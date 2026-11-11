@@ -1,0 +1,15 @@
+{
+  "languageStandard": "c11",
+  "includeRoots": [
+    "include",
+    "subprojects/libreac/include"
+  ],
+  "preprocessorDefinitions": [
+    "_GNU_SOURCE"
+  ],
+  "implementationSources": [
+    "src/repace_wire.c",
+    "src/repace_conf.c",
+    "subprojects/libreac/src/reac.c"
+  ]
+}

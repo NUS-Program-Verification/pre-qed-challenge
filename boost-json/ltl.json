@@ -1,0 +1,395 @@
+{
+  "properties": [
+    {
+      "id": "stream_parser_release_lifecycle",
+      "rule": "stream_parser.hpp: done() returns true only after a successful write/write_some/finish has presented a complete JSON text; release() returns that value and its documentation says 'It is necessary to call reset after calling this function in order to parse another JSON text'. Releasing without a complete text throws, and a second release() without reset() empties the value stack that value_stack.ipp:348 asserts on. The fixed-size temporary buffer/resource stays owned by the caller, so only lifecycle is constrained here.",
+      "formula": "(!s_release W s_done) & G(s_release -> X(!s_release W s_reset))",
+      "apis": [
+        "stream_parser",
+        "stream_parser::done",
+        "stream_parser::finish",
+        "stream_parser::release",
+        "stream_parser::reset",
+        "stream_parser::write",
+        "stream_parser::write_some"
+      ],
+      "predicates": {
+        "s_done": {
+          "meaning": "the parser holds a complete JSON text (done() reported true)",
+          "events": [
+            "ok:stream_parser::done"
+          ]
+        },
+        "s_release": {
+          "meaning": "release is about to be called",
+          "events": [
+            "call:stream_parser::release"
+          ]
+        },
+        "s_reset": {
+          "meaning": "a parser is available for the next JSON text",
+          "events": [
+            "ok:stream_parser",
+            "ok:stream_parser::reset"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:stream_parser",
+            "ok:stream_parser",
+            "call:stream_parser::write",
+            "ok:stream_parser::write",
+            "call:stream_parser::done",
+            "ok:stream_parser::done",
+            "call:stream_parser::release",
+            "ok:stream_parser::release"
+          ],
+          "allowed": true,
+          "reason": "the text was completed before the value was taken"
+        },
+        {
+          "events": [
+            "call:stream_parser",
+            "ok:stream_parser",
+            "call:stream_parser::release"
+          ],
+          "allowed": false,
+          "reason": "release before any complete text"
+        },
+        {
+          "events": [
+            "call:stream_parser",
+            "ok:stream_parser",
+            "call:stream_parser::write",
+            "ok:stream_parser::write",
+            "call:stream_parser::done",
+            "ok:stream_parser::done",
+            "call:stream_parser::release",
+            "ok:stream_parser::release",
+            "call:stream_parser::release"
+          ],
+          "allowed": false,
+          "reason": "second release without reset"
+        },
+        {
+          "events": [
+            "call:stream_parser",
+            "ok:stream_parser",
+            "call:stream_parser::write",
+            "ok:stream_parser::write",
+            "call:stream_parser::done",
+            "ok:stream_parser::done",
+            "call:stream_parser::release",
+            "ok:stream_parser::release",
+            "call:stream_parser::reset",
+            "ok:stream_parser::reset",
+            "call:stream_parser::write",
+            "ok:stream_parser::write",
+            "call:stream_parser::done",
+            "ok:stream_parser::done",
+            "call:stream_parser::release",
+            "ok:stream_parser::release"
+          ],
+          "allowed": true,
+          "reason": "reset before parsing the next text"
+        }
+      ]
+    },
+    {
+      "id": "parser_release_lifecycle",
+      "rule": "parser.hpp: write() either consumes the whole buffer as one complete JSON text or fails with extra_data/incomplete, so a successful write is the only state in which release() can return. release() documentation: 'It is necessary to call reset after calling this function in order to parse another JSON text'; calling it twice without reset() empties the value stack and trips value_stack.ipp:348.",
+      "formula": "(!p_release W p_complete) & G(p_release -> X(!p_release W p_reset))",
+      "apis": [
+        "parser",
+        "parser::release",
+        "parser::reset",
+        "parser::write"
+      ],
+      "predicates": {
+        "p_complete": {
+          "meaning": "a complete JSON text was consumed by write",
+          "events": [
+            "ok:parser::write"
+          ]
+        },
+        "p_release": {
+          "meaning": "release is about to be called",
+          "events": [
+            "call:parser::release"
+          ]
+        },
+        "p_reset": {
+          "meaning": "the parser is ready for another JSON text",
+          "events": [
+            "ok:parser",
+            "ok:parser::reset"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:parser",
+            "ok:parser",
+            "call:parser::write",
+            "ok:parser::write",
+            "call:parser::release",
+            "ok:parser::release"
+          ],
+          "allowed": true,
+          "reason": "one complete text, then release"
+        },
+        {
+          "events": [
+            "call:parser",
+            "ok:parser",
+            "call:parser::release"
+          ],
+          "allowed": false,
+          "reason": "release before a successful write"
+        },
+        {
+          "events": [
+            "call:parser",
+            "ok:parser",
+            "call:parser::write",
+            "ok:parser::write",
+            "call:parser::release",
+            "ok:parser::release",
+            "call:parser::release"
+          ],
+          "allowed": false,
+          "reason": "second release without reset"
+        }
+      ]
+    },
+    {
+      "id": "serializer_read_after_reset",
+      "rule": "serializer.hpp: reset() binds the element to serialize and read() has the documented precondition done() == false; the class docs say to 'declare a variable and call reset ... Then call read over and over until done returns true'. Reading before reset serializes a fresh null, and reading after done() is a precondition violation.",
+      "formula": "(!r_read W r_bound) & G(r_done -> X(!r_read W r_bound))",
+      "apis": [
+        "serializer",
+        "serializer::done",
+        "serializer::read",
+        "serializer::reset"
+      ],
+      "predicates": {
+        "r_bound": {
+          "meaning": "reset() bound an element to serialize",
+          "events": [
+            "ok:serializer::reset"
+          ]
+        },
+        "r_done": {
+          "meaning": "all characters of the element were emitted",
+          "events": [
+            "ok:serializer::done"
+          ]
+        },
+        "r_read": {
+          "meaning": "read is about to be called",
+          "events": [
+            "call:serializer::read"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:serializer",
+            "ok:serializer",
+            "call:serializer::reset",
+            "ok:serializer::reset",
+            "call:serializer::read",
+            "ok:serializer::read",
+            "call:serializer::done",
+            "fail:serializer::done",
+            "call:serializer::read",
+            "ok:serializer::read"
+          ],
+          "allowed": true,
+          "reason": "reset, then read until done"
+        },
+        {
+          "events": [
+            "call:serializer",
+            "ok:serializer",
+            "call:serializer::read"
+          ],
+          "allowed": false,
+          "reason": "read with nothing bound"
+        },
+        {
+          "events": [
+            "call:serializer",
+            "ok:serializer",
+            "call:serializer::reset",
+            "ok:serializer::reset",
+            "call:serializer::read",
+            "ok:serializer::read",
+            "call:serializer::done",
+            "ok:serializer::done",
+            "call:serializer::read"
+          ],
+          "allowed": false,
+          "reason": "read after done"
+        }
+      ]
+    },
+    {
+      "id": "serializer_value_lifetime",
+      "rule": "serializer.hpp: reset() does not take ownership - 'The caller is responsible for ensuring that the lifetime of the object pointed to by the argument extends until it is no longer needed'. The serializer walks the element and keeps pointers to its sub-elements on its own stack, so replacing or mutating that value while the walk is unfinished leaves those pointers dangling. The same holds for every call that rewrites the value in place (emplace_*, clear, erase, insert, assign, swap, reserve/shrink_to_fit, string edits: serializer.ipp:471 keeps a pointer into the string characters) or replaces it (operator>>).",
+      "formula": "G(r_bind -> X(!r_replace W r_done))",
+      "apis": [
+        "array::clear",
+        "array::emplace",
+        "array::emplace_back",
+        "array::erase",
+        "array::insert",
+        "array::operator=",
+        "array::pop_back",
+        "array::resize",
+        "array::shrink_to_fit",
+        "array::swap",
+        "object::clear",
+        "object::erase",
+        "object::insert_or_assign",
+        "object::operator=",
+        "object::operator[]",
+        "object::stable_erase",
+        "operator>>",
+        "parse",
+        "parse(istream)",
+        "parse(storage_ptr)",
+        "parser::release",
+        "serializer",
+        "serializer::done",
+        "serializer::read",
+        "serializer::reset",
+        "stream_parser::release",
+        "string::append",
+        "string::clear",
+        "string::erase",
+        "string::insert",
+        "string::operator+=",
+        "string::operator=",
+        "string::pop_back",
+        "string::push_back",
+        "string::replace",
+        "string::reserve",
+        "string::resize",
+        "string::shrink_to_fit",
+        "string::swap",
+        "swap",
+        "value::emplace_bool",
+        "value::emplace_double",
+        "value::emplace_int64",
+        "value::emplace_null",
+        "value::emplace_object",
+        "value::emplace_uint64",
+        "value::set_at_pointer",
+        "value::set_at_pointer(options)",
+        "value_from"
+      ],
+      "predicates": {
+        "r_bind": {
+          "meaning": "the serializer was pointed at the current value",
+          "events": [
+            "ok:serializer::reset"
+          ]
+        },
+        "r_done": {
+          "meaning": "the walk finished",
+          "events": [
+            "ok:serializer::done"
+          ]
+        },
+        "r_replace": {
+          "meaning": "a call that replaces or rewrites the value being walked",
+          "events": [
+            "call:array::clear",
+            "call:array::emplace",
+            "call:array::emplace_back",
+            "call:array::erase",
+            "call:array::insert",
+            "call:array::operator=",
+            "call:array::pop_back",
+            "call:array::resize",
+            "call:array::shrink_to_fit",
+            "call:array::swap",
+            "call:object::clear",
+            "call:object::erase",
+            "call:object::insert_or_assign",
+            "call:object::operator=",
+            "call:object::operator[]",
+            "call:object::stable_erase",
+            "call:operator>>",
+            "call:parse",
+            "call:parse(istream)",
+            "call:parse(storage_ptr)",
+            "call:parser::release",
+            "call:serializer",
+            "call:stream_parser::release",
+            "call:string::append",
+            "call:string::clear",
+            "call:string::erase",
+            "call:string::insert",
+            "call:string::operator+=",
+            "call:string::operator=",
+            "call:string::pop_back",
+            "call:string::push_back",
+            "call:string::replace",
+            "call:string::reserve",
+            "call:string::resize",
+            "call:string::shrink_to_fit",
+            "call:string::swap",
+            "call:swap",
+            "call:value::emplace_bool",
+            "call:value::emplace_double",
+            "call:value::emplace_int64",
+            "call:value::emplace_null",
+            "call:value::emplace_object",
+            "call:value::emplace_uint64",
+            "call:value::set_at_pointer",
+            "call:value::set_at_pointer(options)",
+            "call:value_from"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:serializer",
+            "ok:serializer",
+            "call:serializer::reset",
+            "ok:serializer::reset",
+            "call:serializer::read",
+            "ok:serializer::read",
+            "call:serializer::done",
+            "ok:serializer::done",
+            "call:parse",
+            "ok:parse"
+          ],
+          "allowed": true,
+          "reason": "the value was replaced only after the walk finished"
+        },
+        {
+          "events": [
+            "call:serializer",
+            "ok:serializer",
+            "call:serializer::reset",
+            "ok:serializer::reset",
+            "call:serializer::read",
+            "ok:serializer::read",
+            "call:parse",
+            "ok:parse"
+          ],
+          "allowed": false,
+          "reason": "the walked value was replaced mid-serialization"
+        }
+      ]
+    }
+  ]
+}

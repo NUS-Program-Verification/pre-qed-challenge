@@ -1,0 +1,19 @@
+{
+  "languageStandard": "gnu11",
+  "includeRoots": [".", "include", "pcre2", "bin/vinyld/common", "vmod"],
+  "preprocessorDefinitions": ["VINYL_STATE_DIR=\"/var/lib/vinyl\""],
+  "implementationSources": [
+    "lib/libvinyl/vav.c", "lib/libvinyl/vnum.c", "lib/libvinyl/vct.c",
+    "lib/libvinyl/vas.c", "lib/libvinyl/vbt.c", "lib/libvinyl/vsb.c",
+    "lib/libvinyl/vbh.c", "lib/libvinyl/vcli_proto.c", "lib/libvinyl/version.c", "lib/libvinyl/vre.c",
+    "lib/libvinyl/vrnd.c", "lib/libvinyl/vsa.c", "lib/libvinyl/vsha256.c", "lib/libvinyl/vss.c",
+    "lib/libvinyl/vtcp.c", "lib/libvinyl/vte.c", "lib/libvinyl/vtim.c", "lib/libvinyl/vin.c",
+    "lib/libvinyl/vfil.c", "lib/libvinyl/vfl.c", "lib/libvinyl/vlu.c", "lib/libvinyl/vjsn.c", "lib/libvinyl/vpf.c",
+    "lib/libvinylapi/vsc.c", "lib/libvinylapi/vsig.c", "lib/libvinylapi/vsl.c", "lib/libvinylapi/vsl_arg.c",
+    "lib/libvinylapi/vsl_cursor.c", "lib/libvinylapi/vsl_dispatch.c", "lib/libvinylapi/vsl_query.c",
+    "lib/libvinylapi/vsm.c", "lib/libvinylapi/vut.c", "lib/libvinylapi/vxp.c", "lib/libvinylapi/vxp_fixed_token.c",
+    "lib/libvinylapi/vxp_lexer.c", "lib/libvinylapi/vxp_parse.c",
+    "bin/vinyld/common/common_vsmw.c", "bin/vinyld/common/common_vsc.c"
+  ],
+  "linkLibraries": ["m", ":libpcre2-8.so.0"]
+}

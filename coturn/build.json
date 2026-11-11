@@ -1,0 +1,12 @@
+{
+  "languageStandard": "c11",
+  "includeRoots": ["src", "src/client", "src/apps/common", "src/server"],
+  "preprocessorDefinitions": ["_GNU_SOURCE", "FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION"],
+  "implementationSources": [
+    "src/client/ns_turn_msg.c",
+    "src/client/ns_turn_msg_addr.c",
+    "src/client/ns_turn_ioaddr.c",
+    "src/apps/common/ns_turn_utils.c"
+  ],
+  "linkLibraries": ["ssl", "crypto", "event"]
+}

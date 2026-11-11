@@ -1,0 +1,5 @@
+{
+  "languageStandard": "c11",
+  "preprocessorDefinitions": ["_GNU_SOURCE"],
+  "implementationSources": ["blocksort.c", "huffman.c", "crctable.c", "randtable.c", "compress.c", "decompress.c", "bzlib.c"]
+}

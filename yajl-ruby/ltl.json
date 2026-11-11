@@ -1,0 +1,241 @@
+{
+  "properties": [
+    {
+      "id": "parser_lifecycle",
+      "rule": "yajl_parse.h: every parser routine takes the yajl_handle returned by yajl_alloc; yajl_free releases it. The harness keeps one parser.",
+      "formula": "(!p_use W p_new) & G(p_free -> X(!p_use W p_new))",
+      "apis": [
+        "yajl_alloc",
+        "yajl_parse",
+        "yajl_parse_complete",
+        "yajl_reset_parser",
+        "yajl_get_bytes_consumed",
+        "yajl_get_error",
+        "yajl_free_error",
+        "yajl_free"
+      ],
+      "predicates": {
+        "p_new": {
+          "meaning": "yajl_alloc returned a handle",
+          "events": [
+            "ok:yajl_alloc"
+          ]
+        },
+        "p_free": {
+          "meaning": "yajl_free is about to be called",
+          "events": [
+            "call:yajl_free"
+          ]
+        },
+        "p_use": {
+          "meaning": "a routine taking the parser handle is about to be called",
+          "events": [
+            "call:yajl_parse",
+            "call:yajl_parse_complete",
+            "call:yajl_reset_parser",
+            "call:yajl_get_bytes_consumed",
+            "call:yajl_get_error",
+            "call:yajl_free_error",
+            "call:yajl_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:yajl_alloc",
+            "ok:yajl_alloc",
+            "call:yajl_parse",
+            "fail:yajl_parse",
+            "call:yajl_reset_parser",
+            "ok:yajl_reset_parser",
+            "call:yajl_free",
+            "ok:yajl_free"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:yajl_parse"
+          ],
+          "allowed": false,
+          "reason": "no parser"
+        },
+        {
+          "events": [
+            "call:yajl_alloc",
+            "ok:yajl_alloc",
+            "call:yajl_free",
+            "ok:yajl_free",
+            "call:yajl_parse_complete"
+          ],
+          "allowed": false,
+          "reason": "use after free"
+        }
+      ]
+    },
+    {
+      "id": "error_string_freed_through_parser",
+      "rule": "yajl_parse.h: the string returned by yajl_get_error 'must be freed with yajl_free_error' using the same handle (its allocator); freeing it twice or without one is invalid, and yajl_free before yajl_free_error leaves no allocator to release it with.",
+      "formula": "(!e_free W e_ok) & G(e_free -> X(!e_free W e_ok)) & G(e_ok -> X(!p_free W e_free))",
+      "apis": [
+        "yajl_get_error",
+        "yajl_free_error",
+        "yajl_free"
+      ],
+      "predicates": {
+        "e_ok": {
+          "meaning": "yajl_get_error returned a string",
+          "events": [
+            "ok:yajl_get_error"
+          ]
+        },
+        "e_free": {
+          "meaning": "yajl_free_error is about to be called",
+          "events": [
+            "call:yajl_free_error"
+          ]
+        },
+        "p_free": {
+          "meaning": "yajl_free is about to be called",
+          "events": [
+            "call:yajl_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:yajl_get_error",
+            "ok:yajl_get_error",
+            "call:yajl_free_error",
+            "ok:yajl_free_error",
+            "call:yajl_free",
+            "ok:yajl_free"
+          ],
+          "allowed": true,
+          "reason": "error string released before the parser"
+        },
+        {
+          "events": [
+            "call:yajl_free_error"
+          ],
+          "allowed": false,
+          "reason": "no error string"
+        },
+        {
+          "events": [
+            "call:yajl_get_error",
+            "ok:yajl_get_error",
+            "call:yajl_free_error",
+            "ok:yajl_free_error",
+            "call:yajl_free_error"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        },
+        {
+          "events": [
+            "call:yajl_get_error",
+            "ok:yajl_get_error",
+            "call:yajl_free"
+          ],
+          "allowed": false,
+          "reason": "parser freed while its error string is outstanding"
+        }
+      ]
+    },
+    {
+      "id": "generator_lifecycle",
+      "rule": "yajl_gen.h: every yajl_gen_* routine takes the yajl_gen from yajl_gen_alloc / yajl_gen_alloc2; yajl_gen_free releases it. The harness keeps one generator.",
+      "formula": "(!g_use W g_new) & G(g_free -> X(!g_use W g_new))",
+      "apis": [
+        "yajl_gen_alloc",
+        "yajl_gen_alloc2",
+        "yajl_gen_integer",
+        "yajl_gen_long",
+        "yajl_gen_double",
+        "yajl_gen_number",
+        "yajl_gen_string",
+        "yajl_gen_null",
+        "yajl_gen_bool",
+        "yajl_gen_map_open",
+        "yajl_gen_map_close",
+        "yajl_gen_array_open",
+        "yajl_gen_array_close",
+        "yajl_gen_get_buf",
+        "yajl_gen_clear",
+        "yajl_gen_free"
+      ],
+      "predicates": {
+        "g_new": {
+          "meaning": "a generator was allocated",
+          "events": [
+            "ok:yajl_gen_alloc",
+            "ok:yajl_gen_alloc2"
+          ]
+        },
+        "g_free": {
+          "meaning": "yajl_gen_free is about to be called",
+          "events": [
+            "call:yajl_gen_free"
+          ]
+        },
+        "g_use": {
+          "meaning": "a routine taking the generator is about to be called",
+          "events": [
+            "call:yajl_gen_integer",
+            "call:yajl_gen_long",
+            "call:yajl_gen_double",
+            "call:yajl_gen_number",
+            "call:yajl_gen_string",
+            "call:yajl_gen_null",
+            "call:yajl_gen_bool",
+            "call:yajl_gen_map_open",
+            "call:yajl_gen_map_close",
+            "call:yajl_gen_array_open",
+            "call:yajl_gen_array_close",
+            "call:yajl_gen_get_buf",
+            "call:yajl_gen_clear",
+            "call:yajl_gen_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:yajl_gen_alloc2",
+            "ok:yajl_gen_alloc2",
+            "call:yajl_gen_map_open",
+            "ok:yajl_gen_map_open",
+            "call:yajl_gen_map_close",
+            "ok:yajl_gen_map_close",
+            "call:yajl_gen_free",
+            "ok:yajl_gen_free"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:yajl_gen_null"
+          ],
+          "allowed": false,
+          "reason": "no generator"
+        },
+        {
+          "events": [
+            "call:yajl_gen_alloc",
+            "ok:yajl_gen_alloc",
+            "call:yajl_gen_free",
+            "ok:yajl_gen_free",
+            "call:yajl_gen_clear"
+          ],
+          "allowed": false,
+          "reason": "use after free"
+        }
+      ]
+    }
+  ]
+}

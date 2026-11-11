@@ -1,0 +1,403 @@
+{
+  "properties": [
+    {
+      "id": "jmespath_expression_lifecycle",
+      "rule": "jmespath.hpp:971-991,997-1008: jmespath_expression tokenizes in its constructor, stores the result in `error`, and its `tokens` vector holds string_views into the path storage handed to the constructor. read_jmespath(const jmespath_expression&, value, buffer) reads those tokens, so an expression object must exist before it is evaluated; the harness keeps the one expression and the path string it was tokenized from. (A tokenize error does not make evaluation illegal: read_jmespath returns syntax_error for it.)",
+      "formula": "(!eval W x_new)",
+      "apis": [
+        "jmespath_expression::jmespath_expression",
+        "read_jmespath"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "an expression object was constructed (its tokenize result may be an error)",
+          "events": [
+            "ok:jmespath_expression::jmespath_expression",
+            "fail:jmespath_expression::jmespath_expression"
+          ]
+        },
+        "eval": {
+          "meaning": "an expression is about to be evaluated",
+          "events": [
+            "call:read_jmespath"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:jmespath_expression::jmespath_expression",
+            "ok:jmespath_expression::jmespath_expression",
+            "call:read_jmespath",
+            "ok:read_jmespath"
+          ],
+          "allowed": true,
+          "reason": "construct, then evaluate"
+        },
+        {
+          "events": [
+            "call:jmespath_expression::jmespath_expression",
+            "fail:jmespath_expression::jmespath_expression",
+            "call:read_jmespath",
+            "fail:read_jmespath"
+          ],
+          "allowed": true,
+          "reason": "a tokenize error is reported as syntax_error by the evaluation"
+        },
+        {
+          "events": [
+            "call:read_jmespath"
+          ],
+          "allowed": false,
+          "reason": "no expression to read tokens from"
+        }
+      ]
+    },
+    {
+      "id": "lazy_json_lifecycle",
+      "rule": "json/lazy.hpp:1590-1600: lazy_json(buffer) only stores pointers into the buffer, which 'must remain valid for document lifetime'; lazy.hpp:372,504 and 600-605: every lazy_json_view (root(), operator[], iterator elements) holds a pointer to its lazy_document and into the text; lazy.hpp:789: indexed_lazy_view (view.index()) likewise. So document, view and indexed-view methods need a successfully parsed document whose text is still alive. The harness keeps one text, one document and the views derived from it, and lazy_json drops all of them before it parses new text, so after a call to lazy_json nothing may be used until it succeeds.",
+      "formula": "(!x_use W x_new) & G(x_gone -> X(!x_use W x_new))",
+      "apis": [
+        "lazy_json",
+        "lazy_document::root",
+        "lazy_document::operator[]",
+        "lazy_document::reset_parse_pos",
+        "lazy_json_view::operator[]",
+        "lazy_json_view::get",
+        "lazy_json_view::key",
+        "lazy_json_view::index",
+        "lazy_json_view::is_object",
+        "lazy_json_view::is_array",
+        "lazy_json_view::is_string",
+        "lazy_json_view::is_number",
+        "lazy_json_view::is_boolean",
+        "lazy_json_view::is_null",
+        "lazy_json_view::has_error",
+        "lazy_json_view::error",
+        "lazy_json_view::empty",
+        "lazy_json_view::size",
+        "lazy_json_view::contains",
+        "lazy_json_view::read_into",
+        "lazy_json_view::begin",
+        "lazy_json_view::end",
+        "lazy_json_view::raw_json",
+        "indexed_lazy_view::size",
+        "indexed_lazy_view::empty",
+        "indexed_lazy_view::contains",
+        "indexed_lazy_view::operator[]",
+        "indexed_lazy_view::begin",
+        "indexed_lazy_view::end"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "a document was parsed",
+          "events": [
+            "ok:lazy_json"
+          ]
+        },
+        "x_gone": {
+          "meaning": "the document, its text and every view of it are dropped before the new text is parsed",
+          "events": [
+            "call:lazy_json"
+          ]
+        },
+        "x_use": {
+          "meaning": "the document or a view derived from it is used",
+          "events": [
+            "call:lazy_document::root",
+            "call:lazy_document::operator[]",
+            "call:lazy_document::reset_parse_pos",
+            "call:lazy_json_view::operator[]",
+            "call:lazy_json_view::get",
+            "call:lazy_json_view::key",
+            "call:lazy_json_view::index",
+            "call:lazy_json_view::is_object",
+            "call:lazy_json_view::is_array",
+            "call:lazy_json_view::is_string",
+            "call:lazy_json_view::is_number",
+            "call:lazy_json_view::is_boolean",
+            "call:lazy_json_view::is_null",
+            "call:lazy_json_view::has_error",
+            "call:lazy_json_view::error",
+            "call:lazy_json_view::empty",
+            "call:lazy_json_view::size",
+            "call:lazy_json_view::contains",
+            "call:lazy_json_view::read_into",
+            "call:lazy_json_view::begin",
+            "call:lazy_json_view::end",
+            "call:lazy_json_view::raw_json",
+            "call:indexed_lazy_view::size",
+            "call:indexed_lazy_view::empty",
+            "call:indexed_lazy_view::contains",
+            "call:indexed_lazy_view::operator[]",
+            "call:indexed_lazy_view::begin",
+            "call:indexed_lazy_view::end"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:lazy_json",
+            "ok:lazy_json",
+            "call:lazy_document::root",
+            "ok:lazy_document::root",
+            "call:lazy_json_view::get",
+            "ok:lazy_json_view::get"
+          ],
+          "allowed": true,
+          "reason": "parse, take a view, use it"
+        },
+        {
+          "events": [
+            "call:lazy_document::root"
+          ],
+          "allowed": false,
+          "reason": "no document yet"
+        },
+        {
+          "events": [
+            "call:lazy_json",
+            "ok:lazy_json",
+            "call:lazy_json",
+            "fail:lazy_json",
+            "call:lazy_document::root"
+          ],
+          "allowed": false,
+          "reason": "the failed parse dropped the previous document and its text"
+        }
+      ]
+    },
+    {
+      "id": "lazy_beve_lifecycle",
+      "rule": "beve/lazy.hpp:1314 lazy_beve(buffer) stores pointers into the BEVE buffer (docs/lazy-beve.md: the buffer must outlive the document); beve/lazy.hpp:138,301,360-364: lazy_beve_view keeps a pointer to its lazy_beve_document and into the buffer; beve/lazy.hpp:459: indexed_lazy_beve_view likewise. Document, view and indexed-view methods need a successfully parsed document whose buffer is alive; lazy_beve drops the harness's document, buffer and views before parsing new bytes.",
+      "formula": "(!x_use W x_new) & G(x_gone -> X(!x_use W x_new))",
+      "apis": [
+        "lazy_beve",
+        "lazy_beve_document::root",
+        "lazy_beve_document::operator[]",
+        "lazy_beve_document::reset_parse_pos",
+        "lazy_beve_view::operator[]",
+        "lazy_beve_view::get",
+        "lazy_beve_view::key",
+        "lazy_beve_view::index",
+        "lazy_beve_view::is_object",
+        "lazy_beve_view::is_array",
+        "lazy_beve_view::is_string",
+        "lazy_beve_view::is_number",
+        "lazy_beve_view::is_boolean",
+        "lazy_beve_view::is_null",
+        "lazy_beve_view::has_error",
+        "lazy_beve_view::error",
+        "lazy_beve_view::empty",
+        "lazy_beve_view::size",
+        "lazy_beve_view::contains",
+        "lazy_beve_view::read_into",
+        "lazy_beve_view::begin",
+        "lazy_beve_view::end",
+        "lazy_beve_view::is_typed_array",
+        "lazy_beve_view::is_generic_array",
+        "lazy_beve_view::raw_beve",
+        "indexed_lazy_beve_view::size",
+        "indexed_lazy_beve_view::empty",
+        "indexed_lazy_beve_view::contains",
+        "indexed_lazy_beve_view::operator[]",
+        "indexed_lazy_beve_view::begin",
+        "indexed_lazy_beve_view::end"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "a document was parsed",
+          "events": [
+            "ok:lazy_beve"
+          ]
+        },
+        "x_gone": {
+          "meaning": "the document, its text and every view of it are dropped before the new text is parsed",
+          "events": [
+            "call:lazy_beve"
+          ]
+        },
+        "x_use": {
+          "meaning": "the document or a view derived from it is used",
+          "events": [
+            "call:lazy_beve_document::root",
+            "call:lazy_beve_document::operator[]",
+            "call:lazy_beve_document::reset_parse_pos",
+            "call:lazy_beve_view::operator[]",
+            "call:lazy_beve_view::get",
+            "call:lazy_beve_view::key",
+            "call:lazy_beve_view::index",
+            "call:lazy_beve_view::is_object",
+            "call:lazy_beve_view::is_array",
+            "call:lazy_beve_view::is_string",
+            "call:lazy_beve_view::is_number",
+            "call:lazy_beve_view::is_boolean",
+            "call:lazy_beve_view::is_null",
+            "call:lazy_beve_view::has_error",
+            "call:lazy_beve_view::error",
+            "call:lazy_beve_view::empty",
+            "call:lazy_beve_view::size",
+            "call:lazy_beve_view::contains",
+            "call:lazy_beve_view::read_into",
+            "call:lazy_beve_view::begin",
+            "call:lazy_beve_view::end",
+            "call:lazy_beve_view::is_typed_array",
+            "call:lazy_beve_view::is_generic_array",
+            "call:lazy_beve_view::raw_beve",
+            "call:indexed_lazy_beve_view::size",
+            "call:indexed_lazy_beve_view::empty",
+            "call:indexed_lazy_beve_view::contains",
+            "call:indexed_lazy_beve_view::operator[]",
+            "call:indexed_lazy_beve_view::begin",
+            "call:indexed_lazy_beve_view::end"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:lazy_beve",
+            "ok:lazy_beve",
+            "call:lazy_beve_document::root",
+            "ok:lazy_beve_document::root",
+            "call:lazy_beve_view::get",
+            "ok:lazy_beve_view::get"
+          ],
+          "allowed": true,
+          "reason": "parse, take a view, use it"
+        },
+        {
+          "events": [
+            "call:lazy_beve_document::root"
+          ],
+          "allowed": false,
+          "reason": "no document yet"
+        },
+        {
+          "events": [
+            "call:lazy_beve",
+            "ok:lazy_beve",
+            "call:lazy_beve",
+            "fail:lazy_beve",
+            "call:lazy_beve_document::root"
+          ],
+          "allowed": false,
+          "reason": "the failed parse dropped the previous document and its text"
+        }
+      ]
+    },
+    {
+      "id": "json_stream_reader_lifecycle",
+      "rule": "json/json_stream.hpp:36-48: json_stream_reader is constructed from a stream it reads from (it keeps it in its basic_istream_buffer, core/istream_buffer.hpp:56-80); read_next (json_stream.hpp:52), begin (151) and end (152) are members of that reader, so a reader must have been constructed before any of them. The harness keeps the reader together with its std::istringstream.",
+      "formula": "!x_use W x_new",
+      "apis": [
+        "json_stream_reader::json_stream_reader",
+        "json_stream_reader::read_next",
+        "json_stream_reader::begin",
+        "json_stream_reader::end"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "a reader was constructed over a stream",
+          "events": [
+            "ok:json_stream_reader::json_stream_reader"
+          ]
+        },
+        "x_use": {
+          "meaning": "the object is used",
+          "events": [
+            "call:json_stream_reader::read_next",
+            "call:json_stream_reader::begin",
+            "call:json_stream_reader::end"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:json_stream_reader::json_stream_reader",
+            "ok:json_stream_reader::json_stream_reader",
+            "call:json_stream_reader::read_next",
+            "fail:json_stream_reader::read_next"
+          ],
+          "allowed": true,
+          "reason": "construct, then read (end_reached is a failure result)"
+        },
+        {
+          "events": [
+            "call:json_stream_reader::read_next"
+          ],
+          "allowed": false,
+          "reason": "no reader"
+        },
+        {
+          "events": [
+            "call:json_stream_reader::begin",
+            "ok:json_stream_reader::begin",
+            "call:json_stream_reader::json_stream_reader",
+            "ok:json_stream_reader::json_stream_reader"
+          ],
+          "allowed": false,
+          "reason": "iterating before the reader exists"
+        }
+      ]
+    },
+    {
+      "id": "pool_lifecycle",
+      "rule": "thread/threadpool.hpp:20-22: glz::pool starts its worker threads in its constructor; emplace_back (74,116) queues a job on those workers and wait (159) blocks until the queue of that pool is empty, so both need a constructed pool. ~pool (167) finishes the queued work.",
+      "formula": "!x_use W x_new",
+      "apis": [
+        "pool::pool",
+        "pool::emplace_back",
+        "pool::wait"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "a pool was constructed",
+          "events": [
+            "ok:pool::pool"
+          ]
+        },
+        "x_use": {
+          "meaning": "the object is used",
+          "events": [
+            "call:pool::emplace_back",
+            "call:pool::wait"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:pool::pool",
+            "ok:pool::pool",
+            "call:pool::emplace_back",
+            "ok:pool::emplace_back",
+            "call:pool::wait",
+            "ok:pool::wait"
+          ],
+          "allowed": true,
+          "reason": "construct, queue a job, wait"
+        },
+        {
+          "events": [
+            "call:pool::emplace_back"
+          ],
+          "allowed": false,
+          "reason": "no pool to queue on"
+        },
+        {
+          "events": [
+            "call:pool::wait",
+            "ok:pool::wait",
+            "call:pool::pool",
+            "ok:pool::pool"
+          ],
+          "allowed": false,
+          "reason": "waiting before the pool exists"
+        }
+      ]
+    }
+  ]
+}

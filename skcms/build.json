@@ -1,0 +1,6 @@
+{
+  "languageStandard": "c++17",
+  "includeRoots": ["."],
+  "preprocessorDefinitions": ["SKCMS_FORCE_BASELINE"],
+  "implementationSources": ["skcms.cc", "src/skcms_TransformBaseline.cc"]
+}

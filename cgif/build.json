@@ -1,0 +1,6 @@
+{
+  "languageStandard": "c11",
+  "includeRoots": ["inc"],
+  "preprocessorDefinitions": ["_GNU_SOURCE"],
+  "implementationSources": ["src/cgif.c", "src/cgif_raw.c", "src/cgif_rgb.c"]
+}

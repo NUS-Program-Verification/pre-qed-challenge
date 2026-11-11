@@ -1,0 +1,1410 @@
+{
+  "properties": [
+    {
+      "id": "context_lifecycle",
+      "rule": "libspirv.h spvContextCreate: the context carries the target environment for the assembler, disassembler, validator and binary parser, and 'encodes the given SPIR-V assembly text'; spvTextToBinary/spvBinaryToText/spvValidate*/spvBinaryParse dereference it (e.g. text.cpp:994, disassemble.cpp:1124, val/validate.cpp:480). spvContextDestroy releases it. The harness keeps one context; binaries and text it produces may outlive it.",
+      "formula": "(!ctx_use W ctx_new) & G(ctx_free -> X(!ctx_use W ctx_new))",
+      "apis": [
+        "spvContextCreate",
+        "spvContextDestroy",
+        "spvTextToBinary",
+        "spvTextToBinaryWithOptions",
+        "spvBinaryToText",
+        "spvValidate",
+        "spvValidateWithOptions",
+        "spvValidateBinary",
+        "spvBinaryParse"
+      ],
+      "predicates": {
+        "ctx_new": {
+          "meaning": "a context was created",
+          "events": ["ok:spvContextCreate"]
+        },
+        "ctx_free": {
+          "meaning": "the context is about to be destroyed",
+          "events": ["call:spvContextDestroy"]
+        },
+        "ctx_use": {
+          "meaning": "a routine taking the context is about to be called",
+          "events": [
+            "call:spvContextDestroy",
+            "call:spvTextToBinary",
+            "call:spvTextToBinaryWithOptions",
+            "call:spvBinaryToText",
+            "call:spvValidate",
+            "call:spvValidateWithOptions",
+            "call:spvValidateBinary",
+            "call:spvBinaryParse"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvContextCreate",
+            "ok:spvContextCreate",
+            "call:spvTextToBinary",
+            "ok:spvTextToBinary",
+            "call:spvValidateBinary",
+            "fail:spvValidateBinary",
+            "call:spvContextDestroy",
+            "ok:spvContextDestroy"
+          ],
+          "allowed": true,
+          "reason": "the whole module flow sits inside the context's lifetime"
+        },
+        {
+          "events": ["call:spvTextToBinary"],
+          "allowed": false,
+          "reason": "no context"
+        },
+        {
+          "events": [
+            "call:spvContextCreate",
+            "fail:spvContextCreate",
+            "call:spvBinaryToText"
+          ],
+          "allowed": false,
+          "reason": "creation failed, so no context is in hand"
+        },
+        {
+          "events": [
+            "call:spvContextCreate",
+            "ok:spvContextCreate",
+            "call:spvContextDestroy",
+            "ok:spvContextDestroy",
+            "call:spvValidate"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "validator_options_lifecycle",
+      "rule": "libspirv.h spvValidatorOptionsCreate: the object stays valid until spvValidatorOptionsDestroy, and every spvValidatorOptionsSet* calls assert(options) (spirv_validator_options.cpp:62), so a null or freed object is a crash. spvValidateWithOptions and spvOptimizerOptionsSetValidatorOptions take it. The harness keeps one object.",
+      "formula": "(!vo_use W vo_new) & G(vo_free -> X(!vo_use W vo_new))",
+      "apis": [
+        "spvValidatorOptionsCreate",
+        "spvValidatorOptionsDestroy",
+        "spvValidatorOptionsSetUniversalLimit",
+        "spvValidatorOptionsSetRelaxStoreStruct",
+        "spvValidatorOptionsSetRelaxLogicalPointer",
+        "spvValidatorOptionsSetBeforeHlslLegalization",
+        "spvValidatorOptionsSetRelaxBlockLayout",
+        "spvValidatorOptionsSetUniformBufferStandardLayout",
+        "spvValidatorOptionsSetScalarBlockLayout",
+        "spvValidatorOptionsSetWorkgroupScalarBlockLayout",
+        "spvValidatorOptionsSetSkipBlockLayout",
+        "spvValidatorOptionsSetAllowLocalSizeId",
+        "spvValidatorOptionsSetAllowOffsetTextureOperand",
+        "spvValidatorOptionsSetAllowVulkan32BitBitwise",
+        "spvValidatorOptionsSetFriendlyNames",
+        "spvValidatorOptionsSetBufferDescriptorLayout",
+        "spvValidatorOptionsSetImageDescriptorLayout",
+        "spvValidatorOptionsSetSamplerDescriptorLayout",
+        "spvValidatorOptionsSetTensorDescriptorLayout",
+        "spvValidateWithOptions",
+        "spvOptimizerOptionsSetValidatorOptions"
+      ],
+      "predicates": {
+        "vo_new": {
+          "meaning": "a validator options object was created",
+          "events": ["ok:spvValidatorOptionsCreate"]
+        },
+        "vo_free": {
+          "meaning": "the options object is about to be destroyed",
+          "events": ["call:spvValidatorOptionsDestroy"]
+        },
+        "vo_use": {
+          "meaning": "a routine taking the options object is about to be called",
+          "events": [
+            "call:spvValidatorOptionsDestroy",
+            "call:spvValidatorOptionsSetUniversalLimit",
+            "call:spvValidatorOptionsSetRelaxStoreStruct",
+            "call:spvValidatorOptionsSetRelaxLogicalPointer",
+            "call:spvValidatorOptionsSetBeforeHlslLegalization",
+            "call:spvValidatorOptionsSetRelaxBlockLayout",
+            "call:spvValidatorOptionsSetUniformBufferStandardLayout",
+            "call:spvValidatorOptionsSetScalarBlockLayout",
+            "call:spvValidatorOptionsSetWorkgroupScalarBlockLayout",
+            "call:spvValidatorOptionsSetSkipBlockLayout",
+            "call:spvValidatorOptionsSetAllowLocalSizeId",
+            "call:spvValidatorOptionsSetAllowOffsetTextureOperand",
+            "call:spvValidatorOptionsSetAllowVulkan32BitBitwise",
+            "call:spvValidatorOptionsSetFriendlyNames",
+            "call:spvValidatorOptionsSetBufferDescriptorLayout",
+            "call:spvValidatorOptionsSetImageDescriptorLayout",
+            "call:spvValidatorOptionsSetSamplerDescriptorLayout",
+            "call:spvValidatorOptionsSetTensorDescriptorLayout",
+            "call:spvValidateWithOptions",
+            "call:spvOptimizerOptionsSetValidatorOptions"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvValidatorOptionsCreate",
+            "ok:spvValidatorOptionsCreate",
+            "call:spvValidatorOptionsSetScalarBlockLayout",
+            "call:spvOptimizerOptionsSetValidatorOptions",
+            "call:spvValidateWithOptions",
+            "ok:spvValidateWithOptions",
+            "call:spvValidatorOptionsDestroy",
+            "ok:spvValidatorOptionsDestroy"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": ["call:spvValidatorOptionsSetSkipBlockLayout"],
+          "allowed": false,
+          "reason": "no options object"
+        },
+        {
+          "events": [
+            "call:spvValidatorOptionsCreate",
+            "ok:spvValidatorOptionsCreate",
+            "call:spvValidatorOptionsDestroy",
+            "call:spvValidatorOptionsDestroy"
+          ],
+          "allowed": false,
+          "reason": "double destroy"
+        },
+        {
+          "events": [
+            "call:spvValidatorOptionsCreate",
+            "ok:spvValidatorOptionsCreate",
+            "call:spvValidatorOptionsDestroy",
+            "ok:spvValidatorOptionsDestroy",
+            "call:spvValidateWithOptions"
+          ],
+          "allowed": false,
+          "reason": "validation with a freed options object"
+        }
+      ]
+    },
+    {
+      "id": "optimizer_options_lifecycle",
+      "rule": "libspirv.h spvOptimizerOptionsCreate: the object stays valid until spvOptimizerOptionsDestroy; spvOptimizerRun dereferences it without a null check (opt/optimizer.cpp:696 opt_options->run_validator_) and reads the validator options it holds, so it must be live and must not have been freed. The harness keeps one object.",
+      "formula": "(!oo_use W oo_new) & G(oo_free -> X(!oo_use W oo_new))",
+      "apis": [
+        "spvOptimizerOptionsCreate",
+        "spvOptimizerOptionsDestroy",
+        "spvOptimizerOptionsSetRunValidator",
+        "spvOptimizerOptionsSetValidatorOptions",
+        "spvOptimizerOptionsSetMaxIdBound",
+        "spvOptimizerOptionsSetPreserveBindings",
+        "spvOptimizerOptionsSetPreserveSpecConstants",
+        "spvOptimizerRun"
+      ],
+      "predicates": {
+        "oo_new": {
+          "meaning": "an optimizer options object was created",
+          "events": ["ok:spvOptimizerOptionsCreate"]
+        },
+        "oo_free": {
+          "meaning": "the options object is about to be destroyed",
+          "events": ["call:spvOptimizerOptionsDestroy"]
+        },
+        "oo_use": {
+          "meaning": "a routine taking the options object is about to be called",
+          "events": [
+            "call:spvOptimizerOptionsDestroy",
+            "call:spvOptimizerOptionsSetRunValidator",
+            "call:spvOptimizerOptionsSetValidatorOptions",
+            "call:spvOptimizerOptionsSetMaxIdBound",
+            "call:spvOptimizerOptionsSetPreserveBindings",
+            "call:spvOptimizerOptionsSetPreserveSpecConstants",
+            "call:spvOptimizerRun"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvOptimizerOptionsCreate",
+            "ok:spvOptimizerOptionsCreate",
+            "call:spvOptimizerOptionsSetRunValidator",
+            "call:spvOptimizerOptionsSetMaxIdBound",
+            "call:spvOptimizerRun",
+            "ok:spvOptimizerRun",
+            "call:spvOptimizerOptionsDestroy",
+            "ok:spvOptimizerOptionsDestroy"
+          ],
+          "allowed": true,
+          "reason": "run inside the options lifetime"
+        },
+        {
+          "events": ["call:spvOptimizerRun"],
+          "allowed": false,
+          "reason": "no options object"
+        },
+        {
+          "events": [
+            "call:spvOptimizerOptionsCreate",
+            "ok:spvOptimizerOptionsCreate",
+            "call:spvOptimizerOptionsDestroy",
+            "ok:spvOptimizerOptionsDestroy",
+            "call:spvOptimizerOptionsSetRunValidator"
+          ],
+          "allowed": false,
+          "reason": "setter after destroy"
+        }
+      ]
+    },
+    {
+      "id": "reducer_options_lifecycle",
+      "rule": "libspirv.h spvReducerOptionsCreate: the object stays valid until spvReducerOptionsDestroy and is only read by the reducer, which lives in the separate SPIRV-Tools-reduce library, so this API only creates, configures and destroys it. The harness keeps one object.",
+      "formula": "(!ro_use W ro_new) & G(ro_free -> X(!ro_use W ro_new))",
+      "apis": [
+        "spvReducerOptionsCreate",
+        "spvReducerOptionsDestroy",
+        "spvReducerOptionsSetStepLimit",
+        "spvReducerOptionsSetFailOnValidationError",
+        "spvReducerOptionsSetTargetFunction"
+      ],
+      "predicates": {
+        "ro_new": {
+          "meaning": "a reducer options object was created",
+          "events": ["ok:spvReducerOptionsCreate"]
+        },
+        "ro_free": {
+          "meaning": "the options object is about to be destroyed",
+          "events": ["call:spvReducerOptionsDestroy"]
+        },
+        "ro_use": {
+          "meaning": "a routine taking the options object is about to be called",
+          "events": [
+            "call:spvReducerOptionsDestroy",
+            "call:spvReducerOptionsSetStepLimit",
+            "call:spvReducerOptionsSetFailOnValidationError",
+            "call:spvReducerOptionsSetTargetFunction"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvReducerOptionsCreate",
+            "ok:spvReducerOptionsCreate",
+            "call:spvReducerOptionsSetStepLimit",
+            "call:spvReducerOptionsSetTargetFunction",
+            "call:spvReducerOptionsDestroy",
+            "ok:spvReducerOptionsDestroy"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": ["call:spvReducerOptionsSetStepLimit"],
+          "allowed": false,
+          "reason": "no options object"
+        },
+        {
+          "events": [
+            "call:spvReducerOptionsCreate",
+            "ok:spvReducerOptionsCreate",
+            "call:spvReducerOptionsDestroy",
+            "ok:spvReducerOptionsDestroy",
+            "call:spvReducerOptionsSetFailOnValidationError"
+          ],
+          "allowed": false,
+          "reason": "setter after destroy"
+        }
+      ]
+    },
+    {
+      "id": "fuzzer_options_lifecycle",
+      "rule": "libspirv.h spvFuzzerOptionsCreate: the object stays valid until spvFuzzerOptionsDestroy and is only read by the shader fuzzer, which lives in the separate SPIRV-Tools-fuzz library, so this API only creates, configures and destroys it. The harness keeps one object.",
+      "formula": "(!fo_use W fo_new) & G(fo_free -> X(!fo_use W fo_new))",
+      "apis": [
+        "spvFuzzerOptionsCreate",
+        "spvFuzzerOptionsDestroy",
+        "spvFuzzerOptionsEnableReplayValidation",
+        "spvFuzzerOptionsSetRandomSeed",
+        "spvFuzzerOptionsSetReplayRange",
+        "spvFuzzerOptionsSetShrinkerStepLimit",
+        "spvFuzzerOptionsEnableFuzzerPassValidation",
+        "spvFuzzerOptionsEnableAllPasses"
+      ],
+      "predicates": {
+        "fo_new": {
+          "meaning": "a fuzzer options object was created",
+          "events": ["ok:spvFuzzerOptionsCreate"]
+        },
+        "fo_free": {
+          "meaning": "the options object is about to be destroyed",
+          "events": ["call:spvFuzzerOptionsDestroy"]
+        },
+        "fo_use": {
+          "meaning": "a routine taking the options object is about to be called",
+          "events": [
+            "call:spvFuzzerOptionsDestroy",
+            "call:spvFuzzerOptionsEnableReplayValidation",
+            "call:spvFuzzerOptionsSetRandomSeed",
+            "call:spvFuzzerOptionsSetReplayRange",
+            "call:spvFuzzerOptionsSetShrinkerStepLimit",
+            "call:spvFuzzerOptionsEnableFuzzerPassValidation",
+            "call:spvFuzzerOptionsEnableAllPasses"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvFuzzerOptionsCreate",
+            "ok:spvFuzzerOptionsCreate",
+            "call:spvFuzzerOptionsSetRandomSeed",
+            "call:spvFuzzerOptionsEnableAllPasses",
+            "call:spvFuzzerOptionsDestroy",
+            "ok:spvFuzzerOptionsDestroy"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": ["call:spvFuzzerOptionsSetReplayRange"],
+          "allowed": false,
+          "reason": "no options object"
+        },
+        {
+          "events": [
+            "call:spvFuzzerOptionsCreate",
+            "ok:spvFuzzerOptionsCreate",
+            "call:spvFuzzerOptionsDestroy",
+            "call:spvFuzzerOptionsSetShrinkerStepLimit"
+          ],
+          "allowed": false,
+          "reason": "setter after destroy"
+        }
+      ]
+    },
+    {
+      "id": "optimizer_lifecycle",
+      "rule": "libspirv.h spvOptimizerCreate: the optimizer accumulates registered passes and is valid until spvOptimizerDestroy; every opt/optimizer.cpp entry point reinterpret_casts it without a null check (opt/optimizer.cpp:1233-1311), so a null or freed optimizer is a crash. The harness keeps one optimizer; destroying it drops the registered passes.",
+      "formula": "(!opt_use W opt_new) & G(opt_free -> X(!opt_use W opt_new))",
+      "apis": [
+        "spvOptimizerCreate",
+        "spvOptimizerDestroy",
+        "spvOptimizerSetMessageConsumer",
+        "spvOptimizerRegisterLegalizationPasses",
+        "spvOptimizerRegisterPerformancePasses",
+        "spvOptimizerRegisterSizePasses",
+        "spvOptimizerRegisterPassFromFlag",
+        "spvOptimizerRegisterPassesFromFlags",
+        "spvOptimizerRegisterPassesFromFlagsWhilePreservingTheInterface",
+        "spvOptimizerRun"
+      ],
+      "predicates": {
+        "opt_new": {
+          "meaning": "an optimizer was created",
+          "events": ["ok:spvOptimizerCreate"]
+        },
+        "opt_free": {
+          "meaning": "the optimizer is about to be destroyed",
+          "events": ["call:spvOptimizerDestroy"]
+        },
+        "opt_use": {
+          "meaning": "a routine taking the optimizer is about to be called",
+          "events": [
+            "call:spvOptimizerDestroy",
+            "call:spvOptimizerSetMessageConsumer",
+            "call:spvOptimizerRegisterLegalizationPasses",
+            "call:spvOptimizerRegisterPerformancePasses",
+            "call:spvOptimizerRegisterSizePasses",
+            "call:spvOptimizerRegisterPassFromFlag",
+            "call:spvOptimizerRegisterPassesFromFlags",
+            "call:spvOptimizerRegisterPassesFromFlagsWhilePreservingTheInterface",
+            "call:spvOptimizerRun"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvOptimizerCreate",
+            "ok:spvOptimizerCreate",
+            "call:spvOptimizerRegisterPerformancePasses",
+            "call:spvOptimizerRun",
+            "ok:spvOptimizerRun",
+            "call:spvOptimizerDestroy",
+            "ok:spvOptimizerDestroy"
+          ],
+          "allowed": true,
+          "reason": "passes registered and run before the destroy"
+        },
+        {
+          "events": ["call:spvOptimizerRegisterSizePasses"],
+          "allowed": false,
+          "reason": "no optimizer"
+        },
+        {
+          "events": [
+            "call:spvOptimizerCreate",
+            "ok:spvOptimizerCreate",
+            "call:spvOptimizerDestroy",
+            "ok:spvOptimizerDestroy",
+            "call:spvOptimizerRun"
+          ],
+          "allowed": false,
+          "reason": "run after destroy"
+        },
+        {
+          "events": [
+            "call:spvOptimizerCreate",
+            "ok:spvOptimizerCreate",
+            "call:spvOptimizerDestroy",
+            "call:spvOptimizerDestroy"
+          ],
+          "allowed": false,
+          "reason": "double destroy"
+        }
+      ]
+    },
+    {
+      "id": "binary_ownership",
+      "rule": "libspirv.h declares no spvOptimizedBinaryDestroy: spvOptimizerRun's spv_binary out-parameter is released by spvBinaryDestroy, exactly like the spv_binary from spvTextToBinary(WithOptions) (binary.cpp:975 frees code and the struct). Each successful producer returns one binary, so each binary is destroyed once and only after a producer; the harness keeps at most one assembler binary and one optimizer binary.",
+      "formula": "(!bin_destroy W bin_produce) & G(bin_destroy -> X(!bin_destroy W bin_produce))",
+      "apis": [
+        "spvTextToBinary",
+        "spvTextToBinaryWithOptions",
+        "spvOptimizerRun",
+        "spvBinaryDestroy"
+      ],
+      "predicates": {
+        "bin_produce": {
+          "meaning": "a spv_binary was returned to the caller",
+          "events": [
+            "ok:spvTextToBinary",
+            "ok:spvTextToBinaryWithOptions",
+            "ok:spvOptimizerRun"
+          ]
+        },
+        "bin_destroy": {
+          "meaning": "spvBinaryDestroy is about to be called",
+          "events": ["call:spvBinaryDestroy"]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvTextToBinary",
+            "ok:spvTextToBinary",
+            "call:spvBinaryDestroy",
+            "ok:spvBinaryDestroy",
+            "call:spvOptimizerRun",
+            "ok:spvOptimizerRun",
+            "call:spvBinaryDestroy",
+            "ok:spvBinaryDestroy"
+          ],
+          "allowed": true,
+          "reason": "one destroy per produced binary"
+        },
+        {
+          "events": ["call:spvBinaryDestroy"],
+          "allowed": false,
+          "reason": "no binary has been produced"
+        },
+        {
+          "events": [
+            "call:spvTextToBinary",
+            "ok:spvTextToBinary",
+            "call:spvBinaryDestroy",
+            "ok:spvBinaryDestroy",
+            "call:spvBinaryDestroy"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        },
+        {
+          "events": [
+            "call:spvTextToBinary",
+            "fail:spvTextToBinary",
+            "call:spvOptimizerRun",
+            "fail:spvOptimizerRun",
+            "call:spvBinaryDestroy"
+          ],
+          "allowed": false,
+          "reason": "failed producers leave nothing to destroy"
+        }
+      ]
+    },
+    {
+      "id": "text_ownership",
+      "rule": "libspirv.h spvBinaryToText: the disassembly is stored into *text on SPV_SUCCESS and 'Frees an allocated text stream' is spvTextDestroy (text.cpp:1010, a no-op on null). A failed disassembly produces no text, so a destroy follows a successful producer once.",
+      "formula": "(!t_destroy W t_produce) & G(t_destroy -> X(!t_destroy W t_produce))",
+      "apis": ["spvBinaryToText", "spvTextDestroy"],
+      "predicates": {
+        "t_produce": {
+          "meaning": "a spv_text was returned to the caller",
+          "events": ["ok:spvBinaryToText"]
+        },
+        "t_destroy": {
+          "meaning": "spvTextDestroy is about to be called",
+          "events": ["call:spvTextDestroy"]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvBinaryToText",
+            "ok:spvBinaryToText",
+            "call:spvTextDestroy",
+            "ok:spvTextDestroy",
+            "call:spvBinaryToText",
+            "ok:spvBinaryToText",
+            "call:spvTextDestroy"
+          ],
+          "allowed": true,
+          "reason": "the harness keeps one text and frees it before asking for the next"
+        },
+        {
+          "events": ["call:spvTextDestroy"],
+          "allowed": false,
+          "reason": "no text to free"
+        },
+        {
+          "events": [
+            "call:spvBinaryToText",
+            "fail:spvBinaryToText",
+            "call:spvTextDestroy"
+          ],
+          "allowed": false,
+          "reason": "the disassembly failed"
+        }
+      ]
+    },
+    {
+      "id": "diagnostic_ownership",
+      "rule": "libspirv.h spvDiagnosticCreate/spvDiagnosticDestroy: spvDiagnosticDestroy is 'a no-op if diagnostic is a null pointer' and frees the message, so one destroy per produced diagnostic. A diagnostic is produced by spvDiagnosticCreate, or by any of the calls that take a spv_diagnostic* out-parameter when they fail (they install themselves as the context's message consumer, diagnostic.cpp:126); those calls also overwrite the slot (text.cpp:996, disassemble.cpp:1125), so the harness only passes a slot that is empty.",
+      "formula": "(!d_destroy W d_produce) & G(d_destroy -> X(!d_use W d_produce))",
+      "apis": [
+        "spvDiagnosticCreate",
+        "spvDiagnosticDestroy",
+        "spvDiagnosticPrint",
+        "spvTextToBinary",
+        "spvTextToBinaryWithOptions",
+        "spvBinaryToText",
+        "spvValidate",
+        "spvValidateWithOptions",
+        "spvValidateBinary",
+        "spvBinaryParse"
+      ],
+      "predicates": {
+        "d_produce": {
+          "meaning": "a diagnostic object was stored into the caller's slot",
+          "events": [
+            "ok:spvDiagnosticCreate",
+            "fail:spvTextToBinary",
+            "fail:spvTextToBinaryWithOptions",
+            "fail:spvBinaryToText",
+            "fail:spvValidate",
+            "fail:spvValidateWithOptions",
+            "fail:spvValidateBinary",
+            "fail:spvBinaryParse"
+          ]
+        },
+        "d_destroy": {
+          "meaning": "spvDiagnosticDestroy is about to be called",
+          "events": ["call:spvDiagnosticDestroy"]
+        },
+        "d_use": {
+          "meaning": "a routine taking the diagnostic is about to be called",
+          "events": ["call:spvDiagnosticDestroy", "call:spvDiagnosticPrint"]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvValidate",
+            "fail:spvValidate",
+            "call:spvDiagnosticPrint",
+            "ok:spvDiagnosticPrint",
+            "call:spvDiagnosticDestroy",
+            "ok:spvDiagnosticDestroy"
+          ],
+          "allowed": true,
+          "reason": "print and free the diagnostic that validation produced"
+        },
+        {
+          "events": ["call:spvDiagnosticDestroy"],
+          "allowed": false,
+          "reason": "no diagnostic"
+        },
+        {
+          "events": [
+            "call:spvDiagnosticCreate",
+            "ok:spvDiagnosticCreate",
+            "call:spvDiagnosticDestroy",
+            "ok:spvDiagnosticDestroy",
+            "call:spvDiagnosticDestroy"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        },
+        {
+          "events": [
+            "call:spvDiagnosticCreate",
+            "ok:spvDiagnosticCreate",
+            "call:spvDiagnosticDestroy",
+            "ok:spvDiagnosticDestroy",
+            "call:spvDiagnosticPrint"
+          ],
+          "allowed": false,
+          "reason": "print after destroy"
+        }
+      ]
+    },
+    {
+      "id": "cpp_context_lifecycle",
+      "rule": "libspirv.hpp Context: 'C++ RAII wrapper around the C context object spv_context', movable ('Enables move constructor/assignment operations'). linker.hpp Link takes it and lists 'The given context was not initialised using spvContextCreate()' among its failures. C++ object lifetime: member functions run only between construction and destruction. The harness keeps one heap instance.",
+      "formula": "(!cc_use W cc_new) & G(cc_free -> X(!cc_use W cc_new))",
+      "apis": [
+        "spvtools::Context::Context",
+        "spvtools::Context::~Context",
+        "spvtools::Context::SetMessageConsumer",
+        "spvtools::Context::CContext",
+        "spvtools::Context::Context(Context&&)",
+        "spvtools::Context::operator=",
+        "spvtools::Link"
+      ],
+      "predicates": {
+        "cc_new": {
+          "meaning": "the object was constructed",
+          "events": ["ok:spvtools::Context::Context"]
+        },
+        "cc_free": {
+          "meaning": "the object is about to be destroyed",
+          "events": ["call:spvtools::Context::~Context"]
+        },
+        "cc_use": {
+          "meaning": "a member function (or a function taking the object) is about to be called",
+          "events": [
+            "call:spvtools::Context::~Context",
+            "call:spvtools::Context::SetMessageConsumer",
+            "call:spvtools::Context::CContext",
+            "call:spvtools::Context::Context(Context&&)",
+            "call:spvtools::Context::operator=",
+            "call:spvtools::Link"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvtools::Context::Context",
+            "ok:spvtools::Context::Context",
+            "call:spvtools::Context::SetMessageConsumer",
+            "ok:spvtools::Context::SetMessageConsumer",
+            "call:spvtools::Context::~Context",
+            "ok:spvtools::Context::~Context",
+            "call:spvtools::Context::Context",
+            "ok:spvtools::Context::Context",
+            "call:spvtools::Context::SetMessageConsumer"
+          ],
+          "allowed": true,
+          "reason": "uses sit between construction and destruction"
+        },
+        {
+          "events": ["call:spvtools::Context::SetMessageConsumer"],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:spvtools::Context::Context",
+            "ok:spvtools::Context::Context",
+            "call:spvtools::Context::~Context",
+            "ok:spvtools::Context::~Context",
+            "call:spvtools::Context::SetMessageConsumer"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        },
+        {
+          "events": [
+            "call:spvtools::Context::Context",
+            "ok:spvtools::Context::Context",
+            "call:spvtools::Context::~Context",
+            "ok:spvtools::Context::~Context",
+            "call:spvtools::Context::~Context"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "cpp_tools_lifecycle",
+      "rule": "libspirv.hpp SpirvTools: 'It wraps the context (including target environment and the corresponding SPIR-V grammar) and provides methods for assembling, disassembling, and validating'; copy and move are deleted. C++ object lifetime: member functions run only between construction and destruction. The harness keeps one heap instance.",
+      "formula": "(!ct_use W ct_new) & G(ct_free -> X(!ct_use W ct_new))",
+      "apis": [
+        "spvtools::SpirvTools::SpirvTools",
+        "spvtools::SpirvTools::~SpirvTools",
+        "spvtools::SpirvTools::IsValid",
+        "spvtools::SpirvTools::Parse",
+        "spvtools::SpirvTools::Validate"
+      ],
+      "predicates": {
+        "ct_new": {
+          "meaning": "the object was constructed",
+          "events": ["ok:spvtools::SpirvTools::SpirvTools"]
+        },
+        "ct_free": {
+          "meaning": "the object is about to be destroyed",
+          "events": ["call:spvtools::SpirvTools::~SpirvTools"]
+        },
+        "ct_use": {
+          "meaning": "a member function (or a function taking the object) is about to be called",
+          "events": [
+            "call:spvtools::SpirvTools::~SpirvTools",
+            "call:spvtools::SpirvTools::IsValid",
+            "call:spvtools::SpirvTools::Parse",
+            "call:spvtools::SpirvTools::Validate"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvtools::SpirvTools::SpirvTools",
+            "ok:spvtools::SpirvTools::SpirvTools",
+            "call:spvtools::SpirvTools::IsValid",
+            "ok:spvtools::SpirvTools::IsValid",
+            "call:spvtools::SpirvTools::~SpirvTools",
+            "ok:spvtools::SpirvTools::~SpirvTools",
+            "call:spvtools::SpirvTools::SpirvTools",
+            "ok:spvtools::SpirvTools::SpirvTools",
+            "call:spvtools::SpirvTools::IsValid"
+          ],
+          "allowed": true,
+          "reason": "uses sit between construction and destruction"
+        },
+        {
+          "events": ["call:spvtools::SpirvTools::IsValid"],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:spvtools::SpirvTools::SpirvTools",
+            "ok:spvtools::SpirvTools::SpirvTools",
+            "call:spvtools::SpirvTools::~SpirvTools",
+            "ok:spvtools::SpirvTools::~SpirvTools",
+            "call:spvtools::SpirvTools::IsValid"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        },
+        {
+          "events": [
+            "call:spvtools::SpirvTools::SpirvTools",
+            "ok:spvtools::SpirvTools::SpirvTools",
+            "call:spvtools::SpirvTools::~SpirvTools",
+            "ok:spvtools::SpirvTools::~SpirvTools",
+            "call:spvtools::SpirvTools::~SpirvTools"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "cpp_validator_options_lifecycle",
+      "rule": "libspirv.hpp ValidatorOptions: 'A RAII wrapper around a validator options object' (spvValidatorOptionsCreate in the constructor, spvValidatorOptionsDestroy in the destructor); every setter forwards to the C object. C++ object lifetime: member functions run only between construction and destruction. The harness keeps one heap instance.",
+      "formula": "(!cv_use W cv_new) & G(cv_free -> X(!cv_use W cv_new))",
+      "apis": [
+        "spvtools::ValidatorOptions::ValidatorOptions",
+        "spvtools::ValidatorOptions::~ValidatorOptions",
+        "spvtools::ValidatorOptions::SetUniversalLimit",
+        "spvtools::ValidatorOptions::SetRelaxStructStore",
+        "spvtools::ValidatorOptions::SetRelaxBlockLayout",
+        "spvtools::ValidatorOptions::SetUniformBufferStandardLayout",
+        "spvtools::ValidatorOptions::SetScalarBlockLayout",
+        "spvtools::ValidatorOptions::SetWorkgroupScalarBlockLayout",
+        "spvtools::ValidatorOptions::SetSkipBlockLayout",
+        "spvtools::ValidatorOptions::SetAllowLocalSizeId",
+        "spvtools::ValidatorOptions::SetAllowOffsetTextureOperand",
+        "spvtools::ValidatorOptions::SetAllowVulkan32BitBitwise",
+        "spvtools::ValidatorOptions::SetRelaxLogicalPointer",
+        "spvtools::ValidatorOptions::SetBeforeHlslLegalization",
+        "spvtools::ValidatorOptions::SetFriendlyNames",
+        "spvtools::ValidatorOptions::SetBufferDescriptorLayout",
+        "spvtools::ValidatorOptions::SetImageDescriptorLayout",
+        "spvtools::ValidatorOptions::SetSamplerDescriptorLayout",
+        "spvtools::ValidatorOptions::SetTensorDescriptorLayout"
+      ],
+      "predicates": {
+        "cv_new": {
+          "meaning": "the object was constructed",
+          "events": ["ok:spvtools::ValidatorOptions::ValidatorOptions"]
+        },
+        "cv_free": {
+          "meaning": "the object is about to be destroyed",
+          "events": ["call:spvtools::ValidatorOptions::~ValidatorOptions"]
+        },
+        "cv_use": {
+          "meaning": "a member function (or a function taking the object) is about to be called",
+          "events": [
+            "call:spvtools::ValidatorOptions::~ValidatorOptions",
+            "call:spvtools::ValidatorOptions::SetUniversalLimit",
+            "call:spvtools::ValidatorOptions::SetRelaxStructStore",
+            "call:spvtools::ValidatorOptions::SetRelaxBlockLayout",
+            "call:spvtools::ValidatorOptions::SetUniformBufferStandardLayout",
+            "call:spvtools::ValidatorOptions::SetScalarBlockLayout",
+            "call:spvtools::ValidatorOptions::SetWorkgroupScalarBlockLayout",
+            "call:spvtools::ValidatorOptions::SetSkipBlockLayout",
+            "call:spvtools::ValidatorOptions::SetAllowLocalSizeId",
+            "call:spvtools::ValidatorOptions::SetAllowOffsetTextureOperand",
+            "call:spvtools::ValidatorOptions::SetAllowVulkan32BitBitwise",
+            "call:spvtools::ValidatorOptions::SetRelaxLogicalPointer",
+            "call:spvtools::ValidatorOptions::SetBeforeHlslLegalization",
+            "call:spvtools::ValidatorOptions::SetFriendlyNames",
+            "call:spvtools::ValidatorOptions::SetBufferDescriptorLayout",
+            "call:spvtools::ValidatorOptions::SetImageDescriptorLayout",
+            "call:spvtools::ValidatorOptions::SetSamplerDescriptorLayout",
+            "call:spvtools::ValidatorOptions::SetTensorDescriptorLayout"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvtools::ValidatorOptions::ValidatorOptions",
+            "ok:spvtools::ValidatorOptions::ValidatorOptions",
+            "call:spvtools::ValidatorOptions::SetUniversalLimit",
+            "ok:spvtools::ValidatorOptions::SetUniversalLimit",
+            "call:spvtools::ValidatorOptions::~ValidatorOptions",
+            "ok:spvtools::ValidatorOptions::~ValidatorOptions",
+            "call:spvtools::ValidatorOptions::ValidatorOptions",
+            "ok:spvtools::ValidatorOptions::ValidatorOptions",
+            "call:spvtools::ValidatorOptions::SetUniversalLimit"
+          ],
+          "allowed": true,
+          "reason": "uses sit between construction and destruction"
+        },
+        {
+          "events": ["call:spvtools::ValidatorOptions::SetUniversalLimit"],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:spvtools::ValidatorOptions::ValidatorOptions",
+            "ok:spvtools::ValidatorOptions::ValidatorOptions",
+            "call:spvtools::ValidatorOptions::~ValidatorOptions",
+            "ok:spvtools::ValidatorOptions::~ValidatorOptions",
+            "call:spvtools::ValidatorOptions::SetUniversalLimit"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        },
+        {
+          "events": [
+            "call:spvtools::ValidatorOptions::ValidatorOptions",
+            "ok:spvtools::ValidatorOptions::ValidatorOptions",
+            "call:spvtools::ValidatorOptions::~ValidatorOptions",
+            "ok:spvtools::ValidatorOptions::~ValidatorOptions",
+            "call:spvtools::ValidatorOptions::~ValidatorOptions"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "cpp_optimizer_options_lifecycle",
+      "rule": "libspirv.hpp OptimizerOptions: 'A C++ wrapper around an optimization options object' created in the constructor and destroyed in the destructor. C++ object lifetime: member functions run only between construction and destruction. The harness keeps one heap instance.",
+      "formula": "(!co_use W co_new) & G(co_free -> X(!co_use W co_new))",
+      "apis": [
+        "spvtools::OptimizerOptions::OptimizerOptions",
+        "spvtools::OptimizerOptions::~OptimizerOptions",
+        "spvtools::OptimizerOptions::set_max_id_bound",
+        "spvtools::OptimizerOptions::set_preserve_bindings",
+        "spvtools::OptimizerOptions::set_preserve_spec_constants"
+      ],
+      "predicates": {
+        "co_new": {
+          "meaning": "the object was constructed",
+          "events": ["ok:spvtools::OptimizerOptions::OptimizerOptions"]
+        },
+        "co_free": {
+          "meaning": "the object is about to be destroyed",
+          "events": ["call:spvtools::OptimizerOptions::~OptimizerOptions"]
+        },
+        "co_use": {
+          "meaning": "a member function (or a function taking the object) is about to be called",
+          "events": [
+            "call:spvtools::OptimizerOptions::~OptimizerOptions",
+            "call:spvtools::OptimizerOptions::set_max_id_bound",
+            "call:spvtools::OptimizerOptions::set_preserve_bindings",
+            "call:spvtools::OptimizerOptions::set_preserve_spec_constants"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvtools::OptimizerOptions::OptimizerOptions",
+            "ok:spvtools::OptimizerOptions::OptimizerOptions",
+            "call:spvtools::OptimizerOptions::set_max_id_bound",
+            "ok:spvtools::OptimizerOptions::set_max_id_bound",
+            "call:spvtools::OptimizerOptions::~OptimizerOptions",
+            "ok:spvtools::OptimizerOptions::~OptimizerOptions",
+            "call:spvtools::OptimizerOptions::OptimizerOptions",
+            "ok:spvtools::OptimizerOptions::OptimizerOptions",
+            "call:spvtools::OptimizerOptions::set_max_id_bound"
+          ],
+          "allowed": true,
+          "reason": "uses sit between construction and destruction"
+        },
+        {
+          "events": ["call:spvtools::OptimizerOptions::set_max_id_bound"],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:spvtools::OptimizerOptions::OptimizerOptions",
+            "ok:spvtools::OptimizerOptions::OptimizerOptions",
+            "call:spvtools::OptimizerOptions::~OptimizerOptions",
+            "ok:spvtools::OptimizerOptions::~OptimizerOptions",
+            "call:spvtools::OptimizerOptions::set_max_id_bound"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        },
+        {
+          "events": [
+            "call:spvtools::OptimizerOptions::OptimizerOptions",
+            "ok:spvtools::OptimizerOptions::OptimizerOptions",
+            "call:spvtools::OptimizerOptions::~OptimizerOptions",
+            "ok:spvtools::OptimizerOptions::~OptimizerOptions",
+            "call:spvtools::OptimizerOptions::~OptimizerOptions"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "cpp_reducer_options_lifecycle",
+      "rule": "libspirv.hpp ReducerOptions: 'A C++ wrapper around a reducer options object'; the conversion operator hands out the C handle it owns. C++ object lifetime: member functions run only between construction and destruction. The harness keeps one heap instance.",
+      "formula": "(!cr_use W cr_new) & G(cr_free -> X(!cr_use W cr_new))",
+      "apis": [
+        "spvtools::ReducerOptions::ReducerOptions",
+        "spvtools::ReducerOptions::~ReducerOptions",
+        "spvtools::ReducerOptions::set_step_limit",
+        "spvtools::ReducerOptions::set_fail_on_validation_error",
+        "spvtools::ReducerOptions::set_target_function",
+        "spvtools::ReducerOptions::operator_spv_reducer_options"
+      ],
+      "predicates": {
+        "cr_new": {
+          "meaning": "the object was constructed",
+          "events": ["ok:spvtools::ReducerOptions::ReducerOptions"]
+        },
+        "cr_free": {
+          "meaning": "the object is about to be destroyed",
+          "events": ["call:spvtools::ReducerOptions::~ReducerOptions"]
+        },
+        "cr_use": {
+          "meaning": "a member function (or a function taking the object) is about to be called",
+          "events": [
+            "call:spvtools::ReducerOptions::~ReducerOptions",
+            "call:spvtools::ReducerOptions::set_step_limit",
+            "call:spvtools::ReducerOptions::set_fail_on_validation_error",
+            "call:spvtools::ReducerOptions::set_target_function",
+            "call:spvtools::ReducerOptions::operator_spv_reducer_options"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvtools::ReducerOptions::ReducerOptions",
+            "ok:spvtools::ReducerOptions::ReducerOptions",
+            "call:spvtools::ReducerOptions::set_step_limit",
+            "ok:spvtools::ReducerOptions::set_step_limit",
+            "call:spvtools::ReducerOptions::~ReducerOptions",
+            "ok:spvtools::ReducerOptions::~ReducerOptions",
+            "call:spvtools::ReducerOptions::ReducerOptions",
+            "ok:spvtools::ReducerOptions::ReducerOptions",
+            "call:spvtools::ReducerOptions::set_step_limit"
+          ],
+          "allowed": true,
+          "reason": "uses sit between construction and destruction"
+        },
+        {
+          "events": ["call:spvtools::ReducerOptions::set_step_limit"],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:spvtools::ReducerOptions::ReducerOptions",
+            "ok:spvtools::ReducerOptions::ReducerOptions",
+            "call:spvtools::ReducerOptions::~ReducerOptions",
+            "ok:spvtools::ReducerOptions::~ReducerOptions",
+            "call:spvtools::ReducerOptions::set_step_limit"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        },
+        {
+          "events": [
+            "call:spvtools::ReducerOptions::ReducerOptions",
+            "ok:spvtools::ReducerOptions::ReducerOptions",
+            "call:spvtools::ReducerOptions::~ReducerOptions",
+            "ok:spvtools::ReducerOptions::~ReducerOptions",
+            "call:spvtools::ReducerOptions::~ReducerOptions"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "cpp_fuzzer_options_lifecycle",
+      "rule": "libspirv.hpp FuzzerOptions: 'A C++ wrapper around a fuzzer options object'; the conversion operator hands out the C handle it owns. C++ object lifetime: member functions run only between construction and destruction. The harness keeps one heap instance.",
+      "formula": "(!cf_use W cf_new) & G(cf_free -> X(!cf_use W cf_new))",
+      "apis": [
+        "spvtools::FuzzerOptions::FuzzerOptions",
+        "spvtools::FuzzerOptions::~FuzzerOptions",
+        "spvtools::FuzzerOptions::enable_replay_validation",
+        "spvtools::FuzzerOptions::set_random_seed",
+        "spvtools::FuzzerOptions::set_replay_range",
+        "spvtools::FuzzerOptions::set_shrinker_step_limit",
+        "spvtools::FuzzerOptions::enable_fuzzer_pass_validation",
+        "spvtools::FuzzerOptions::enable_all_passes",
+        "spvtools::FuzzerOptions::operator_spv_fuzzer_options"
+      ],
+      "predicates": {
+        "cf_new": {
+          "meaning": "the object was constructed",
+          "events": ["ok:spvtools::FuzzerOptions::FuzzerOptions"]
+        },
+        "cf_free": {
+          "meaning": "the object is about to be destroyed",
+          "events": ["call:spvtools::FuzzerOptions::~FuzzerOptions"]
+        },
+        "cf_use": {
+          "meaning": "a member function (or a function taking the object) is about to be called",
+          "events": [
+            "call:spvtools::FuzzerOptions::~FuzzerOptions",
+            "call:spvtools::FuzzerOptions::enable_replay_validation",
+            "call:spvtools::FuzzerOptions::set_random_seed",
+            "call:spvtools::FuzzerOptions::set_replay_range",
+            "call:spvtools::FuzzerOptions::set_shrinker_step_limit",
+            "call:spvtools::FuzzerOptions::enable_fuzzer_pass_validation",
+            "call:spvtools::FuzzerOptions::enable_all_passes",
+            "call:spvtools::FuzzerOptions::operator_spv_fuzzer_options"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvtools::FuzzerOptions::FuzzerOptions",
+            "ok:spvtools::FuzzerOptions::FuzzerOptions",
+            "call:spvtools::FuzzerOptions::enable_replay_validation",
+            "ok:spvtools::FuzzerOptions::enable_replay_validation",
+            "call:spvtools::FuzzerOptions::~FuzzerOptions",
+            "ok:spvtools::FuzzerOptions::~FuzzerOptions",
+            "call:spvtools::FuzzerOptions::FuzzerOptions",
+            "ok:spvtools::FuzzerOptions::FuzzerOptions",
+            "call:spvtools::FuzzerOptions::enable_replay_validation"
+          ],
+          "allowed": true,
+          "reason": "uses sit between construction and destruction"
+        },
+        {
+          "events": ["call:spvtools::FuzzerOptions::enable_replay_validation"],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:spvtools::FuzzerOptions::FuzzerOptions",
+            "ok:spvtools::FuzzerOptions::FuzzerOptions",
+            "call:spvtools::FuzzerOptions::~FuzzerOptions",
+            "ok:spvtools::FuzzerOptions::~FuzzerOptions",
+            "call:spvtools::FuzzerOptions::enable_replay_validation"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        },
+        {
+          "events": [
+            "call:spvtools::FuzzerOptions::FuzzerOptions",
+            "ok:spvtools::FuzzerOptions::FuzzerOptions",
+            "call:spvtools::FuzzerOptions::~FuzzerOptions",
+            "ok:spvtools::FuzzerOptions::~FuzzerOptions",
+            "call:spvtools::FuzzerOptions::~FuzzerOptions"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "cpp_optimizer_lifecycle",
+      "rule": "optimizer.hpp Optimizer: 'It wraps the context ... and provides methods for registering optimization passes and optimizing'; copy and move are deleted. A PassToken from a Create*Pass() function is 'consumed by the RegisterPass() method', so the Create*Pass records (and the PassToken move assignment, which registers its token) need a live optimizer. C++ object lifetime: member functions run only between construction and destruction. The harness keeps one heap instance.",
+      "formula": "(!cp_use W cp_new) & G(cp_free -> X(!cp_use W cp_new))",
+      "apis": [
+        "spvtools::Optimizer::Optimizer",
+        "spvtools::Optimizer::~Optimizer",
+        "spvtools::Optimizer::SetTargetEnv",
+        "spvtools::Optimizer::SetPrintAll",
+        "spvtools::Optimizer::SetTimeReport",
+        "spvtools::Optimizer::SetValidateAfterAll",
+        "spvtools::Optimizer::GetPassNames",
+        "spvtools::Optimizer::PassToken::operator=",
+        "spvtools::Optimizer::Run",
+        "spvtools::CreateNullPass",
+        "spvtools::CreatePropagateLineInfoPass",
+        "spvtools::CreateRedundantLineInfoElimPass",
+        "spvtools::CreateEliminateDeadInputComponentsPass",
+        "spvtools::CreateEliminateDeadOutputComponentsPass",
+        "spvtools::CreateInterfaceVariableScalarReplacementPass",
+        "spvtools::CreateAnalyzeLiveInputPass",
+        "spvtools::CreateEliminateDeadOutputStoresPass"
+      ],
+      "predicates": {
+        "cp_new": {
+          "meaning": "the object was constructed",
+          "events": ["ok:spvtools::Optimizer::Optimizer"]
+        },
+        "cp_free": {
+          "meaning": "the object is about to be destroyed",
+          "events": ["call:spvtools::Optimizer::~Optimizer"]
+        },
+        "cp_use": {
+          "meaning": "a member function (or a function taking the object) is about to be called",
+          "events": [
+            "call:spvtools::Optimizer::~Optimizer",
+            "call:spvtools::Optimizer::SetTargetEnv",
+            "call:spvtools::Optimizer::SetPrintAll",
+            "call:spvtools::Optimizer::SetTimeReport",
+            "call:spvtools::Optimizer::SetValidateAfterAll",
+            "call:spvtools::Optimizer::GetPassNames",
+            "call:spvtools::Optimizer::PassToken::operator=",
+            "call:spvtools::Optimizer::Run",
+            "call:spvtools::CreateNullPass",
+            "call:spvtools::CreatePropagateLineInfoPass",
+            "call:spvtools::CreateRedundantLineInfoElimPass",
+            "call:spvtools::CreateEliminateDeadInputComponentsPass",
+            "call:spvtools::CreateEliminateDeadOutputComponentsPass",
+            "call:spvtools::CreateInterfaceVariableScalarReplacementPass",
+            "call:spvtools::CreateAnalyzeLiveInputPass",
+            "call:spvtools::CreateEliminateDeadOutputStoresPass"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvtools::Optimizer::Optimizer",
+            "ok:spvtools::Optimizer::Optimizer",
+            "call:spvtools::CreateNullPass",
+            "ok:spvtools::CreateNullPass",
+            "call:spvtools::Optimizer::~Optimizer",
+            "ok:spvtools::Optimizer::~Optimizer",
+            "call:spvtools::Optimizer::Optimizer",
+            "ok:spvtools::Optimizer::Optimizer",
+            "call:spvtools::CreateNullPass"
+          ],
+          "allowed": true,
+          "reason": "uses sit between construction and destruction"
+        },
+        {
+          "events": ["call:spvtools::CreateNullPass"],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:spvtools::Optimizer::Optimizer",
+            "ok:spvtools::Optimizer::Optimizer",
+            "call:spvtools::Optimizer::~Optimizer",
+            "ok:spvtools::Optimizer::~Optimizer",
+            "call:spvtools::CreateNullPass"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        },
+        {
+          "events": [
+            "call:spvtools::Optimizer::Optimizer",
+            "ok:spvtools::Optimizer::Optimizer",
+            "call:spvtools::Optimizer::~Optimizer",
+            "ok:spvtools::Optimizer::~Optimizer",
+            "call:spvtools::Optimizer::~Optimizer"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "cpp_linter_lifecycle",
+      "rule": "linter.hpp Linter: 'It wraps the context (including target environment and the corresponding SPIR-V grammar) and provides a method for linting.' C++ object lifetime: member functions run only between construction and destruction. The harness keeps one heap instance.",
+      "formula": "(!cl_use W cl_new) & G(cl_free -> X(!cl_use W cl_new))",
+      "apis": [
+        "spvtools::Linter::Linter",
+        "spvtools::Linter::~Linter",
+        "spvtools::Linter::SetMessageConsumer",
+        "spvtools::Linter::Consumer",
+        "spvtools::Linter::Run"
+      ],
+      "predicates": {
+        "cl_new": {
+          "meaning": "the object was constructed",
+          "events": ["ok:spvtools::Linter::Linter"]
+        },
+        "cl_free": {
+          "meaning": "the object is about to be destroyed",
+          "events": ["call:spvtools::Linter::~Linter"]
+        },
+        "cl_use": {
+          "meaning": "a member function (or a function taking the object) is about to be called",
+          "events": [
+            "call:spvtools::Linter::~Linter",
+            "call:spvtools::Linter::SetMessageConsumer",
+            "call:spvtools::Linter::Consumer",
+            "call:spvtools::Linter::Run"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvtools::Linter::Linter",
+            "ok:spvtools::Linter::Linter",
+            "call:spvtools::Linter::SetMessageConsumer",
+            "ok:spvtools::Linter::SetMessageConsumer",
+            "call:spvtools::Linter::~Linter",
+            "ok:spvtools::Linter::~Linter",
+            "call:spvtools::Linter::Linter",
+            "ok:spvtools::Linter::Linter",
+            "call:spvtools::Linter::SetMessageConsumer"
+          ],
+          "allowed": true,
+          "reason": "uses sit between construction and destruction"
+        },
+        {
+          "events": ["call:spvtools::Linter::SetMessageConsumer"],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:spvtools::Linter::Linter",
+            "ok:spvtools::Linter::Linter",
+            "call:spvtools::Linter::~Linter",
+            "ok:spvtools::Linter::~Linter",
+            "call:spvtools::Linter::SetMessageConsumer"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        },
+        {
+          "events": [
+            "call:spvtools::Linter::Linter",
+            "ok:spvtools::Linter::Linter",
+            "call:spvtools::Linter::~Linter",
+            "ok:spvtools::Linter::~Linter",
+            "call:spvtools::Linter::~Linter"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "no_run_after_failed_run",
+      "rule": "optimizer.hpp Optimizer::Run: 'Returns false if |original_binary| fails to validate or if errors occur when processing |original_binary| using any of the registered passes. In that case, no further passes are executed'. opt/pass_manager.cpp:77 resets every pass that ran to nullptr and clears the pass list only after a fully successful run, so after a run that failed in a pass the optimizer holds null passes, and the next run (pass_manager.cpp:58) or Optimizer::GetPassNames dereferences them (repro2.cpp case 3). A failed run cannot be told apart from a failed validation, so after any failed run the optimizer is destroyed before it is run again. Applies to the C optimizer (spvOptimizerRun) and to the C++ one.",
+      "formula": "G(run_fail -> X(!run W opt_free)) & G(cpp_run_fail -> X(!cpp_run W cpp_opt_free))",
+      "apis": [
+        "spvOptimizerRun",
+        "spvOptimizerDestroy",
+        "spvtools::Optimizer::Run",
+        "spvtools::Optimizer::GetPassNames",
+        "spvtools::Optimizer::~Optimizer"
+      ],
+      "predicates": {
+        "run_fail": {
+          "meaning": "spvOptimizerRun failed",
+          "events": ["fail:spvOptimizerRun"]
+        },
+        "run": {
+          "meaning": "spvOptimizerRun is about to be called",
+          "events": ["call:spvOptimizerRun"]
+        },
+        "opt_free": {
+          "meaning": "the C optimizer is about to be destroyed",
+          "events": ["call:spvOptimizerDestroy"]
+        },
+        "cpp_run_fail": {
+          "meaning": "Optimizer::Run returned false",
+          "events": ["fail:spvtools::Optimizer::Run"]
+        },
+        "cpp_run": {
+          "meaning": "a member function that walks the registered passes is about to be called",
+          "events": [
+            "call:spvtools::Optimizer::Run",
+            "call:spvtools::Optimizer::GetPassNames"
+          ]
+        },
+        "cpp_opt_free": {
+          "meaning": "the C++ optimizer is about to be destroyed",
+          "events": ["call:spvtools::Optimizer::~Optimizer"]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:spvOptimizerRun",
+            "ok:spvOptimizerRun",
+            "call:spvOptimizerRun",
+            "fail:spvOptimizerRun",
+            "call:spvOptimizerDestroy",
+            "ok:spvOptimizerDestroy",
+            "call:spvOptimizerRun"
+          ],
+          "allowed": true,
+          "reason": "a successful run can be repeated; after a failed one the optimizer is replaced"
+        },
+        {
+          "events": [
+            "call:spvOptimizerRun",
+            "fail:spvOptimizerRun",
+            "call:spvOptimizerRun"
+          ],
+          "allowed": false,
+          "reason": "run again after a failed run"
+        },
+        {
+          "events": [
+            "call:spvtools::Optimizer::Run",
+            "fail:spvtools::Optimizer::Run",
+            "call:spvtools::Optimizer::GetPassNames"
+          ],
+          "allowed": false,
+          "reason": "pass names read after a failed run"
+        },
+        {
+          "events": [
+            "call:spvtools::Optimizer::Run",
+            "fail:spvtools::Optimizer::Run",
+            "call:spvtools::Optimizer::Run"
+          ],
+          "allowed": false,
+          "reason": "run again after a failed run"
+        }
+      ]
+    }
+  ]
+}

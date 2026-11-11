@@ -1,0 +1,4 @@
+{
+  "properties": [],
+  "unconstrainedReason": "The repace library (include/repace_wire.h, include/repace_conf.h) is 15 pure functions over a caller-owned frame or text buffer: no objects, handles or ordering requirements. Their preconditions are argument sizes (rp_counter / rp_restamp need a frame of at least 16 bytes), which the harness checks; there is no call-sequence rule to state."
+}

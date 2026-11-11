@@ -1,0 +1,535 @@
+{
+  "properties": [
+    {
+      "id": "instance_lifecycle",
+      "rule": "clap_host.h: an instance exists once omx_clap_host_open, omx_clap_host_open_timed, omx_clap_host_open_entry or omx_clap_host_create answered 0 with *out set, and is gone at omx_clap_host_close ('Destroy the instance ... and drop its binary reference'). Every other call here takes that instance. The harness keeps one instance and closes it by a record.",
+      "formula": "(!i_use W i_new) & G(i_close -> X(!i_use W i_new))",
+      "apis": [
+        "omx_clap_host_open", "omx_clap_host_open_timed", "omx_clap_host_open_entry", "omx_clap_host_create",
+        "omx_clap_host_close",
+        "omx_clap_host_activate", "omx_clap_host_publish", "omx_clap_host_publish_role",
+        "omx_clap_host_set_audio_thread", "omx_clap_host_set_audio_role", "omx_clap_host_arm",
+        "omx_clap_host_unpublish", "omx_clap_host_stop", "omx_clap_host_restart", "omx_clap_host_deactivate",
+        "omx_clap_host_set_rate", "omx_clap_host_latency", "omx_clap_host_take_role",
+        "omx_clap_host_release_role", "omx_clap_host_bypass", "omx_clap_host_bypassed",
+        "omx_clap_host_param_count", "omx_clap_host_param_row", "omx_clap_host_param_roster",
+        "omx_clap_host_param_write", "omx_clap_host_param_modulate", "omx_clap_host_param_gesture",
+        "omx_clap_host_param_flush", "omx_clap_host_param_deliver", "omx_clap_host_settle",
+        "omx_clap_host_param_compare", "omx_clap_host_param_read", "omx_clap_host_param_value",
+        "omx_clap_host_param_is_row", "omx_clap_host_param_readable", "omx_clap_host_param_row_of",
+        "omx_clap_host_params_rescanned", "omx_clap_host_param_text", "omx_clap_host_param_parse",
+        "omx_clap_host_param_contract", "omx_clap_host_param_meaning", "omx_clap_host_param_events_take",
+        "omx_clap_host_param_events_dropped", "omx_clap_host_state_save", "omx_clap_host_state_load",
+        "omx_clap_host_state_save_context", "omx_clap_host_state_load_context", "omx_clap_host_preset_load",
+        "omx_clap_host_preset_load_key", "omx_clap_host_meter_count", "omx_clap_host_meter_info",
+        "omx_clap_host_meter_values", "omx_clap_host_voice_info", "omx_clap_host_resource_hints",
+        "omx_clap_host_tail", "omx_clap_host_note_name_count", "omx_clap_host_note_name",
+        "omx_clap_host_note_names_changed", "omx_clap_host_note_ports_rescanned",
+        "omx_clap_host_ports_rescanned", "omx_clap_host_request_layout", "omx_clap_host_tick",
+        "omx_clap_host_log_take", "omx_clap_host_track_info_set", "omx_clap_host_remote_controls_changed",
+        "omx_clap_host_set_render", "omx_clap_host_set_tempo", "omx_clap_host_set_transport",
+        "omx_clap_host_bind_aux_input", "omx_clap_host_bind_aux_output"
+      ],
+      "predicates": {
+        "i_new": {
+          "meaning": "an instance was created",
+          "events": [
+            "ok:omx_clap_host_open",
+            "ok:omx_clap_host_open_timed",
+            "ok:omx_clap_host_open_entry",
+            "ok:omx_clap_host_create"
+          ]
+        },
+        "i_close": {
+          "meaning": "omx_clap_host_close is about to destroy the instance",
+          "events": ["call:omx_clap_host_close"]
+        },
+        "i_use": {
+          "meaning": "a routine that takes the instance is about to be called",
+          "events": [
+            "call:omx_clap_host_close",
+            "call:omx_clap_host_activate", "call:omx_clap_host_publish", "call:omx_clap_host_publish_role",
+            "call:omx_clap_host_set_audio_thread", "call:omx_clap_host_set_audio_role", "call:omx_clap_host_arm",
+            "call:omx_clap_host_unpublish", "call:omx_clap_host_stop", "call:omx_clap_host_restart",
+            "call:omx_clap_host_deactivate", "call:omx_clap_host_set_rate", "call:omx_clap_host_latency",
+            "call:omx_clap_host_take_role", "call:omx_clap_host_release_role", "call:omx_clap_host_bypass",
+            "call:omx_clap_host_bypassed",
+            "call:omx_clap_host_param_count", "call:omx_clap_host_param_row", "call:omx_clap_host_param_roster",
+            "call:omx_clap_host_param_write", "call:omx_clap_host_param_modulate",
+            "call:omx_clap_host_param_gesture", "call:omx_clap_host_param_flush",
+            "call:omx_clap_host_param_deliver", "call:omx_clap_host_settle", "call:omx_clap_host_param_compare",
+            "call:omx_clap_host_param_read", "call:omx_clap_host_param_value",
+            "call:omx_clap_host_param_is_row", "call:omx_clap_host_param_readable",
+            "call:omx_clap_host_param_row_of", "call:omx_clap_host_params_rescanned",
+            "call:omx_clap_host_param_text", "call:omx_clap_host_param_parse",
+            "call:omx_clap_host_param_contract", "call:omx_clap_host_param_meaning",
+            "call:omx_clap_host_param_events_take", "call:omx_clap_host_param_events_dropped",
+            "call:omx_clap_host_state_save", "call:omx_clap_host_state_load",
+            "call:omx_clap_host_state_save_context", "call:omx_clap_host_state_load_context",
+            "call:omx_clap_host_preset_load", "call:omx_clap_host_preset_load_key",
+            "call:omx_clap_host_meter_count", "call:omx_clap_host_meter_info",
+            "call:omx_clap_host_meter_values", "call:omx_clap_host_voice_info",
+            "call:omx_clap_host_resource_hints", "call:omx_clap_host_tail",
+            "call:omx_clap_host_note_name_count", "call:omx_clap_host_note_name",
+            "call:omx_clap_host_note_names_changed", "call:omx_clap_host_note_ports_rescanned",
+            "call:omx_clap_host_ports_rescanned", "call:omx_clap_host_request_layout",
+            "call:omx_clap_host_tick", "call:omx_clap_host_log_take", "call:omx_clap_host_track_info_set",
+            "call:omx_clap_host_remote_controls_changed", "call:omx_clap_host_set_render",
+            "call:omx_clap_host_set_tempo", "call:omx_clap_host_set_transport",
+            "call:omx_clap_host_bind_aux_input", "call:omx_clap_host_bind_aux_output"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:omx_clap_host_open", "ok:omx_clap_host_open",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_param_count", "ok:omx_clap_host_param_count",
+            "call:omx_clap_host_close", "ok:omx_clap_host_close"
+          ],
+          "allowed": true,
+          "reason": "uses sit between a successful open and the close"
+        },
+        {
+          "events": ["call:omx_clap_host_activate", "ok:omx_clap_host_activate"],
+          "allowed": false,
+          "reason": "no instance"
+        },
+        {
+          "events": ["call:omx_clap_host_open", "fail:omx_clap_host_open", "call:omx_clap_host_tick"],
+          "allowed": false,
+          "reason": "the open was refused, there is no instance"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_open", "ok:omx_clap_host_open",
+            "call:omx_clap_host_close", "ok:omx_clap_host_close",
+            "call:omx_clap_host_latency"
+          ],
+          "allowed": false,
+          "reason": "use after close"
+        }
+      ]
+    },
+    {
+      "id": "activate_deactivate",
+      "rule": "clap_host.h: omx_clap_host_activate is 'Activate at rate for blocks up to max_block' of a plugin that is not active (src/clap_host.c:2908 refuses an active one, -1), and omx_clap_host_deactivate is the only call that makes it inactive again. A restart and a rate change deactivate and activate on their own, so they bracket the activation they replace. The instance closed and opened again starts a new bracket.",
+      "formula": "G(a_act -> X(!a_act W (a_deact | i_close | i_new)))",
+      "apis": [
+        "omx_clap_host_activate", "omx_clap_host_deactivate", "omx_clap_host_restart",
+        "omx_clap_host_set_rate", "omx_clap_host_close"
+      ],
+      "predicates": {
+        "a_act": {
+          "meaning": "the instance was activated",
+          "events": ["ok:omx_clap_host_activate"]
+        },
+        "a_deact": {
+          "meaning": "the instance is inactive again: deactivated, or deactivated and activated by a restart or a rate change",
+          "events": [
+            "ok:omx_clap_host_deactivate",
+            "ok:omx_clap_host_restart",
+            "ok:omx_clap_host_set_rate"
+          ]
+        },
+        "i_close": {
+          "meaning": "omx_clap_host_close is about to destroy the instance",
+          "events": ["call:omx_clap_host_close"]
+        },
+        "i_new": {
+          "meaning": "another instance was created",
+          "events": [
+            "ok:omx_clap_host_open",
+            "ok:omx_clap_host_open_timed",
+            "ok:omx_clap_host_open_entry",
+            "ok:omx_clap_host_create"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:omx_clap_host_open", "ok:omx_clap_host_open",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_deactivate", "ok:omx_clap_host_deactivate",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate"
+          ],
+          "allowed": true,
+          "reason": "deactivated before the second activate"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_open", "ok:omx_clap_host_open",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate"
+          ],
+          "allowed": false,
+          "reason": "activate on an active instance"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_open", "ok:omx_clap_host_open",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_restart", "ok:omx_clap_host_restart",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate"
+          ],
+          "allowed": true,
+          "reason": "a restart deactivates and activates again"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_publish", "ok:omx_clap_host_publish",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate"
+          ],
+          "allowed": false,
+          "reason": "a publish in between does not deactivate the instance"
+        }
+      ]
+    },
+    {
+      "id": "publish_when_active",
+      "rule": "clap_host.h: omx_clap_host_publish, omx_clap_host_publish_role and omx_clap_host_arm arm the stage omx_clap_host_activate bound ('Publish: the stage is ARMED'), so the instance must be active; the stage a deactivate tears down cannot be armed again until the next activate. The harness guards the four this way too: the armed stage of an inactive instance has no plugin for omx_clap_take_state to start.",
+      "formula": "(!pub W a_act) & G(a_deact -> X(!pub W (a_act | i_new)))",
+      "apis": [
+        "omx_clap_host_publish", "omx_clap_host_publish_role", "omx_clap_host_arm",
+        "omx_clap_host_activate", "omx_clap_host_deactivate"
+      ],
+      "predicates": {
+        "pub": {
+          "meaning": "the stage is about to be armed",
+          "events": [
+            "call:omx_clap_host_publish",
+            "call:omx_clap_host_publish_role",
+            "call:omx_clap_host_arm"
+          ]
+        },
+        "a_act": {
+          "meaning": "the instance was activated",
+          "events": ["ok:omx_clap_host_activate"]
+        },
+        "a_deact": {
+          "meaning": "the instance is inactive again",
+          "events": [
+            "ok:omx_clap_host_deactivate",
+            "ok:omx_clap_host_restart",
+            "ok:omx_clap_host_set_rate"
+          ]
+        },
+        "i_new": {
+          "meaning": "another instance was created",
+          "events": [
+            "ok:omx_clap_host_open",
+            "ok:omx_clap_host_open_timed",
+            "ok:omx_clap_host_open_entry",
+            "ok:omx_clap_host_create"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_publish", "ok:omx_clap_host_publish",
+            "call:omx_clap_host_unpublish", "ok:omx_clap_host_unpublish",
+            "call:omx_clap_host_arm", "ok:omx_clap_host_arm",
+            "call:omx_clap_host_deactivate", "ok:omx_clap_host_deactivate"
+          ],
+          "allowed": true,
+          "reason": "armed only while the instance is active"
+        },
+        {
+          "events": ["call:omx_clap_host_publish", "ok:omx_clap_host_publish"],
+          "allowed": false,
+          "reason": "armed with no activate before it"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_deactivate", "ok:omx_clap_host_deactivate",
+            "call:omx_clap_host_arm", "ok:omx_clap_host_arm"
+          ],
+          "allowed": false,
+          "reason": "armed after the deactivate tore the stage down"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_deactivate", "ok:omx_clap_host_deactivate",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_publish_role", "ok:omx_clap_host_publish_role"
+          ],
+          "allowed": true,
+          "reason": "activated again first"
+        }
+      ]
+    },
+    {
+      "id": "audio_role_take_release",
+      "rule": "clap_host.h: omx_clap_host_take_role takes the audio role from whoever holds it and records in `role` what to give back; omx_clap_host_release_role gives it back. The harness keeps one role and takes it once, so a take is matched by the release before the next take.",
+      "formula": "(!r_release W r_take) & G(r_take -> X(!r_take W (r_release | i_close | i_new)))",
+      "apis": ["omx_clap_host_take_role", "omx_clap_host_release_role", "omx_clap_host_close"],
+      "predicates": {
+        "r_take": {
+          "meaning": "the control thread is about to take the audio role",
+          "events": ["call:omx_clap_host_take_role"]
+        },
+        "r_release": {
+          "meaning": "the audio role is about to be given back",
+          "events": ["call:omx_clap_host_release_role"]
+        },
+        "i_close": {
+          "meaning": "omx_clap_host_close is about to destroy the instance",
+          "events": ["call:omx_clap_host_close"]
+        },
+        "i_new": {
+          "meaning": "another instance was created",
+          "events": [
+            "ok:omx_clap_host_open",
+            "ok:omx_clap_host_open_timed",
+            "ok:omx_clap_host_open_entry",
+            "ok:omx_clap_host_create"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:omx_clap_host_take_role", "ok:omx_clap_host_take_role",
+            "call:omx_clap_host_release_role", "ok:omx_clap_host_release_role"
+          ],
+          "allowed": true,
+          "reason": "taken and given back"
+        },
+        {
+          "events": ["call:omx_clap_host_release_role", "ok:omx_clap_host_release_role"],
+          "allowed": false,
+          "reason": "released a role never taken"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_take_role", "ok:omx_clap_host_take_role",
+            "call:omx_clap_host_take_role", "ok:omx_clap_host_take_role"
+          ],
+          "allowed": false,
+          "reason": "taken twice without a release"
+        }
+      ]
+    },
+    {
+      "id": "binary_lifecycle",
+      "rule": "clap_host.h: omx_clap_host_binary_open returns a plugin file that omx_clap_host_binary_close closes, 'once every instance created from it is destroyed'; omx_clap_host_binary_count, _descriptor, omx_clap_host_presets and omx_clap_host_create take it. The harness keeps one binary and guards the premature close.",
+      "formula": "(!b_use W b_new) & G(b_close -> X(!b_use W b_new)) & G(i_create -> X(!b_close W i_close))",
+      "apis": [
+        "omx_clap_host_binary_open", "omx_clap_host_binary_close", "omx_clap_host_binary_count",
+        "omx_clap_host_binary_descriptor", "omx_clap_host_presets", "omx_clap_host_create",
+        "omx_clap_host_close"
+      ],
+      "predicates": {
+        "b_new": {
+          "meaning": "a plugin file was opened",
+          "events": ["ok:omx_clap_host_binary_open"]
+        },
+        "b_close": {
+          "meaning": "omx_clap_host_binary_close is about to close it",
+          "events": ["call:omx_clap_host_binary_close"]
+        },
+        "b_use": {
+          "meaning": "a routine that takes the plugin file is about to be called",
+          "events": [
+            "call:omx_clap_host_binary_close",
+            "call:omx_clap_host_binary_count",
+            "call:omx_clap_host_binary_descriptor",
+            "call:omx_clap_host_presets",
+            "call:omx_clap_host_create"
+          ]
+        },
+        "i_create": {
+          "meaning": "an instance was created from the plugin file",
+          "events": ["ok:omx_clap_host_create"]
+        },
+        "i_close": {
+          "meaning": "that instance was destroyed",
+          "events": ["call:omx_clap_host_close"]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:omx_clap_host_binary_open", "ok:omx_clap_host_binary_open",
+            "call:omx_clap_host_binary_count", "ok:omx_clap_host_binary_count",
+            "call:omx_clap_host_binary_close", "ok:omx_clap_host_binary_close"
+          ],
+          "allowed": true,
+          "reason": "counted between the open and the close"
+        },
+        {
+          "events": ["call:omx_clap_host_binary_count"],
+          "allowed": false,
+          "reason": "no plugin file open"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_binary_open", "ok:omx_clap_host_binary_open",
+            "call:omx_clap_host_binary_close", "ok:omx_clap_host_binary_close",
+            "call:omx_clap_host_binary_descriptor"
+          ],
+          "allowed": false,
+          "reason": "use after close"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_binary_open", "ok:omx_clap_host_binary_open",
+            "call:omx_clap_host_create", "ok:omx_clap_host_create",
+            "call:omx_clap_host_close", "ok:omx_clap_host_close",
+            "call:omx_clap_host_binary_close", "ok:omx_clap_host_binary_close"
+          ],
+          "allowed": true,
+          "reason": "the instance closed before the file"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_binary_open", "ok:omx_clap_host_binary_open",
+            "call:omx_clap_host_create", "ok:omx_clap_host_create",
+            "call:omx_clap_host_binary_close", "ok:omx_clap_host_binary_close"
+          ],
+          "allowed": false,
+          "reason": "the file closed under a live instance"
+        }
+      ]
+    },
+    {
+      "id": "chain_lifecycle",
+      "rule": "clap_chain.h: omx_clap_chain_create makes the chain and omx_clap_chain_destroy frees it ('no cycle running it'); every other chain call takes it. The harness keeps one chain.",
+      "formula": "(!c_use W c_new) & G(c_destroy -> X(!c_use W c_new))",
+      "apis": [
+        "omx_clap_chain_create", "omx_clap_chain_destroy", "omx_clap_chain_add", "omx_clap_chain_remove",
+        "omx_clap_chain_bypass", "omx_clap_chain_member_latency_set", "omx_clap_chain_refresh",
+        "omx_clap_chain_report", "omx_clap_chain_member_info", "omx_clap_chain_process"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a chain was created",
+          "events": ["ok:omx_clap_chain_create"]
+        },
+        "c_destroy": {
+          "meaning": "omx_clap_chain_destroy is about to free it",
+          "events": ["call:omx_clap_chain_destroy"]
+        },
+        "c_use": {
+          "meaning": "a routine that takes the chain is about to be called",
+          "events": [
+            "call:omx_clap_chain_destroy", "call:omx_clap_chain_add", "call:omx_clap_chain_remove",
+            "call:omx_clap_chain_bypass", "call:omx_clap_chain_member_latency_set",
+            "call:omx_clap_chain_refresh", "call:omx_clap_chain_report", "call:omx_clap_chain_member_info",
+            "call:omx_clap_chain_process"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:omx_clap_chain_create", "ok:omx_clap_chain_create",
+            "call:omx_clap_chain_add", "ok:omx_clap_chain_add",
+            "call:omx_clap_chain_process", "ok:omx_clap_chain_process",
+            "call:omx_clap_chain_destroy", "ok:omx_clap_chain_destroy"
+          ],
+          "allowed": true,
+          "reason": "the chain's own lifetime"
+        },
+        {
+          "events": ["call:omx_clap_chain_report"],
+          "allowed": false,
+          "reason": "no chain"
+        },
+        {
+          "events": [
+            "call:omx_clap_chain_create", "ok:omx_clap_chain_create",
+            "call:omx_clap_chain_destroy", "ok:omx_clap_chain_destroy",
+            "call:omx_clap_chain_process"
+          ],
+          "allowed": false,
+          "reason": "process after destroy"
+        }
+      ]
+    },
+    {
+      "id": "bind_aux_while_stopped",
+      "rule": "clap_host.h: omx_clap_host_bind_aux_input and _bind_aux_output are 'Control thread, while the instance is not running (never published, or unpublished)' (src/clap_host.c bind_aux returns -1: 'unpublish first'): an armed or processing stage refuses them. A restart, a rate change and a deactivate stop the stage, so a bind after one is fine.",
+      "formula": "G(pub -> X(!b_aux W (a_round | i_new)))",
+      "apis": [
+        "omx_clap_host_bind_aux_input", "omx_clap_host_bind_aux_output", "omx_clap_host_publish",
+        "omx_clap_host_unpublish", "omx_clap_host_stop"
+      ],
+      "predicates": {
+        "pub": {
+          "meaning": "the stage was armed",
+          "events": [
+            "call:omx_clap_host_publish",
+            "call:omx_clap_host_publish_role",
+            "call:omx_clap_host_arm"
+          ]
+        },
+        "b_aux": {
+          "meaning": "an auxiliary port's buffers are about to be bound",
+          "events": [
+            "call:omx_clap_host_bind_aux_input",
+            "call:omx_clap_host_bind_aux_output"
+          ]
+        },
+        "a_round": {
+          "meaning": "the stage is no longer running",
+          "events": [
+            "ok:omx_clap_host_unpublish",
+            "call:omx_clap_host_stop",
+            "ok:omx_clap_host_restart",
+            "ok:omx_clap_host_set_rate",
+            "ok:omx_clap_host_deactivate",
+            "call:omx_clap_host_close"
+          ]
+        },
+        "i_new": {
+          "meaning": "another instance was created",
+          "events": [
+            "ok:omx_clap_host_open",
+            "ok:omx_clap_host_open_timed",
+            "ok:omx_clap_host_open_entry",
+            "ok:omx_clap_host_create"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_bind_aux_input", "ok:omx_clap_host_bind_aux_input",
+            "call:omx_clap_host_publish", "ok:omx_clap_host_publish",
+            "call:omx_clap_host_unpublish", "ok:omx_clap_host_unpublish",
+            "call:omx_clap_host_bind_aux_output", "ok:omx_clap_host_bind_aux_output"
+          ],
+          "allowed": true,
+          "reason": "bound while never published, then after the unpublish"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_publish", "ok:omx_clap_host_publish",
+            "call:omx_clap_host_bind_aux_input", "fail:omx_clap_host_bind_aux_input"
+          ],
+          "allowed": false,
+          "reason": "bound while the stage is armed"
+        },
+        {
+          "events": [
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate",
+            "call:omx_clap_host_publish", "ok:omx_clap_host_publish",
+            "call:omx_clap_host_activate", "ok:omx_clap_host_activate"
+          ],
+          "allowed": true,
+          "reason": "no auxiliary bind in the trace"
+        }
+      ]
+    }
+  ]
+}

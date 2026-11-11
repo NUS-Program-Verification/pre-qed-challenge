@@ -1,0 +1,7 @@
+{
+  "languageStandard": "gnu99",
+  "includeRoots": ["src", "deps/clap/include", "deps/omx-dsp/include", "deps/omx-contract/include"],
+  "preprocessorDefinitions": ["_GNU_SOURCE", "OMX_CLAP_VERSION=\"0.20.1\"", "OMX_CLAP_VERSION_NUM=2001u"],
+  "implementationSources": ["src/clap_host.c", "src/idle_hold.c", "src/clap_chain.c"],
+  "linkLibraries": ["dl", "pthread", "m"]
+}

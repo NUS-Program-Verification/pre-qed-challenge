@@ -1,0 +1,826 @@
+{
+  "properties": [
+    {
+      "id": "root_lifecycle",
+      "rule": "json_object.h: json_object_put drops the caller's reference; with the harness holding the only reference the tree is freed, and every routine taking the tree is use-after-free until a parser or file loader returns a new one. json_patch_apply and json_pointer_set may replace *base, so they produce a root too.",
+      "formula": "(!root_use W root_ok) & G(root_put -> X(!root_use W root_ok))",
+      "apis": [
+        "json_c_visit",
+        "json_object_array_add",
+        "json_object_array_bsearch",
+        "json_object_array_del_idx",
+        "json_object_array_get_idx",
+        "json_object_array_insert_idx",
+        "json_object_array_length",
+        "json_object_array_put_idx",
+        "json_object_array_put_with_idx_limit_cb",
+        "json_object_array_shrink",
+        "json_object_array_sort",
+        "json_object_deep_copy",
+        "json_object_equal",
+        "json_object_from_fd",
+        "json_object_from_fd_ex",
+        "json_object_from_file",
+        "json_object_get_array",
+        "json_object_get_object",
+        "json_object_iter_begin",
+        "json_object_iter_end",
+        "json_object_object_add",
+        "json_object_object_add_ex",
+        "json_object_object_del",
+        "json_object_object_get",
+        "json_object_object_get_ex",
+        "json_object_object_length",
+        "json_object_put",
+        "json_object_to_fd",
+        "json_object_to_file",
+        "json_object_to_file_ext",
+        "json_object_to_json_string",
+        "json_object_to_json_string_ext",
+        "json_object_to_json_string_length",
+        "json_patch_apply",
+        "json_pointer_get",
+        "json_pointer_getf",
+        "json_pointer_set",
+        "json_pointer_set_with_cb",
+        "json_pointer_set_with_limit_index",
+        "json_pointer_setf",
+        "json_tokener_parse",
+        "json_tokener_parse_ex",
+        "json_tokener_parse_verbose"
+      ],
+      "predicates": {
+        "root_ok": {
+          "meaning": "a parser or loader returned a non-NULL tree",
+          "events": [
+            "ok:json_tokener_parse",
+            "ok:json_tokener_parse_verbose",
+            "ok:json_tokener_parse_ex",
+            "ok:json_object_from_file",
+            "ok:json_object_from_fd",
+            "ok:json_object_from_fd_ex"
+          ]
+        },
+        "root_put": {
+          "meaning": "json_object_put on the tree",
+          "events": [
+            "call:json_object_put"
+          ]
+        },
+        "root_use": {
+          "meaning": "a routine taking the tree is about to be called",
+          "events": [
+            "call:json_object_to_file",
+            "call:json_object_to_file_ext",
+            "call:json_object_to_fd",
+            "call:json_object_to_json_string",
+            "call:json_object_to_json_string_ext",
+            "call:json_object_to_json_string_length",
+            "call:json_object_put",
+            "call:json_object_deep_copy",
+            "call:json_object_object_add",
+            "call:json_object_object_add_ex",
+            "call:json_object_array_add",
+            "call:json_object_array_put_idx",
+            "call:json_object_array_insert_idx",
+            "call:json_object_array_put_with_idx_limit_cb",
+            "call:json_pointer_set",
+            "call:json_pointer_setf",
+            "call:json_pointer_set_with_limit_index",
+            "call:json_pointer_set_with_cb",
+            "call:json_pointer_get",
+            "call:json_pointer_getf",
+            "call:json_object_object_get",
+            "call:json_object_object_get_ex",
+            "call:json_object_object_length",
+            "call:json_object_object_del",
+            "call:json_object_get_object",
+            "call:json_object_array_length",
+            "call:json_object_array_get_idx",
+            "call:json_object_array_del_idx",
+            "call:json_object_array_shrink",
+            "call:json_object_array_sort",
+            "call:json_object_array_bsearch",
+            "call:json_object_get_array",
+            "call:json_object_equal",
+            "call:json_c_visit",
+            "call:json_patch_apply",
+            "call:json_object_iter_begin",
+            "call:json_object_iter_end"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:json_tokener_parse",
+            "ok:json_tokener_parse",
+            "call:json_object_to_json_string",
+            "ok:json_object_to_json_string",
+            "call:json_object_put",
+            "ok:json_object_put",
+            "call:json_object_from_file",
+            "ok:json_object_from_file",
+            "call:json_object_array_length"
+          ],
+          "allowed": true,
+          "reason": "uses sit between a successful parse and put"
+        },
+        {
+          "events": [
+            "call:json_object_to_json_string"
+          ],
+          "allowed": false,
+          "reason": "no tree"
+        },
+        {
+          "events": [
+            "call:json_tokener_parse",
+            "fail:json_tokener_parse",
+            "call:json_object_put"
+          ],
+          "allowed": false,
+          "reason": "parse returned NULL"
+        },
+        {
+          "events": [
+            "call:json_tokener_parse",
+            "ok:json_tokener_parse",
+            "call:json_object_put",
+            "ok:json_object_put",
+            "call:json_c_visit"
+          ],
+          "allowed": false,
+          "reason": "use after put"
+        }
+      ]
+    },
+    {
+      "id": "item_ownership",
+      "rule": "json_object.h: json_object_new_* and json_object_get return a reference the caller owns. json_object_object_add*, json_object_array_add/put_idx/insert_idx and json_pointer_set* take over that reference on success ('the reference count of val is not incremented'); the caller must not pass it again until it owns a new object. The harness keeps one loose object.",
+      "formula": "(!item_use W item_owned) & G(item_given -> X(!item_use W item_owned))",
+      "apis": [
+        "json_object_array_add",
+        "json_object_array_bsearch",
+        "json_object_array_insert_idx",
+        "json_object_array_put_idx",
+        "json_object_array_put_with_idx_limit_cb",
+        "json_object_deep_copy",
+        "json_object_equal",
+        "json_object_get",
+        "json_object_new_array",
+        "json_object_new_array_ext",
+        "json_object_new_boolean",
+        "json_object_new_double",
+        "json_object_new_double_s",
+        "json_object_new_int",
+        "json_object_new_int64",
+        "json_object_new_null",
+        "json_object_new_object",
+        "json_object_new_string",
+        "json_object_new_string_len",
+        "json_object_new_uint64",
+        "json_object_object_add",
+        "json_object_object_add_ex",
+        "json_patch_apply",
+        "json_pointer_set",
+        "json_pointer_set_with_cb",
+        "json_pointer_set_with_limit_index",
+        "json_pointer_setf"
+      ],
+      "predicates": {
+        "item_owned": {
+          "meaning": "a constructor, deep copy or json_object_get returned an owned reference",
+          "events": [
+            "ok:json_object_new_object",
+            "ok:json_object_new_array",
+            "ok:json_object_new_null",
+            "ok:json_object_new_array_ext",
+            "ok:json_object_new_boolean",
+            "ok:json_object_new_int",
+            "ok:json_object_new_int64",
+            "ok:json_object_new_uint64",
+            "ok:json_object_new_double",
+            "ok:json_object_new_double_s",
+            "ok:json_object_new_string",
+            "ok:json_object_new_string_len",
+            "ok:json_object_deep_copy",
+            "ok:json_object_get"
+          ]
+        },
+        "item_given": {
+          "meaning": "an add or set accepted the object and now owns it",
+          "events": [
+            "ok:json_object_object_add",
+            "ok:json_object_object_add_ex",
+            "ok:json_object_array_add",
+            "ok:json_object_array_put_idx",
+            "ok:json_object_array_insert_idx",
+            "ok:json_object_array_put_with_idx_limit_cb",
+            "ok:json_pointer_set",
+            "ok:json_pointer_setf",
+            "ok:json_pointer_set_with_limit_index",
+            "ok:json_pointer_set_with_cb"
+          ]
+        },
+        "item_use": {
+          "meaning": "a routine taking the loose object is about to be called",
+          "events": [
+            "call:json_object_object_add",
+            "call:json_object_object_add_ex",
+            "call:json_object_array_add",
+            "call:json_object_array_put_idx",
+            "call:json_object_array_insert_idx",
+            "call:json_object_array_put_with_idx_limit_cb",
+            "call:json_pointer_set",
+            "call:json_pointer_setf",
+            "call:json_pointer_set_with_limit_index",
+            "call:json_pointer_set_with_cb",
+            "call:json_object_array_bsearch",
+            "call:json_object_equal",
+            "call:json_patch_apply"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:json_object_new_int",
+            "ok:json_object_new_int",
+            "call:json_object_array_add",
+            "fail:json_object_array_add",
+            "call:json_object_object_add",
+            "ok:json_object_object_add",
+            "call:json_object_new_null",
+            "ok:json_object_new_null",
+            "call:json_object_equal"
+          ],
+          "allowed": true,
+          "reason": "failed add keeps ownership; after the successful add a new object is created before the next use"
+        },
+        {
+          "events": [
+            "call:json_object_array_add"
+          ],
+          "allowed": false,
+          "reason": "nothing owned"
+        },
+        {
+          "events": [
+            "call:json_object_new_int",
+            "ok:json_object_new_int",
+            "call:json_object_array_add",
+            "ok:json_object_array_add",
+            "call:json_object_array_add"
+          ],
+          "allowed": false,
+          "reason": "same reference added twice"
+        },
+        {
+          "events": [
+            "call:json_object_new_string",
+            "ok:json_object_new_string",
+            "call:json_pointer_set",
+            "ok:json_pointer_set",
+            "call:json_object_equal"
+          ],
+          "allowed": false,
+          "reason": "pointer set consumed the reference"
+        }
+      ]
+    },
+    {
+      "id": "borrowed_child_validity",
+      "rule": "json_object.h: lookups (json_object_object_get, json_object_array_get_idx, json_pointer_get, iterator peek) return a borrowed pointer owned by the tree ('no reference count is incremented'). Any mutation of the tree or dropping the tree may free or move it, so it must be looked up again before further use.",
+      "formula": "(!child_use W child_ok) & G(tree_mutated -> X(!child_use W child_ok))",
+      "apis": [
+        "json_object_array_add",
+        "json_object_array_bsearch",
+        "json_object_array_del_idx",
+        "json_object_array_get_idx",
+        "json_object_array_insert_idx",
+        "json_object_array_put_idx",
+        "json_object_array_put_with_idx_limit_cb",
+        "json_object_array_sort",
+        "json_object_double_to_json_string",
+        "json_object_get",
+        "json_object_get_boolean",
+        "json_object_get_double",
+        "json_object_get_int",
+        "json_object_get_int64",
+        "json_object_get_string",
+        "json_object_get_string_len",
+        "json_object_get_type",
+        "json_object_get_uint64",
+        "json_object_get_userdata",
+        "json_object_int_inc",
+        "json_object_is_type",
+        "json_object_iter_peek_value",
+        "json_object_object_add",
+        "json_object_object_add_ex",
+        "json_object_object_del",
+        "json_object_object_get",
+        "json_object_object_get_ex",
+        "json_object_put",
+        "json_object_set_boolean",
+        "json_object_set_double",
+        "json_object_set_int",
+        "json_object_set_int64",
+        "json_object_set_serializer",
+        "json_object_set_string",
+        "json_object_set_string_len",
+        "json_object_set_uint64",
+        "json_object_set_userdata",
+        "json_patch_apply",
+        "json_pointer_get",
+        "json_pointer_getf",
+        "json_pointer_set",
+        "json_pointer_set_with_cb",
+        "json_pointer_set_with_limit_index",
+        "json_pointer_setf"
+      ],
+      "predicates": {
+        "child_ok": {
+          "meaning": "a lookup returned a non-NULL node inside the tree",
+          "events": [
+            "ok:json_pointer_get",
+            "ok:json_pointer_getf",
+            "ok:json_object_object_get",
+            "ok:json_object_object_get_ex",
+            "ok:json_object_array_get_idx",
+            "ok:json_object_array_bsearch",
+            "ok:json_object_iter_peek_value"
+          ]
+        },
+        "child_use": {
+          "meaning": "a routine taking the borrowed node is about to be called",
+          "events": [
+            "call:json_object_set_serializer",
+            "call:json_object_set_userdata",
+            "call:json_object_get_userdata",
+            "call:json_object_double_to_json_string",
+            "call:json_object_get",
+            "call:json_object_get_type",
+            "call:json_object_is_type",
+            "call:json_object_get_boolean",
+            "call:json_object_get_int",
+            "call:json_object_get_int64",
+            "call:json_object_get_uint64",
+            "call:json_object_get_double",
+            "call:json_object_get_string",
+            "call:json_object_get_string_len",
+            "call:json_object_set_boolean",
+            "call:json_object_set_int",
+            "call:json_object_set_int64",
+            "call:json_object_set_uint64",
+            "call:json_object_set_double",
+            "call:json_object_set_string",
+            "call:json_object_set_string_len",
+            "call:json_object_int_inc"
+          ]
+        },
+        "tree_mutated": {
+          "meaning": "the tree is about to be restructured or dropped",
+          "events": [
+            "call:json_object_put",
+            "call:json_object_object_add",
+            "call:json_object_object_add_ex",
+            "call:json_object_array_add",
+            "call:json_object_array_put_idx",
+            "call:json_object_array_insert_idx",
+            "call:json_object_array_put_with_idx_limit_cb",
+            "call:json_pointer_set",
+            "call:json_pointer_setf",
+            "call:json_pointer_set_with_limit_index",
+            "call:json_pointer_set_with_cb",
+            "call:json_object_object_del",
+            "call:json_object_array_del_idx",
+            "call:json_object_array_sort",
+            "call:json_patch_apply"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:json_object_object_get",
+            "ok:json_object_object_get",
+            "call:json_object_get_int",
+            "ok:json_object_get_int",
+            "call:json_object_object_del",
+            "ok:json_object_object_del",
+            "call:json_object_array_get_idx",
+            "ok:json_object_array_get_idx",
+            "call:json_object_get_type"
+          ],
+          "allowed": true,
+          "reason": "re-looked-up after the mutation"
+        },
+        {
+          "events": [
+            "call:json_object_get_string"
+          ],
+          "allowed": false,
+          "reason": "nothing looked up"
+        },
+        {
+          "events": [
+            "call:json_pointer_get",
+            "fail:json_pointer_get",
+            "call:json_object_get_type"
+          ],
+          "allowed": false,
+          "reason": "lookup failed"
+        },
+        {
+          "events": [
+            "call:json_object_array_get_idx",
+            "ok:json_object_array_get_idx",
+            "call:json_object_array_del_idx",
+            "ok:json_object_array_del_idx",
+            "call:json_object_set_int"
+          ],
+          "allowed": false,
+          "reason": "deletion may have freed the node"
+        }
+      ]
+    },
+    {
+      "id": "tokener_lifecycle",
+      "rule": "json_tokener.h: json_tokener_parse_ex, set_flags, reset, get_error, get_parse_end take a tokener from json_tokener_new/new_ex; json_tokener_free releases it. The harness keeps one tokener.",
+      "formula": "(!tok_use W tok_ok) & G(tok_free -> X(!tok_use W tok_ok))",
+      "apis": [
+        "json_tokener_new",
+        "json_tokener_new_ex",
+        "json_tokener_set_flags",
+        "json_tokener_parse_ex",
+        "json_tokener_get_error",
+        "json_tokener_get_parse_end",
+        "json_tokener_reset",
+        "json_tokener_free"
+      ],
+      "predicates": {
+        "tok_ok": {
+          "meaning": "a tokener was allocated",
+          "events": [
+            "ok:json_tokener_new",
+            "ok:json_tokener_new_ex"
+          ]
+        },
+        "tok_free": {
+          "meaning": "json_tokener_free is about to be called",
+          "events": [
+            "call:json_tokener_free"
+          ]
+        },
+        "tok_use": {
+          "meaning": "a routine taking the tokener is about to be called",
+          "events": [
+            "call:json_tokener_set_flags",
+            "call:json_tokener_parse_ex",
+            "call:json_tokener_get_error",
+            "call:json_tokener_get_parse_end",
+            "call:json_tokener_reset",
+            "call:json_tokener_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:json_tokener_new",
+            "ok:json_tokener_new",
+            "call:json_tokener_parse_ex",
+            "fail:json_tokener_parse_ex",
+            "call:json_tokener_reset",
+            "ok:json_tokener_reset",
+            "call:json_tokener_free",
+            "ok:json_tokener_free"
+          ],
+          "allowed": true,
+          "reason": "normal lifecycle"
+        },
+        {
+          "events": [
+            "call:json_tokener_parse_ex"
+          ],
+          "allowed": false,
+          "reason": "no tokener"
+        },
+        {
+          "events": [
+            "call:json_tokener_new",
+            "ok:json_tokener_new",
+            "call:json_tokener_free",
+            "ok:json_tokener_free",
+            "call:json_tokener_free"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        }
+      ]
+    },
+    {
+      "id": "iterator_validity",
+      "rule": "json_object_iterator.h: an iterator from json_object_iter_begin is valid only while the object is unchanged; 'the object must not be modified while iterating' and peek/next on an iterator equal to end are undefined.",
+      "formula": "(!iter_use W iter_begin) & G(tree_mutated -> X(!iter_use W iter_begin))",
+      "apis": [
+        "json_object_iter_begin",
+        "json_object_iter_equal",
+        "json_object_iter_next",
+        "json_object_iter_peek_name",
+        "json_object_iter_peek_value",
+        "json_object_put",
+        "json_object_object_add",
+        "json_object_object_add_ex",
+        "json_object_array_add",
+        "json_object_array_put_idx",
+        "json_object_array_insert_idx",
+        "json_object_array_put_with_idx_limit_cb",
+        "json_pointer_set",
+        "json_pointer_setf",
+        "json_pointer_set_with_limit_index",
+        "json_pointer_set_with_cb",
+        "json_object_object_del",
+        "json_object_array_del_idx",
+        "json_object_array_sort",
+        "json_patch_apply"
+      ],
+      "predicates": {
+        "iter_begin": {
+          "meaning": "json_object_iter_begin produced an iterator on the current tree",
+          "events": [
+            "ok:json_object_iter_begin"
+          ]
+        },
+        "iter_use": {
+          "meaning": "an iterator routine is about to be called",
+          "events": [
+            "call:json_object_iter_equal",
+            "call:json_object_iter_next",
+            "call:json_object_iter_peek_name",
+            "call:json_object_iter_peek_value"
+          ]
+        },
+        "tree_mutated": {
+          "meaning": "the tree is about to be restructured or dropped",
+          "events": [
+            "call:json_object_put",
+            "call:json_object_object_add",
+            "call:json_object_object_add_ex",
+            "call:json_object_array_add",
+            "call:json_object_array_put_idx",
+            "call:json_object_array_insert_idx",
+            "call:json_object_array_put_with_idx_limit_cb",
+            "call:json_pointer_set",
+            "call:json_pointer_setf",
+            "call:json_pointer_set_with_limit_index",
+            "call:json_pointer_set_with_cb",
+            "call:json_object_object_del",
+            "call:json_object_array_del_idx",
+            "call:json_object_array_sort",
+            "call:json_patch_apply"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:json_object_iter_begin",
+            "ok:json_object_iter_begin",
+            "call:json_object_iter_peek_name",
+            "ok:json_object_iter_peek_name",
+            "call:json_object_iter_next",
+            "ok:json_object_iter_next"
+          ],
+          "allowed": true,
+          "reason": "iteration without mutation"
+        },
+        {
+          "events": [
+            "call:json_object_iter_next"
+          ],
+          "allowed": false,
+          "reason": "no iterator"
+        },
+        {
+          "events": [
+            "call:json_object_iter_begin",
+            "ok:json_object_iter_begin",
+            "call:json_object_object_del",
+            "ok:json_object_object_del",
+            "call:json_object_iter_peek_value"
+          ],
+          "allowed": false,
+          "reason": "object modified during iteration"
+        }
+      ]
+    },
+    {
+      "id": "printbuf_lifecycle",
+      "rule": "printbuf.h: printbuf_memappend, printbuf_memset, sprintbuf, printbuf_reset and json_object_double_to_json_string take a buffer from printbuf_new; printbuf_free releases it. The harness keeps one buffer.",
+      "formula": "(!pb_use W pb_ok) & G(pb_free -> X(!pb_use W pb_ok))",
+      "apis": [
+        "printbuf_new",
+        "printbuf_memappend",
+        "printbuf_memset",
+        "sprintbuf",
+        "printbuf_reset",
+        "printbuf_free",
+        "json_object_double_to_json_string"
+      ],
+      "predicates": {
+        "pb_ok": {
+          "meaning": "printbuf_new returned a buffer",
+          "events": [
+            "ok:printbuf_new"
+          ]
+        },
+        "pb_free": {
+          "meaning": "printbuf_free is about to be called",
+          "events": [
+            "call:printbuf_free"
+          ]
+        },
+        "pb_use": {
+          "meaning": "a routine taking the buffer is about to be called",
+          "events": [
+            "call:printbuf_memappend",
+            "call:printbuf_memset",
+            "call:sprintbuf",
+            "call:printbuf_reset",
+            "call:printbuf_free",
+            "call:json_object_double_to_json_string"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:printbuf_new",
+            "ok:printbuf_new",
+            "call:sprintbuf",
+            "ok:sprintbuf",
+            "call:printbuf_free",
+            "ok:printbuf_free"
+          ],
+          "allowed": true,
+          "reason": "normal lifecycle"
+        },
+        {
+          "events": [
+            "call:printbuf_memappend"
+          ],
+          "allowed": false,
+          "reason": "no buffer"
+        },
+        {
+          "events": [
+            "call:printbuf_new",
+            "ok:printbuf_new",
+            "call:printbuf_free",
+            "ok:printbuf_free",
+            "call:printbuf_reset"
+          ],
+          "allowed": false,
+          "reason": "use after free"
+        }
+      ]
+    },
+    {
+      "id": "lh_table_lifecycle",
+      "rule": "linkhash.h: lh_table_insert takes the table returned by lh_kptr_table_new ('On error, a null pointer is returned'), lh_entry_prev takes an entry of that table, and lh_table_free 'Free a linkhash table'. Nothing may touch the table before a successful create or after the free. The harness keeps one table.",
+      "formula": "(!lh_use W lh_ok) & G(lh_free -> X(!lh_use W lh_ok))",
+      "apis": [
+        "lh_kptr_table_new",
+        "lh_table_insert",
+        "lh_entry_prev",
+        "lh_table_free"
+      ],
+      "predicates": {
+        "lh_ok": {
+          "meaning": "lh_kptr_table_new returned a table",
+          "events": [
+            "ok:lh_kptr_table_new"
+          ]
+        },
+        "lh_free": {
+          "meaning": "lh_table_free is about to be called",
+          "events": [
+            "call:lh_table_free"
+          ]
+        },
+        "lh_use": {
+          "meaning": "a routine taking the table or one of its entries is about to be called",
+          "events": [
+            "call:lh_table_insert",
+            "call:lh_entry_prev",
+            "call:lh_table_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:lh_kptr_table_new",
+            "ok:lh_kptr_table_new",
+            "call:lh_table_insert",
+            "ok:lh_table_insert",
+            "call:lh_entry_prev",
+            "ok:lh_entry_prev",
+            "call:lh_table_free",
+            "ok:lh_table_free",
+            "call:lh_kptr_table_new",
+            "ok:lh_kptr_table_new",
+            "call:lh_table_insert"
+          ],
+          "allowed": true,
+          "reason": "every use follows a successful create with no free in between"
+        },
+        {
+          "events": [
+            "call:lh_table_insert"
+          ],
+          "allowed": false,
+          "reason": "no table"
+        },
+        {
+          "events": [
+            "call:lh_kptr_table_new",
+            "fail:lh_kptr_table_new",
+            "call:lh_table_free"
+          ],
+          "allowed": false,
+          "reason": "create returned NULL"
+        },
+        {
+          "events": [
+            "call:lh_kptr_table_new",
+            "ok:lh_kptr_table_new",
+            "call:lh_table_free",
+            "ok:lh_table_free",
+            "call:lh_entry_prev"
+          ],
+          "allowed": false,
+          "reason": "use after free"
+        }
+      ]
+    },
+    {
+      "id": "array_list_lifecycle",
+      "rule": "arraylist.h: array_list_new allocates the list ('Allocate an array_list of the default size (32)') and array_list_free releases it, so array_list_free needs a list from a successful array_list_new and may run once per list. The harness keeps one list.",
+      "formula": "(!al_free W al_ok) & G(al_free -> X(!al_free W al_ok))",
+      "apis": [
+        "array_list_new",
+        "array_list_free"
+      ],
+      "predicates": {
+        "al_ok": {
+          "meaning": "array_list_new returned a list",
+          "events": [
+            "ok:array_list_new"
+          ]
+        },
+        "al_free": {
+          "meaning": "array_list_free is about to be called",
+          "events": [
+            "call:array_list_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:array_list_new",
+            "ok:array_list_new",
+            "call:array_list_free",
+            "ok:array_list_free",
+            "call:array_list_new",
+            "ok:array_list_new",
+            "call:array_list_free"
+          ],
+          "allowed": true,
+          "reason": "each free follows its own successful new"
+        },
+        {
+          "events": [
+            "call:array_list_free"
+          ],
+          "allowed": false,
+          "reason": "no list"
+        },
+        {
+          "events": [
+            "call:array_list_new",
+            "ok:array_list_new",
+            "call:array_list_free",
+            "ok:array_list_free",
+            "call:array_list_free"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1271 @@
+{
+  "properties": [
+    {
+      "id": "request_parser_header_queries",
+      "rule": "basic_parser.hpp:203-248: the return values of upgrade(), chunked(), keep_alive(), content_length() and content_length_remaining() are undefined unless is_header_done() would return true; keep_alive/content_length/content_length_remaining assert it (impl/basic_parser.ipp:33,52,61). A new request_parser starts without a header.",
+      "formula": "(!query W header_done) & G(ctor -> X(!query W header_done))",
+      "predicates": {
+        "query": {
+          "meaning": "a header-dependent query is about to be called",
+          "events": [
+            "call:request_parser::upgrade",
+            "call:request_parser::chunked",
+            "call:request_parser::keep_alive",
+            "call:request_parser::content_length",
+            "call:request_parser::content_length_remaining"
+          ]
+        },
+        "header_done": {
+          "meaning": "is_header_done() returned true",
+          "events": [
+            "ok:request_parser::is_header_done"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new parser replaced the old one",
+          "events": [
+            "ok:request_parser"
+          ]
+        }
+      },
+      "apis": [
+        "request_parser",
+        "request_parser::is_header_done",
+        "request_parser::upgrade",
+        "request_parser::chunked",
+        "request_parser::keep_alive",
+        "request_parser::content_length",
+        "request_parser::content_length_remaining"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:request_parser",
+            "ok:request_parser",
+            "call:request_parser::put",
+            "ok:request_parser::put",
+            "call:request_parser::is_header_done",
+            "ok:request_parser::is_header_done",
+            "call:request_parser::keep_alive",
+            "ok:request_parser::keep_alive"
+          ],
+          "allowed": true,
+          "reason": "the header was complete"
+        },
+        {
+          "events": [
+            "call:request_parser",
+            "ok:request_parser",
+            "call:request_parser::keep_alive"
+          ],
+          "allowed": false,
+          "reason": "no header yet"
+        },
+        {
+          "events": [
+            "call:request_parser",
+            "ok:request_parser",
+            "call:request_parser::is_header_done",
+            "ok:request_parser::is_header_done",
+            "call:request_parser",
+            "ok:request_parser",
+            "call:request_parser::content_length"
+          ],
+          "allowed": false,
+          "reason": "the new parser has no header"
+        }
+      ]
+    },
+    {
+      "id": "request_parser_configure_before_parsing",
+      "rule": "basic_parser.hpp:292,315: setting body_limit after body octets or header_limit after header octets is undefined; skip() asserts !got_some() (impl/basic_parser.ipp:72); on_chunk_header/on_chunk_body assert the body reader is not initialised (parser.hpp:254,302). So these are set before the parser sees any input.",
+      "formula": "G(parse -> X(!configure W ctor))",
+      "predicates": {
+        "parse": {
+          "meaning": "input is about to be given to the parser",
+          "events": [
+            "call:request_parser::put",
+            "call:request_parser::put_eof",
+            "call:http::read(request_parser)",
+            "call:http::read_header(request_parser)",
+            "call:http::read_some(request_parser)",
+            "call:http::async_read(request_parser)",
+            "call:http::async_read_header(request_parser)",
+            "call:http::async_read_some(request_parser)"
+          ]
+        },
+        "configure": {
+          "meaning": "a limit, skip or chunk callback is about to be set",
+          "events": [
+            "call:request_parser::body_limit",
+            "call:request_parser::header_limit",
+            "call:request_parser::skip(b)",
+            "call:request_parser::on_chunk_header",
+            "call:request_parser::on_chunk_body"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new parser replaced the old one",
+          "events": [
+            "ok:request_parser"
+          ]
+        }
+      },
+      "apis": [
+        "request_parser",
+        "request_parser::put",
+        "request_parser::put_eof",
+        "http::read(request_parser)",
+        "http::read_header(request_parser)",
+        "http::read_some(request_parser)",
+        "request_parser::body_limit",
+        "request_parser::header_limit",
+        "request_parser::skip(b)",
+        "request_parser::on_chunk_header",
+        "request_parser::on_chunk_body",
+        "http::async_read(request_parser)",
+        "http::async_read_header(request_parser)",
+        "http::async_read_some(request_parser)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:request_parser",
+            "ok:request_parser",
+            "call:request_parser::body_limit",
+            "ok:request_parser::body_limit",
+            "call:request_parser::put",
+            "fail:request_parser::put"
+          ],
+          "allowed": true,
+          "reason": "configured first"
+        },
+        {
+          "events": [
+            "call:request_parser",
+            "ok:request_parser",
+            "call:request_parser::put",
+            "fail:request_parser::put",
+            "call:request_parser::skip(b)"
+          ],
+          "allowed": false,
+          "reason": "skip after input"
+        },
+        {
+          "events": [
+            "call:request_parser::put",
+            "ok:request_parser::put",
+            "call:request_parser",
+            "ok:request_parser",
+            "call:request_parser::header_limit"
+          ],
+          "allowed": true,
+          "reason": "a new parser"
+        }
+      ]
+    },
+    {
+      "id": "request_parser_done_is_final",
+      "rule": "impl/basic_parser.ipp:85-90: parsing more data after the parser has completed asserts !is_done(); 're-using a parser ... is not supported', a new parser is needed for each message (also parser.hpp:398).",
+      "formula": "G(done -> X(!parse W ctor))",
+      "predicates": {
+        "done": {
+          "meaning": "is_done() returned true",
+          "events": [
+            "ok:request_parser::is_done"
+          ]
+        },
+        "parse": {
+          "meaning": "input is about to be given to the parser",
+          "events": [
+            "call:request_parser::put",
+            "call:request_parser::put_eof",
+            "call:http::read(request_parser)",
+            "call:http::read_header(request_parser)",
+            "call:http::read_some(request_parser)",
+            "call:http::async_read(request_parser)",
+            "call:http::async_read_header(request_parser)",
+            "call:http::async_read_some(request_parser)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new parser replaced the old one",
+          "events": [
+            "ok:request_parser"
+          ]
+        }
+      },
+      "apis": [
+        "request_parser",
+        "request_parser::is_done",
+        "request_parser::put",
+        "request_parser::put_eof",
+        "http::read(request_parser)",
+        "http::read_header(request_parser)",
+        "http::read_some(request_parser)",
+        "http::async_read(request_parser)",
+        "http::async_read_header(request_parser)",
+        "http::async_read_some(request_parser)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:request_parser::is_done",
+            "ok:request_parser::is_done",
+            "call:request_parser::put"
+          ],
+          "allowed": false,
+          "reason": "parser already finished"
+        },
+        {
+          "events": [
+            "call:request_parser::is_done",
+            "ok:request_parser::is_done",
+            "call:request_parser",
+            "ok:request_parser",
+            "call:request_parser::put"
+          ],
+          "allowed": true,
+          "reason": "a fresh parser"
+        }
+      ]
+    },
+    {
+      "id": "response_parser_header_queries",
+      "rule": "basic_parser.hpp:203-248: the return values of upgrade(), chunked(), keep_alive(), content_length() and content_length_remaining() are undefined unless is_header_done() would return true; keep_alive/content_length/content_length_remaining assert it (impl/basic_parser.ipp:33,52,61). A new response_parser starts without a header.",
+      "formula": "(!query W header_done) & G(ctor -> X(!query W header_done))",
+      "predicates": {
+        "query": {
+          "meaning": "a header-dependent query is about to be called",
+          "events": [
+            "call:response_parser::upgrade",
+            "call:response_parser::chunked",
+            "call:response_parser::keep_alive",
+            "call:response_parser::content_length",
+            "call:response_parser::content_length_remaining"
+          ]
+        },
+        "header_done": {
+          "meaning": "is_header_done() returned true",
+          "events": [
+            "ok:response_parser::is_header_done"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new parser replaced the old one",
+          "events": [
+            "ok:response_parser"
+          ]
+        }
+      },
+      "apis": [
+        "response_parser",
+        "response_parser::is_header_done",
+        "response_parser::upgrade",
+        "response_parser::chunked",
+        "response_parser::keep_alive",
+        "response_parser::content_length",
+        "response_parser::content_length_remaining"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:response_parser",
+            "ok:response_parser",
+            "call:response_parser::put",
+            "ok:response_parser::put",
+            "call:response_parser::is_header_done",
+            "ok:response_parser::is_header_done",
+            "call:response_parser::keep_alive",
+            "ok:response_parser::keep_alive"
+          ],
+          "allowed": true,
+          "reason": "the header was complete"
+        },
+        {
+          "events": [
+            "call:response_parser",
+            "ok:response_parser",
+            "call:response_parser::keep_alive"
+          ],
+          "allowed": false,
+          "reason": "no header yet"
+        },
+        {
+          "events": [
+            "call:response_parser",
+            "ok:response_parser",
+            "call:response_parser::is_header_done",
+            "ok:response_parser::is_header_done",
+            "call:response_parser",
+            "ok:response_parser",
+            "call:response_parser::content_length"
+          ],
+          "allowed": false,
+          "reason": "the new parser has no header"
+        }
+      ]
+    },
+    {
+      "id": "response_parser_configure_before_parsing",
+      "rule": "basic_parser.hpp:292,315: setting body_limit after body octets or header_limit after header octets is undefined; skip() asserts !got_some() (impl/basic_parser.ipp:72); on_chunk_header/on_chunk_body assert the body reader is not initialised (parser.hpp:254,302). So these are set before the parser sees any input.",
+      "formula": "G(parse -> X(!configure W ctor))",
+      "predicates": {
+        "parse": {
+          "meaning": "input is about to be given to the parser",
+          "events": [
+            "call:response_parser::put",
+            "call:response_parser::put_eof",
+            "call:http::read(response_parser)",
+            "call:http::read_header(response_parser)",
+            "call:http::read_some(response_parser)",
+            "call:http::async_read(response_parser)",
+            "call:http::async_read_header(response_parser)",
+            "call:http::async_read_some(response_parser)"
+          ]
+        },
+        "configure": {
+          "meaning": "a limit, skip or chunk callback is about to be set",
+          "events": [
+            "call:response_parser::body_limit",
+            "call:response_parser::header_limit",
+            "call:response_parser::skip(b)",
+            "call:response_parser::on_chunk_header",
+            "call:response_parser::on_chunk_body"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new parser replaced the old one",
+          "events": [
+            "ok:response_parser"
+          ]
+        }
+      },
+      "apis": [
+        "response_parser",
+        "response_parser::put",
+        "response_parser::put_eof",
+        "http::read(response_parser)",
+        "http::read_header(response_parser)",
+        "http::read_some(response_parser)",
+        "response_parser::body_limit",
+        "response_parser::header_limit",
+        "response_parser::skip(b)",
+        "response_parser::on_chunk_header",
+        "response_parser::on_chunk_body",
+        "http::async_read(response_parser)",
+        "http::async_read_header(response_parser)",
+        "http::async_read_some(response_parser)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:response_parser",
+            "ok:response_parser",
+            "call:response_parser::body_limit",
+            "ok:response_parser::body_limit",
+            "call:response_parser::put",
+            "fail:response_parser::put"
+          ],
+          "allowed": true,
+          "reason": "configured first"
+        },
+        {
+          "events": [
+            "call:response_parser",
+            "ok:response_parser",
+            "call:response_parser::put",
+            "fail:response_parser::put",
+            "call:response_parser::skip(b)"
+          ],
+          "allowed": false,
+          "reason": "skip after input"
+        },
+        {
+          "events": [
+            "call:response_parser::put",
+            "ok:response_parser::put",
+            "call:response_parser",
+            "ok:response_parser",
+            "call:response_parser::header_limit"
+          ],
+          "allowed": true,
+          "reason": "a new parser"
+        }
+      ]
+    },
+    {
+      "id": "response_parser_done_is_final",
+      "rule": "impl/basic_parser.ipp:85-90: parsing more data after the parser has completed asserts !is_done(); 're-using a parser ... is not supported', a new parser is needed for each message (also parser.hpp:398).",
+      "formula": "G(done -> X(!parse W ctor))",
+      "predicates": {
+        "done": {
+          "meaning": "is_done() returned true",
+          "events": [
+            "ok:response_parser::is_done"
+          ]
+        },
+        "parse": {
+          "meaning": "input is about to be given to the parser",
+          "events": [
+            "call:response_parser::put",
+            "call:response_parser::put_eof",
+            "call:http::read(response_parser)",
+            "call:http::read_header(response_parser)",
+            "call:http::read_some(response_parser)",
+            "call:http::async_read(response_parser)",
+            "call:http::async_read_header(response_parser)",
+            "call:http::async_read_some(response_parser)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new parser replaced the old one",
+          "events": [
+            "ok:response_parser"
+          ]
+        }
+      },
+      "apis": [
+        "response_parser",
+        "response_parser::is_done",
+        "response_parser::put",
+        "response_parser::put_eof",
+        "http::read(response_parser)",
+        "http::read_header(response_parser)",
+        "http::read_some(response_parser)",
+        "http::async_read(response_parser)",
+        "http::async_read_header(response_parser)",
+        "http::async_read_some(response_parser)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:response_parser::is_done",
+            "ok:response_parser::is_done",
+            "call:response_parser::put"
+          ],
+          "allowed": false,
+          "reason": "parser already finished"
+        },
+        {
+          "events": [
+            "call:response_parser::is_done",
+            "ok:response_parser::is_done",
+            "call:response_parser",
+            "ok:response_parser",
+            "call:response_parser::put"
+          ],
+          "allowed": true,
+          "reason": "a fresh parser"
+        }
+      ]
+    },
+    {
+      "id": "request_serializer_consume_after_next",
+      "rule": "serializer.hpp:349-361: consume(n) consumes octets 'in the buffers provided in the prior call to next'; n must not exceed them. After a consume, or after http::write*, which call next/consume themselves, those buffers are gone, so the next consume needs a new next().",
+      "formula": "(!consume W next) & G((consume | spent | ctor) -> X(!consume W next))",
+      "predicates": {
+        "consume": {
+          "meaning": "consume is about to be called",
+          "events": [
+            "call:request_serializer::consume"
+          ]
+        },
+        "next": {
+          "meaning": "next() presented buffers",
+          "events": [
+            "ok:request_serializer::next"
+          ]
+        },
+        "spent": {
+          "meaning": "a write consumed the presented buffers",
+          "events": [
+            "call:http::write(request_serializer)",
+            "call:http::write_header(request_serializer)",
+            "call:http::write_some(request_serializer)",
+            "call:http::async_write(request_serializer)",
+            "call:http::async_write_header(request_serializer)",
+            "call:http::async_write_some(request_serializer)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new serializer",
+          "events": [
+            "ok:request_serializer"
+          ]
+        }
+      },
+      "apis": [
+        "request_serializer",
+        "request_serializer::next",
+        "request_serializer::consume",
+        "http::write(request_serializer)",
+        "http::write_header(request_serializer)",
+        "http::write_some(request_serializer)",
+        "http::async_write(request_serializer)",
+        "http::async_write_header(request_serializer)",
+        "http::async_write_some(request_serializer)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:request_serializer",
+            "ok:request_serializer",
+            "call:request_serializer::next",
+            "ok:request_serializer::next",
+            "call:request_serializer::consume",
+            "ok:request_serializer::consume"
+          ],
+          "allowed": true,
+          "reason": "consume what next offered"
+        },
+        {
+          "events": [
+            "call:request_serializer",
+            "ok:request_serializer",
+            "call:request_serializer::consume"
+          ],
+          "allowed": false,
+          "reason": "nothing offered"
+        },
+        {
+          "events": [
+            "call:request_serializer::next",
+            "ok:request_serializer::next",
+            "call:request_serializer::consume",
+            "ok:request_serializer::consume",
+            "call:request_serializer::consume"
+          ],
+          "allowed": false,
+          "reason": "second consume for one next"
+        }
+      ]
+    },
+    {
+      "id": "response_serializer_consume_after_next",
+      "rule": "serializer.hpp:349-361: consume(n) consumes octets 'in the buffers provided in the prior call to next'; n must not exceed them. After a consume, or after http::write*, which call next/consume themselves, those buffers are gone, so the next consume needs a new next().",
+      "formula": "(!consume W next) & G((consume | spent | ctor) -> X(!consume W next))",
+      "predicates": {
+        "consume": {
+          "meaning": "consume is about to be called",
+          "events": [
+            "call:response_serializer::consume"
+          ]
+        },
+        "next": {
+          "meaning": "next() presented buffers",
+          "events": [
+            "ok:response_serializer::next"
+          ]
+        },
+        "spent": {
+          "meaning": "a write consumed the presented buffers",
+          "events": [
+            "call:http::write(response_serializer)",
+            "call:http::write_header(response_serializer)",
+            "call:http::write_some(response_serializer)",
+            "call:http::async_write(response_serializer)",
+            "call:http::async_write_header(response_serializer)",
+            "call:http::async_write_some(response_serializer)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new serializer",
+          "events": [
+            "ok:response_serializer"
+          ]
+        }
+      },
+      "apis": [
+        "response_serializer",
+        "response_serializer::next",
+        "response_serializer::consume",
+        "http::write(response_serializer)",
+        "http::write_header(response_serializer)",
+        "http::write_some(response_serializer)",
+        "http::async_write(response_serializer)",
+        "http::async_write_header(response_serializer)",
+        "http::async_write_some(response_serializer)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:response_serializer",
+            "ok:response_serializer",
+            "call:response_serializer::next",
+            "ok:response_serializer::next",
+            "call:response_serializer::consume",
+            "ok:response_serializer::consume"
+          ],
+          "allowed": true,
+          "reason": "consume what next offered"
+        },
+        {
+          "events": [
+            "call:response_serializer",
+            "ok:response_serializer",
+            "call:response_serializer::consume"
+          ],
+          "allowed": false,
+          "reason": "nothing offered"
+        },
+        {
+          "events": [
+            "call:response_serializer::next",
+            "ok:response_serializer::next",
+            "call:response_serializer::consume",
+            "ok:response_serializer::consume",
+            "call:response_serializer::consume"
+          ],
+          "allowed": false,
+          "reason": "second consume for one next"
+        }
+      ]
+    },
+    {
+      "id": "message_generator_consume_after_prepare",
+      "rule": "message_generator.hpp / BuffersGenerator (buffers_generator.hpp): consume(n) marks n octets of the buffers returned by the last prepare() as written; after a consume or a write(message_generator) those buffers are gone.",
+      "formula": "(!consume W prepare) & G((consume | spent | ctor) -> X(!consume W prepare))",
+      "predicates": {
+        "consume": {
+          "meaning": "consume is about to be called",
+          "events": [
+            "call:message_generator::consume"
+          ]
+        },
+        "prepare": {
+          "meaning": "prepare() returned buffers",
+          "events": [
+            "ok:message_generator::prepare"
+          ]
+        },
+        "spent": {
+          "meaning": "write consumed the buffers",
+          "events": [
+            "call:write(message_generator)",
+            "call:async_write(message_generator)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new generator",
+          "events": [
+            "ok:message_generator"
+          ]
+        }
+      },
+      "apis": [
+        "message_generator",
+        "message_generator::prepare",
+        "message_generator::consume",
+        "write(message_generator)",
+        "async_write(message_generator)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:message_generator",
+            "ok:message_generator",
+            "call:message_generator::prepare",
+            "ok:message_generator::prepare",
+            "call:message_generator::consume",
+            "ok:message_generator::consume"
+          ],
+          "allowed": true,
+          "reason": "consume what prepare offered"
+        },
+        {
+          "events": [
+            "call:message_generator",
+            "ok:message_generator",
+            "call:message_generator::consume"
+          ],
+          "allowed": false,
+          "reason": "nothing prepared"
+        }
+      ]
+    },
+    {
+      "id": "websocket_handshake_before_messages",
+      "rule": "RFC 6455 section 4: data and control frames are exchanged only after the opening handshake. A websocket::stream is created in the handshake state; read, write, ping, pong and close are used after a successful accept() (server) or handshake() (client).",
+      "formula": "(!io W open) & G(ctor -> X(!io W open))",
+      "predicates": {
+        "io": {
+          "meaning": "a message or control frame operation is about to be called",
+          "events": [
+            "call:websocket::stream::read",
+            "call:websocket::stream::read_some(buffer,limit)",
+            "call:websocket::stream::read_some(buffers)",
+            "call:websocket::stream::write",
+            "call:websocket::stream::write_some",
+            "call:websocket::stream::ping",
+            "call:websocket::stream::pong",
+            "call:websocket::stream::close",
+            "call:websocket::stream::async_read",
+            "call:websocket::stream::async_read_some(buffer,limit)",
+            "call:websocket::stream::async_read_some(buffers)",
+            "call:websocket::stream::async_write",
+            "call:websocket::stream::async_write_some",
+            "call:websocket::stream::async_ping",
+            "call:websocket::stream::async_pong",
+            "call:websocket::stream::async_close"
+          ]
+        },
+        "open": {
+          "meaning": "the opening handshake succeeded",
+          "events": [
+            "ok:websocket::stream::accept",
+            "ok:websocket::stream::accept(buffers)",
+            "ok:websocket::stream::accept(request)",
+            "ok:websocket::stream::handshake",
+            "ok:websocket::stream::handshake(response)",
+            "ok:websocket::stream::async_accept",
+            "ok:websocket::stream::async_accept(buffers)",
+            "ok:websocket::stream::async_accept(request)",
+            "ok:websocket::stream::async_handshake",
+            "ok:websocket::stream::async_handshake(response)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new stream",
+          "events": [
+            "ok:websocket::stream"
+          ]
+        }
+      },
+      "apis": [
+        "websocket::stream",
+        "websocket::stream::accept",
+        "websocket::stream::accept(buffers)",
+        "websocket::stream::accept(request)",
+        "websocket::stream::handshake",
+        "websocket::stream::handshake(response)",
+        "websocket::stream::read",
+        "websocket::stream::read_some(buffer,limit)",
+        "websocket::stream::read_some(buffers)",
+        "websocket::stream::write",
+        "websocket::stream::write_some",
+        "websocket::stream::ping",
+        "websocket::stream::pong",
+        "websocket::stream::close",
+        "websocket::stream::async_read",
+        "websocket::stream::async_read_some(buffer,limit)",
+        "websocket::stream::async_read_some(buffers)",
+        "websocket::stream::async_write",
+        "websocket::stream::async_write_some",
+        "websocket::stream::async_ping",
+        "websocket::stream::async_pong",
+        "websocket::stream::async_close",
+        "websocket::stream::async_accept",
+        "websocket::stream::async_accept(buffers)",
+        "websocket::stream::async_accept(request)",
+        "websocket::stream::async_handshake",
+        "websocket::stream::async_handshake(response)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:websocket::stream",
+            "ok:websocket::stream",
+            "call:websocket::stream::accept",
+            "ok:websocket::stream::accept",
+            "call:websocket::stream::read",
+            "fail:websocket::stream::read"
+          ],
+          "allowed": true,
+          "reason": "after accept"
+        },
+        {
+          "events": [
+            "call:websocket::stream",
+            "ok:websocket::stream",
+            "call:websocket::stream::write"
+          ],
+          "allowed": false,
+          "reason": "no handshake"
+        },
+        {
+          "events": [
+            "call:websocket::stream",
+            "ok:websocket::stream",
+            "call:websocket::stream::accept",
+            "fail:websocket::stream::accept",
+            "call:websocket::stream::ping"
+          ],
+          "allowed": false,
+          "reason": "the handshake failed"
+        }
+      ]
+    },
+    {
+      "id": "websocket_write_buffer_before_handshake",
+      "rule": "stream.hpp:620-624: 'The write buffer size can only be changed when the stream is not open. Undefined behavior results if the option is modified after a successful WebSocket handshake.'",
+      "formula": "G(open -> X(!set W ctor))",
+      "predicates": {
+        "open": {
+          "meaning": "the opening handshake succeeded",
+          "events": [
+            "ok:websocket::stream::accept",
+            "ok:websocket::stream::accept(buffers)",
+            "ok:websocket::stream::accept(request)",
+            "ok:websocket::stream::handshake",
+            "ok:websocket::stream::handshake(response)",
+            "ok:websocket::stream::async_accept",
+            "ok:websocket::stream::async_accept(buffers)",
+            "ok:websocket::stream::async_accept(request)",
+            "ok:websocket::stream::async_handshake",
+            "ok:websocket::stream::async_handshake(response)"
+          ]
+        },
+        "set": {
+          "meaning": "write_buffer_bytes(n) is about to be called",
+          "events": [
+            "call:websocket::stream::write_buffer_bytes(n)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new stream",
+          "events": [
+            "ok:websocket::stream"
+          ]
+        }
+      },
+      "apis": [
+        "websocket::stream",
+        "websocket::stream::write_buffer_bytes(n)",
+        "websocket::stream::accept",
+        "websocket::stream::accept(buffers)",
+        "websocket::stream::accept(request)",
+        "websocket::stream::handshake",
+        "websocket::stream::handshake(response)",
+        "websocket::stream::async_accept",
+        "websocket::stream::async_accept(buffers)",
+        "websocket::stream::async_accept(request)",
+        "websocket::stream::async_handshake",
+        "websocket::stream::async_handshake(response)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:websocket::stream",
+            "ok:websocket::stream",
+            "call:websocket::stream::write_buffer_bytes(n)",
+            "ok:websocket::stream::write_buffer_bytes(n)",
+            "call:websocket::stream::accept",
+            "ok:websocket::stream::accept"
+          ],
+          "allowed": true,
+          "reason": "set before the handshake"
+        },
+        {
+          "events": [
+            "call:websocket::stream::accept",
+            "ok:websocket::stream::accept",
+            "call:websocket::stream::write_buffer_bytes(n)"
+          ],
+          "allowed": false,
+          "reason": "after the handshake"
+        }
+      ]
+    },
+    {
+      "id": "websocket_frame_before_message_type",
+      "rule": "stream.hpp:305-325: got_text() and got_binary() describe the last received message frame; 'If there is no last message frame, the return value is undefined.'",
+      "formula": "(!query W frame) & G(ctor -> X(!query W frame))",
+      "predicates": {
+        "query": {
+          "meaning": "got_text or got_binary is about to be called",
+          "events": [
+            "call:websocket::stream::got_text",
+            "call:websocket::stream::got_binary"
+          ]
+        },
+        "frame": {
+          "meaning": "a read returned message data",
+          "events": [
+            "ok:websocket::stream::read",
+            "ok:websocket::stream::read_some(buffer,limit)",
+            "ok:websocket::stream::read_some(buffers)",
+            "ok:websocket::stream::async_read",
+            "ok:websocket::stream::async_read_some(buffer,limit)",
+            "ok:websocket::stream::async_read_some(buffers)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new stream",
+          "events": [
+            "ok:websocket::stream"
+          ]
+        }
+      },
+      "apis": [
+        "websocket::stream",
+        "websocket::stream::got_text",
+        "websocket::stream::got_binary",
+        "websocket::stream::read",
+        "websocket::stream::read_some(buffer,limit)",
+        "websocket::stream::read_some(buffers)",
+        "websocket::stream::async_read",
+        "websocket::stream::async_read_some(buffer,limit)",
+        "websocket::stream::async_read_some(buffers)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:websocket::stream",
+            "ok:websocket::stream",
+            "call:websocket::stream::got_text"
+          ],
+          "allowed": false,
+          "reason": "nothing read"
+        },
+        {
+          "events": [
+            "call:websocket::stream",
+            "ok:websocket::stream",
+            "call:websocket::stream::read",
+            "ok:websocket::stream::read",
+            "call:websocket::stream::got_binary",
+            "ok:websocket::stream::got_binary"
+          ],
+          "allowed": true,
+          "reason": "a message was read"
+        }
+      ]
+    },
+    {
+      "id": "websocket_status_after_handshake",
+      "rule": "stream.hpp:433-436: get_status is \"Used to check the status of the permessage-deflate extension after the WebSocket handshake.\" Before a handshake it copies pmd_config_, which is not initialised until a handshake reads or negotiates the extension (detail/impl_base.hpp:57, impl/stream.hpp:183-185).",
+      "formula": "(!status W open) & G(ctor -> X(!status W open))",
+      "predicates": {
+        "status": {
+          "meaning": "get_status is about to be called",
+          "events": [
+            "call:websocket::stream::get_status"
+          ]
+        },
+        "open": {
+          "meaning": "the opening handshake succeeded",
+          "events": [
+            "ok:websocket::stream::accept",
+            "ok:websocket::stream::accept(buffers)",
+            "ok:websocket::stream::accept(request)",
+            "ok:websocket::stream::handshake",
+            "ok:websocket::stream::handshake(response)",
+            "ok:websocket::stream::async_accept",
+            "ok:websocket::stream::async_accept(buffers)",
+            "ok:websocket::stream::async_accept(request)",
+            "ok:websocket::stream::async_handshake",
+            "ok:websocket::stream::async_handshake(response)"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new stream",
+          "events": [
+            "ok:websocket::stream"
+          ]
+        }
+      },
+      "apis": [
+        "websocket::stream",
+        "websocket::stream::get_status",
+        "websocket::stream::accept",
+        "websocket::stream::accept(buffers)",
+        "websocket::stream::accept(request)",
+        "websocket::stream::handshake",
+        "websocket::stream::handshake(response)",
+        "websocket::stream::async_accept",
+        "websocket::stream::async_accept(buffers)",
+        "websocket::stream::async_accept(request)",
+        "websocket::stream::async_handshake",
+        "websocket::stream::async_handshake(response)"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:websocket::stream",
+            "ok:websocket::stream",
+            "call:websocket::stream::get_status"
+          ],
+          "allowed": false,
+          "reason": "no handshake yet"
+        },
+        {
+          "events": [
+            "call:websocket::stream",
+            "ok:websocket::stream",
+            "call:websocket::stream::accept",
+            "ok:websocket::stream::accept",
+            "call:websocket::stream::get_status",
+            "fail:websocket::stream::get_status"
+          ],
+          "allowed": true,
+          "reason": "after accept"
+        }
+      ]
+    },
+    {
+      "id": "saved_handler_value",
+      "rule": "saved_handler.hpp:70,86: emplace 'Requires this->has_value() == false'; saved_handler.hpp:112: invoke 'Requires this->has_value() == true'. The move constructor and move assignment dereference the source's handler and assignment asserts the target is empty (impl/saved_handler.ipp:26-41). reset, maybe_invoke and invoke empty the container, and so does moving its handler out.",
+      "formula": "(!need_value W fill) & G(drain -> X(!need_value W fill)) & G(fill -> X(!need_empty W drain))",
+      "predicates": {
+        "fill": {
+          "meaning": "a handler was stored",
+          "events": [
+            "ok:saved_handler::emplace",
+            "ok:saved_handler::emplace(alloc)",
+            "ok:saved_handler::operator="
+          ]
+        },
+        "drain": {
+          "meaning": "the stored handler was invoked, destroyed or moved out",
+          "events": [
+            "ok:saved_handler::invoke",
+            "ok:saved_handler::maybe_invoke",
+            "ok:saved_handler::reset",
+            "ok:saved_handler::saved_handler"
+          ]
+        },
+        "need_value": {
+          "meaning": "an operation that requires a stored handler is about to be called",
+          "events": [
+            "call:saved_handler::invoke",
+            "call:saved_handler::saved_handler"
+          ]
+        },
+        "need_empty": {
+          "meaning": "an operation that requires an empty container is about to be called",
+          "events": [
+            "call:saved_handler::emplace",
+            "call:saved_handler::emplace(alloc)",
+            "call:saved_handler::operator="
+          ]
+        }
+      },
+      "apis": [
+        "saved_handler::emplace",
+        "saved_handler::emplace(alloc)",
+        "saved_handler::operator=",
+        "saved_handler::invoke",
+        "saved_handler::maybe_invoke",
+        "saved_handler::reset",
+        "saved_handler::saved_handler"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:saved_handler::emplace",
+            "ok:saved_handler::emplace",
+            "call:saved_handler::invoke",
+            "ok:saved_handler::invoke",
+            "call:saved_handler::emplace(alloc)",
+            "ok:saved_handler::emplace(alloc)",
+            "call:saved_handler::saved_handler",
+            "ok:saved_handler::saved_handler"
+          ],
+          "allowed": true,
+          "reason": "each use finds the state it requires"
+        },
+        {
+          "events": [
+            "call:saved_handler::invoke"
+          ],
+          "allowed": false,
+          "reason": "nothing stored"
+        },
+        {
+          "events": [
+            "call:saved_handler::emplace",
+            "ok:saved_handler::emplace",
+            "call:saved_handler::operator="
+          ],
+          "allowed": false,
+          "reason": "assigning into a container that holds a handler"
+        },
+        {
+          "events": [
+            "call:saved_handler::emplace",
+            "ok:saved_handler::emplace",
+            "call:saved_handler::reset",
+            "ok:saved_handler::reset",
+            "call:saved_handler::saved_handler"
+          ],
+          "allowed": false,
+          "reason": "moving from an empty container"
+        }
+      ]
+    },
+    {
+      "id": "async_base_complete_once",
+      "rule": "async_base.hpp:379-384: after release_handler 'the only valid operations on the base object are move construction and destruction'; async_base.hpp:396-397,437-438: 'It is undefined to call either complete or complete_now more than once.'",
+      "formula": "G(released -> X(!use W ctor)) & G(completed -> X(!finish W ctor))",
+      "predicates": {
+        "released": {
+          "meaning": "the handler was moved out",
+          "events": [
+            "ok:async_base::release_handler"
+          ]
+        },
+        "use": {
+          "meaning": "a member of the base object is about to be called",
+          "events": [
+            "call:async_base::get_allocator",
+            "call:async_base::get_executor",
+            "call:async_base::get_immediate_executor",
+            "call:async_base::get_cancellation_slot",
+            "call:async_base::set_allowed_cancellation",
+            "call:async_base::handler",
+            "call:asio_handler_is_continuation",
+            "call:async_base::release_handler",
+            "call:async_base::complete",
+            "call:async_base::complete_now"
+          ]
+        },
+        "completed": {
+          "meaning": "the final handler was invoked",
+          "events": [
+            "ok:async_base::complete",
+            "ok:async_base::complete_now"
+          ]
+        },
+        "finish": {
+          "meaning": "complete or complete_now is about to be called",
+          "events": [
+            "call:async_base::complete",
+            "call:async_base::complete_now"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new base object",
+          "events": [
+            "ok:async_base"
+          ]
+        }
+      },
+      "apis": [
+        "async_base",
+        "async_base::get_allocator",
+        "async_base::get_executor",
+        "async_base::get_immediate_executor",
+        "async_base::get_cancellation_slot",
+        "async_base::set_allowed_cancellation",
+        "async_base::handler",
+        "asio_handler_is_continuation",
+        "async_base::release_handler",
+        "async_base::complete",
+        "async_base::complete_now"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:async_base",
+            "ok:async_base",
+            "call:async_base::get_executor",
+            "ok:async_base::get_executor",
+            "call:async_base::complete",
+            "ok:async_base::complete",
+            "call:async_base",
+            "ok:async_base",
+            "call:async_base::complete_now",
+            "ok:async_base::complete_now"
+          ],
+          "allowed": true,
+          "reason": "one completion per base object"
+        },
+        {
+          "events": [
+            "call:async_base",
+            "ok:async_base",
+            "call:async_base::complete_now",
+            "ok:async_base::complete_now",
+            "call:async_base::complete"
+          ],
+          "allowed": false,
+          "reason": "completed twice"
+        },
+        {
+          "events": [
+            "call:async_base",
+            "ok:async_base",
+            "call:async_base::release_handler",
+            "ok:async_base::release_handler",
+            "call:async_base::get_executor"
+          ],
+          "allowed": false,
+          "reason": "used after the handler was released"
+        }
+      ]
+    },
+    {
+      "id": "stable_async_base_complete_once",
+      "rule": "async_base.hpp:396-397,437-438 (inherited by stable_async_base): 'It is undefined to call either complete or complete_now more than once.'",
+      "formula": "G(completed -> X(!finish W ctor))",
+      "predicates": {
+        "completed": {
+          "meaning": "the final handler was invoked",
+          "events": [
+            "ok:stable_async_base::complete",
+            "ok:stable_async_base::complete_now"
+          ]
+        },
+        "finish": {
+          "meaning": "complete or complete_now is about to be called",
+          "events": [
+            "call:stable_async_base::complete",
+            "call:stable_async_base::complete_now"
+          ]
+        },
+        "ctor": {
+          "meaning": "a new base object",
+          "events": [
+            "ok:stable_async_base"
+          ]
+        }
+      },
+      "apis": [
+        "stable_async_base",
+        "stable_async_base::complete",
+        "stable_async_base::complete_now"
+      ],
+      "examples": [
+        {
+          "events": [
+            "call:stable_async_base",
+            "ok:stable_async_base",
+            "call:allocate_stable",
+            "ok:allocate_stable",
+            "call:stable_async_base::complete",
+            "ok:stable_async_base::complete",
+            "call:stable_async_base",
+            "ok:stable_async_base",
+            "call:stable_async_base::complete_now",
+            "ok:stable_async_base::complete_now"
+          ],
+          "allowed": true,
+          "reason": "one completion per base object"
+        },
+        {
+          "events": [
+            "call:stable_async_base",
+            "ok:stable_async_base",
+            "call:stable_async_base::complete",
+            "ok:stable_async_base::complete",
+            "call:stable_async_base::complete_now"
+          ],
+          "allowed": false,
+          "reason": "completed twice"
+        },
+        {
+          "events": [
+            "call:stable_async_base",
+            "ok:stable_async_base",
+            "call:stable_async_base::complete_now",
+            "ok:stable_async_base::complete_now",
+            "call:stable_async_base::complete_now"
+          ],
+          "allowed": false,
+          "reason": "completed twice"
+        }
+      ]
+    }
+  ]
+}

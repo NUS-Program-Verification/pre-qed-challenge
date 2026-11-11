@@ -1,0 +1,85 @@
+{
+  "properties": [
+    {
+      "id": "sha256_context_lifecycle",
+      "rule": "pin.h: phd_sha256_update and phd_layout_hash_sink feed a phd_sha256_t that phd_sha256_init prepared; phd_sha256_final consumes it and the context must be re-initialised before further updates. The harness keeps one context.",
+      "formula": "(!h_use W h_init) & G(h_final -> X(!h_use W h_init))",
+      "apis": [
+        "phd_sha256_init",
+        "phd_sha256_update",
+        "phd_layout_hash_sink",
+        "phd_sha256_final"
+      ],
+      "predicates": {
+        "h_init": {
+          "meaning": "phd_sha256_init ran",
+          "events": [
+            "ok:phd_sha256_init"
+          ]
+        },
+        "h_final": {
+          "meaning": "phd_sha256_final is about to consume the context",
+          "events": [
+            "call:phd_sha256_final"
+          ]
+        },
+        "h_use": {
+          "meaning": "a routine feeding or finishing the context is about to be called",
+          "events": [
+            "call:phd_sha256_update",
+            "call:phd_layout_hash_sink",
+            "call:phd_sha256_final"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:phd_sha256_init",
+            "ok:phd_sha256_init",
+            "call:phd_sha256_update",
+            "ok:phd_sha256_update",
+            "call:phd_layout_hash_sink",
+            "ok:phd_layout_hash_sink",
+            "call:phd_sha256_final",
+            "ok:phd_sha256_final",
+            "call:phd_sha256_init",
+            "ok:phd_sha256_init",
+            "call:phd_sha256_update"
+          ],
+          "allowed": true,
+          "reason": "init, feed, final, re-init"
+        },
+        {
+          "events": [
+            "call:phd_sha256_update"
+          ],
+          "allowed": false,
+          "reason": "no init"
+        },
+        {
+          "events": [
+            "call:phd_sha256_init",
+            "ok:phd_sha256_init",
+            "call:phd_sha256_final",
+            "ok:phd_sha256_final",
+            "call:phd_sha256_final"
+          ],
+          "allowed": false,
+          "reason": "final twice"
+        },
+        {
+          "events": [
+            "call:phd_sha256_init",
+            "ok:phd_sha256_init",
+            "call:phd_sha256_final",
+            "ok:phd_sha256_final",
+            "call:phd_sha256_update"
+          ],
+          "allowed": false,
+          "reason": "update after final"
+        }
+      ]
+    }
+  ]
+}

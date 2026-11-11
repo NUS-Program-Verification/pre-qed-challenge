@@ -1,0 +1,5 @@
+{
+  "languageStandard": "gnu11",
+  "includeRoots": ["include"],
+  "preprocessorDefinitions": ["_GNU_SOURCE"]
+}

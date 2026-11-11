@@ -1,0 +1,1400 @@
+{
+  "properties": [
+    {
+      "id": "str_header_then_body",
+      "rule": "pack.hpp: pack_str(len) writes only the header; the caller must follow it with pack_str_body carrying exactly len bytes before any other pack call, otherwise the stream is malformed. pack_str_body without a preceding header writes raw bytes into the stream.",
+      "formula": "(!str_body W str_hdr) & G(str_hdr -> X(!other_pack W str_body)) & G(str_body -> X(!str_body W str_hdr))",
+      "apis": [
+        "msgpack::pack",
+        "packer::pack<object>",
+        "packer::pack<std::map>",
+        "packer::pack<std::string>",
+        "packer::pack<std::vector>",
+        "packer::pack_array",
+        "packer::pack_bin",
+        "packer::pack_bin_body",
+        "packer::pack_char",
+        "packer::pack_double",
+        "packer::pack_ext",
+        "packer::pack_ext_body",
+        "packer::pack_false",
+        "packer::pack_fix_int16",
+        "packer::pack_fix_int32",
+        "packer::pack_fix_int64",
+        "packer::pack_fix_int8",
+        "packer::pack_fix_uint16",
+        "packer::pack_fix_uint32",
+        "packer::pack_fix_uint64",
+        "packer::pack_fix_uint8",
+        "packer::pack_float",
+        "packer::pack_int",
+        "packer::pack_int16",
+        "packer::pack_int32",
+        "packer::pack_int64",
+        "packer::pack_int8",
+        "packer::pack_long",
+        "packer::pack_long_long",
+        "packer::pack_map",
+        "packer::pack_nil",
+        "packer::pack_short",
+        "packer::pack_signed_char",
+        "packer::pack_str",
+        "packer::pack_str_body",
+        "packer::pack_true",
+        "packer::pack_uint16",
+        "packer::pack_uint32",
+        "packer::pack_uint64",
+        "packer::pack_uint8",
+        "packer::pack_unsigned_char",
+        "packer::pack_unsigned_int",
+        "packer::pack_unsigned_long",
+        "packer::pack_unsigned_long_long",
+        "packer::pack_unsigned_short",
+        "packer::pack_v4raw",
+        "packer::pack_v4raw_body",
+        "packer::pack_wchar",
+        "packer::pack<type::ext>",
+        "packer::pack<type::ext_ref>",
+        "packer::pack<type::raw_ref>",
+        "packer::pack<type::v4raw_ref>",
+        "packer::pack<type::array_ref>",
+        "packer::pack<type::fix_int>",
+        "packer::pack<type::tuple>",
+        "define_array::msgpack_pack",
+        "define_map::msgpack_pack"
+      ],
+      "predicates": {
+        "str_hdr": {
+          "meaning": "pack_str header is about to be written",
+          "events": [
+            "call:packer::pack_str"
+          ]
+        },
+        "str_body": {
+          "meaning": "pack_str_body is about to be written",
+          "events": [
+            "call:packer::pack_str_body"
+          ]
+        },
+        "other_pack": {
+          "meaning": "any other packer output call",
+          "events": [
+            "call:packer::pack_uint8",
+            "call:packer::pack_uint16",
+            "call:packer::pack_uint32",
+            "call:packer::pack_uint64",
+            "call:packer::pack_int8",
+            "call:packer::pack_int16",
+            "call:packer::pack_int32",
+            "call:packer::pack_int64",
+            "call:packer::pack_fix_uint8",
+            "call:packer::pack_fix_uint16",
+            "call:packer::pack_fix_uint32",
+            "call:packer::pack_fix_uint64",
+            "call:packer::pack_fix_int8",
+            "call:packer::pack_fix_int16",
+            "call:packer::pack_fix_int32",
+            "call:packer::pack_fix_int64",
+            "call:packer::pack_char",
+            "call:packer::pack_signed_char",
+            "call:packer::pack_short",
+            "call:packer::pack_int",
+            "call:packer::pack_long",
+            "call:packer::pack_long_long",
+            "call:packer::pack_unsigned_char",
+            "call:packer::pack_unsigned_short",
+            "call:packer::pack_unsigned_int",
+            "call:packer::pack_unsigned_long",
+            "call:packer::pack_unsigned_long_long",
+            "call:packer::pack_float",
+            "call:packer::pack_double",
+            "call:packer::pack_nil",
+            "call:packer::pack_true",
+            "call:packer::pack_false",
+            "call:packer::pack_array",
+            "call:packer::pack_map",
+            "call:packer::pack_v4raw",
+            "call:packer::pack_bin",
+            "call:packer::pack_ext",
+            "call:packer::pack<std::string>",
+            "call:packer::pack<std::vector>",
+            "call:packer::pack<std::map>",
+            "call:packer::pack<object>",
+            "call:msgpack::pack",
+            "call:packer::pack_v4raw_body",
+            "call:packer::pack_bin_body",
+            "call:packer::pack_ext_body",
+            "call:packer::pack_wchar",
+            "call:packer::pack<type::ext>",
+            "call:packer::pack<type::ext_ref>",
+            "call:packer::pack<type::raw_ref>",
+            "call:packer::pack<type::v4raw_ref>",
+            "call:packer::pack<type::array_ref>",
+            "call:packer::pack<type::fix_int>",
+            "call:packer::pack<type::tuple>",
+            "call:define_array::msgpack_pack",
+            "call:define_map::msgpack_pack"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:packer::pack_str",
+            "ok:packer::pack_str",
+            "call:packer::pack_str_body",
+            "ok:packer::pack_str_body",
+            "call:packer::pack_nil",
+            "ok:packer::pack_nil"
+          ],
+          "allowed": true,
+          "reason": "header, body, then other data"
+        },
+        {
+          "events": [
+            "call:packer::pack_str_body"
+          ],
+          "allowed": false,
+          "reason": "body without header"
+        },
+        {
+          "events": [
+            "call:packer::pack_str",
+            "ok:packer::pack_str",
+            "call:packer::pack_int",
+            "ok:packer::pack_int"
+          ],
+          "allowed": false,
+          "reason": "another value between header and body"
+        },
+        {
+          "events": [
+            "call:packer::pack_str",
+            "ok:packer::pack_str",
+            "call:packer::pack_str_body",
+            "ok:packer::pack_str_body",
+            "call:packer::pack_str_body"
+          ],
+          "allowed": false,
+          "reason": "two bodies for one header"
+        }
+      ]
+    },
+    {
+      "id": "v4raw_header_then_body",
+      "rule": "pack.hpp: pack_v4raw(len) writes only the header; the caller must follow it with pack_v4raw_body carrying exactly len bytes before any other pack call, otherwise the stream is malformed. pack_v4raw_body without a preceding header writes raw bytes into the stream.",
+      "formula": "(!v4raw_body W v4raw_hdr) & G(v4raw_hdr -> X(!other_pack W v4raw_body)) & G(v4raw_body -> X(!v4raw_body W v4raw_hdr))",
+      "apis": [
+        "msgpack::pack",
+        "packer::pack<object>",
+        "packer::pack<std::map>",
+        "packer::pack<std::string>",
+        "packer::pack<std::vector>",
+        "packer::pack_array",
+        "packer::pack_bin",
+        "packer::pack_bin_body",
+        "packer::pack_char",
+        "packer::pack_double",
+        "packer::pack_ext",
+        "packer::pack_ext_body",
+        "packer::pack_false",
+        "packer::pack_fix_int16",
+        "packer::pack_fix_int32",
+        "packer::pack_fix_int64",
+        "packer::pack_fix_int8",
+        "packer::pack_fix_uint16",
+        "packer::pack_fix_uint32",
+        "packer::pack_fix_uint64",
+        "packer::pack_fix_uint8",
+        "packer::pack_float",
+        "packer::pack_int",
+        "packer::pack_int16",
+        "packer::pack_int32",
+        "packer::pack_int64",
+        "packer::pack_int8",
+        "packer::pack_long",
+        "packer::pack_long_long",
+        "packer::pack_map",
+        "packer::pack_nil",
+        "packer::pack_short",
+        "packer::pack_signed_char",
+        "packer::pack_str",
+        "packer::pack_str_body",
+        "packer::pack_true",
+        "packer::pack_uint16",
+        "packer::pack_uint32",
+        "packer::pack_uint64",
+        "packer::pack_uint8",
+        "packer::pack_unsigned_char",
+        "packer::pack_unsigned_int",
+        "packer::pack_unsigned_long",
+        "packer::pack_unsigned_long_long",
+        "packer::pack_unsigned_short",
+        "packer::pack_v4raw",
+        "packer::pack_v4raw_body",
+        "packer::pack_wchar",
+        "packer::pack<type::ext>",
+        "packer::pack<type::ext_ref>",
+        "packer::pack<type::raw_ref>",
+        "packer::pack<type::v4raw_ref>",
+        "packer::pack<type::array_ref>",
+        "packer::pack<type::fix_int>",
+        "packer::pack<type::tuple>",
+        "define_array::msgpack_pack",
+        "define_map::msgpack_pack"
+      ],
+      "predicates": {
+        "v4raw_hdr": {
+          "meaning": "pack_v4raw header is about to be written",
+          "events": [
+            "call:packer::pack_v4raw"
+          ]
+        },
+        "v4raw_body": {
+          "meaning": "pack_v4raw_body is about to be written",
+          "events": [
+            "call:packer::pack_v4raw_body"
+          ]
+        },
+        "other_pack": {
+          "meaning": "any other packer output call",
+          "events": [
+            "call:packer::pack_uint8",
+            "call:packer::pack_uint16",
+            "call:packer::pack_uint32",
+            "call:packer::pack_uint64",
+            "call:packer::pack_int8",
+            "call:packer::pack_int16",
+            "call:packer::pack_int32",
+            "call:packer::pack_int64",
+            "call:packer::pack_fix_uint8",
+            "call:packer::pack_fix_uint16",
+            "call:packer::pack_fix_uint32",
+            "call:packer::pack_fix_uint64",
+            "call:packer::pack_fix_int8",
+            "call:packer::pack_fix_int16",
+            "call:packer::pack_fix_int32",
+            "call:packer::pack_fix_int64",
+            "call:packer::pack_char",
+            "call:packer::pack_signed_char",
+            "call:packer::pack_short",
+            "call:packer::pack_int",
+            "call:packer::pack_long",
+            "call:packer::pack_long_long",
+            "call:packer::pack_unsigned_char",
+            "call:packer::pack_unsigned_short",
+            "call:packer::pack_unsigned_int",
+            "call:packer::pack_unsigned_long",
+            "call:packer::pack_unsigned_long_long",
+            "call:packer::pack_float",
+            "call:packer::pack_double",
+            "call:packer::pack_nil",
+            "call:packer::pack_true",
+            "call:packer::pack_false",
+            "call:packer::pack_array",
+            "call:packer::pack_map",
+            "call:packer::pack_str",
+            "call:packer::pack_bin",
+            "call:packer::pack_ext",
+            "call:packer::pack<std::string>",
+            "call:packer::pack<std::vector>",
+            "call:packer::pack<std::map>",
+            "call:packer::pack<object>",
+            "call:msgpack::pack",
+            "call:packer::pack_str_body",
+            "call:packer::pack_bin_body",
+            "call:packer::pack_ext_body",
+            "call:packer::pack_wchar",
+            "call:packer::pack<type::ext>",
+            "call:packer::pack<type::ext_ref>",
+            "call:packer::pack<type::raw_ref>",
+            "call:packer::pack<type::v4raw_ref>",
+            "call:packer::pack<type::array_ref>",
+            "call:packer::pack<type::fix_int>",
+            "call:packer::pack<type::tuple>",
+            "call:define_array::msgpack_pack",
+            "call:define_map::msgpack_pack"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:packer::pack_v4raw",
+            "ok:packer::pack_v4raw",
+            "call:packer::pack_v4raw_body",
+            "ok:packer::pack_v4raw_body",
+            "call:packer::pack_nil",
+            "ok:packer::pack_nil"
+          ],
+          "allowed": true,
+          "reason": "header, body, then other data"
+        },
+        {
+          "events": [
+            "call:packer::pack_v4raw_body"
+          ],
+          "allowed": false,
+          "reason": "body without header"
+        },
+        {
+          "events": [
+            "call:packer::pack_v4raw",
+            "ok:packer::pack_v4raw",
+            "call:packer::pack_int",
+            "ok:packer::pack_int"
+          ],
+          "allowed": false,
+          "reason": "another value between header and body"
+        },
+        {
+          "events": [
+            "call:packer::pack_v4raw",
+            "ok:packer::pack_v4raw",
+            "call:packer::pack_v4raw_body",
+            "ok:packer::pack_v4raw_body",
+            "call:packer::pack_v4raw_body"
+          ],
+          "allowed": false,
+          "reason": "two bodies for one header"
+        }
+      ]
+    },
+    {
+      "id": "bin_header_then_body",
+      "rule": "pack.hpp: pack_bin(len) writes only the header; the caller must follow it with pack_bin_body carrying exactly len bytes before any other pack call, otherwise the stream is malformed. pack_bin_body without a preceding header writes raw bytes into the stream.",
+      "formula": "(!bin_body W bin_hdr) & G(bin_hdr -> X(!other_pack W bin_body)) & G(bin_body -> X(!bin_body W bin_hdr))",
+      "apis": [
+        "msgpack::pack",
+        "packer::pack<object>",
+        "packer::pack<std::map>",
+        "packer::pack<std::string>",
+        "packer::pack<std::vector>",
+        "packer::pack_array",
+        "packer::pack_bin",
+        "packer::pack_bin_body",
+        "packer::pack_char",
+        "packer::pack_double",
+        "packer::pack_ext",
+        "packer::pack_ext_body",
+        "packer::pack_false",
+        "packer::pack_fix_int16",
+        "packer::pack_fix_int32",
+        "packer::pack_fix_int64",
+        "packer::pack_fix_int8",
+        "packer::pack_fix_uint16",
+        "packer::pack_fix_uint32",
+        "packer::pack_fix_uint64",
+        "packer::pack_fix_uint8",
+        "packer::pack_float",
+        "packer::pack_int",
+        "packer::pack_int16",
+        "packer::pack_int32",
+        "packer::pack_int64",
+        "packer::pack_int8",
+        "packer::pack_long",
+        "packer::pack_long_long",
+        "packer::pack_map",
+        "packer::pack_nil",
+        "packer::pack_short",
+        "packer::pack_signed_char",
+        "packer::pack_str",
+        "packer::pack_str_body",
+        "packer::pack_true",
+        "packer::pack_uint16",
+        "packer::pack_uint32",
+        "packer::pack_uint64",
+        "packer::pack_uint8",
+        "packer::pack_unsigned_char",
+        "packer::pack_unsigned_int",
+        "packer::pack_unsigned_long",
+        "packer::pack_unsigned_long_long",
+        "packer::pack_unsigned_short",
+        "packer::pack_v4raw",
+        "packer::pack_v4raw_body",
+        "packer::pack_wchar",
+        "packer::pack<type::ext>",
+        "packer::pack<type::ext_ref>",
+        "packer::pack<type::raw_ref>",
+        "packer::pack<type::v4raw_ref>",
+        "packer::pack<type::array_ref>",
+        "packer::pack<type::fix_int>",
+        "packer::pack<type::tuple>",
+        "define_array::msgpack_pack",
+        "define_map::msgpack_pack"
+      ],
+      "predicates": {
+        "bin_hdr": {
+          "meaning": "pack_bin header is about to be written",
+          "events": [
+            "call:packer::pack_bin"
+          ]
+        },
+        "bin_body": {
+          "meaning": "pack_bin_body is about to be written",
+          "events": [
+            "call:packer::pack_bin_body"
+          ]
+        },
+        "other_pack": {
+          "meaning": "any other packer output call",
+          "events": [
+            "call:packer::pack_uint8",
+            "call:packer::pack_uint16",
+            "call:packer::pack_uint32",
+            "call:packer::pack_uint64",
+            "call:packer::pack_int8",
+            "call:packer::pack_int16",
+            "call:packer::pack_int32",
+            "call:packer::pack_int64",
+            "call:packer::pack_fix_uint8",
+            "call:packer::pack_fix_uint16",
+            "call:packer::pack_fix_uint32",
+            "call:packer::pack_fix_uint64",
+            "call:packer::pack_fix_int8",
+            "call:packer::pack_fix_int16",
+            "call:packer::pack_fix_int32",
+            "call:packer::pack_fix_int64",
+            "call:packer::pack_char",
+            "call:packer::pack_signed_char",
+            "call:packer::pack_short",
+            "call:packer::pack_int",
+            "call:packer::pack_long",
+            "call:packer::pack_long_long",
+            "call:packer::pack_unsigned_char",
+            "call:packer::pack_unsigned_short",
+            "call:packer::pack_unsigned_int",
+            "call:packer::pack_unsigned_long",
+            "call:packer::pack_unsigned_long_long",
+            "call:packer::pack_float",
+            "call:packer::pack_double",
+            "call:packer::pack_nil",
+            "call:packer::pack_true",
+            "call:packer::pack_false",
+            "call:packer::pack_array",
+            "call:packer::pack_map",
+            "call:packer::pack_str",
+            "call:packer::pack_v4raw",
+            "call:packer::pack_ext",
+            "call:packer::pack<std::string>",
+            "call:packer::pack<std::vector>",
+            "call:packer::pack<std::map>",
+            "call:packer::pack<object>",
+            "call:msgpack::pack",
+            "call:packer::pack_str_body",
+            "call:packer::pack_v4raw_body",
+            "call:packer::pack_ext_body",
+            "call:packer::pack_wchar",
+            "call:packer::pack<type::ext>",
+            "call:packer::pack<type::ext_ref>",
+            "call:packer::pack<type::raw_ref>",
+            "call:packer::pack<type::v4raw_ref>",
+            "call:packer::pack<type::array_ref>",
+            "call:packer::pack<type::fix_int>",
+            "call:packer::pack<type::tuple>",
+            "call:define_array::msgpack_pack",
+            "call:define_map::msgpack_pack"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:packer::pack_bin",
+            "ok:packer::pack_bin",
+            "call:packer::pack_bin_body",
+            "ok:packer::pack_bin_body",
+            "call:packer::pack_nil",
+            "ok:packer::pack_nil"
+          ],
+          "allowed": true,
+          "reason": "header, body, then other data"
+        },
+        {
+          "events": [
+            "call:packer::pack_bin_body"
+          ],
+          "allowed": false,
+          "reason": "body without header"
+        },
+        {
+          "events": [
+            "call:packer::pack_bin",
+            "ok:packer::pack_bin",
+            "call:packer::pack_int",
+            "ok:packer::pack_int"
+          ],
+          "allowed": false,
+          "reason": "another value between header and body"
+        },
+        {
+          "events": [
+            "call:packer::pack_bin",
+            "ok:packer::pack_bin",
+            "call:packer::pack_bin_body",
+            "ok:packer::pack_bin_body",
+            "call:packer::pack_bin_body"
+          ],
+          "allowed": false,
+          "reason": "two bodies for one header"
+        }
+      ]
+    },
+    {
+      "id": "ext_header_then_body",
+      "rule": "pack.hpp: pack_ext(len) writes only the header; the caller must follow it with pack_ext_body carrying exactly len bytes before any other pack call, otherwise the stream is malformed. pack_ext_body without a preceding header writes raw bytes into the stream.",
+      "formula": "(!ext_body W ext_hdr) & G(ext_hdr -> X(!other_pack W ext_body)) & G(ext_body -> X(!ext_body W ext_hdr))",
+      "apis": [
+        "msgpack::pack",
+        "packer::pack<object>",
+        "packer::pack<std::map>",
+        "packer::pack<std::string>",
+        "packer::pack<std::vector>",
+        "packer::pack_array",
+        "packer::pack_bin",
+        "packer::pack_bin_body",
+        "packer::pack_char",
+        "packer::pack_double",
+        "packer::pack_ext",
+        "packer::pack_ext_body",
+        "packer::pack_false",
+        "packer::pack_fix_int16",
+        "packer::pack_fix_int32",
+        "packer::pack_fix_int64",
+        "packer::pack_fix_int8",
+        "packer::pack_fix_uint16",
+        "packer::pack_fix_uint32",
+        "packer::pack_fix_uint64",
+        "packer::pack_fix_uint8",
+        "packer::pack_float",
+        "packer::pack_int",
+        "packer::pack_int16",
+        "packer::pack_int32",
+        "packer::pack_int64",
+        "packer::pack_int8",
+        "packer::pack_long",
+        "packer::pack_long_long",
+        "packer::pack_map",
+        "packer::pack_nil",
+        "packer::pack_short",
+        "packer::pack_signed_char",
+        "packer::pack_str",
+        "packer::pack_str_body",
+        "packer::pack_true",
+        "packer::pack_uint16",
+        "packer::pack_uint32",
+        "packer::pack_uint64",
+        "packer::pack_uint8",
+        "packer::pack_unsigned_char",
+        "packer::pack_unsigned_int",
+        "packer::pack_unsigned_long",
+        "packer::pack_unsigned_long_long",
+        "packer::pack_unsigned_short",
+        "packer::pack_v4raw",
+        "packer::pack_v4raw_body",
+        "packer::pack_wchar",
+        "packer::pack<type::ext>",
+        "packer::pack<type::ext_ref>",
+        "packer::pack<type::raw_ref>",
+        "packer::pack<type::v4raw_ref>",
+        "packer::pack<type::array_ref>",
+        "packer::pack<type::fix_int>",
+        "packer::pack<type::tuple>",
+        "define_array::msgpack_pack",
+        "define_map::msgpack_pack"
+      ],
+      "predicates": {
+        "ext_hdr": {
+          "meaning": "pack_ext header is about to be written",
+          "events": [
+            "call:packer::pack_ext"
+          ]
+        },
+        "ext_body": {
+          "meaning": "pack_ext_body is about to be written",
+          "events": [
+            "call:packer::pack_ext_body"
+          ]
+        },
+        "other_pack": {
+          "meaning": "any other packer output call",
+          "events": [
+            "call:packer::pack_uint8",
+            "call:packer::pack_uint16",
+            "call:packer::pack_uint32",
+            "call:packer::pack_uint64",
+            "call:packer::pack_int8",
+            "call:packer::pack_int16",
+            "call:packer::pack_int32",
+            "call:packer::pack_int64",
+            "call:packer::pack_fix_uint8",
+            "call:packer::pack_fix_uint16",
+            "call:packer::pack_fix_uint32",
+            "call:packer::pack_fix_uint64",
+            "call:packer::pack_fix_int8",
+            "call:packer::pack_fix_int16",
+            "call:packer::pack_fix_int32",
+            "call:packer::pack_fix_int64",
+            "call:packer::pack_char",
+            "call:packer::pack_signed_char",
+            "call:packer::pack_short",
+            "call:packer::pack_int",
+            "call:packer::pack_long",
+            "call:packer::pack_long_long",
+            "call:packer::pack_unsigned_char",
+            "call:packer::pack_unsigned_short",
+            "call:packer::pack_unsigned_int",
+            "call:packer::pack_unsigned_long",
+            "call:packer::pack_unsigned_long_long",
+            "call:packer::pack_float",
+            "call:packer::pack_double",
+            "call:packer::pack_nil",
+            "call:packer::pack_true",
+            "call:packer::pack_false",
+            "call:packer::pack_array",
+            "call:packer::pack_map",
+            "call:packer::pack_str",
+            "call:packer::pack_v4raw",
+            "call:packer::pack_bin",
+            "call:packer::pack<std::string>",
+            "call:packer::pack<std::vector>",
+            "call:packer::pack<std::map>",
+            "call:packer::pack<object>",
+            "call:msgpack::pack",
+            "call:packer::pack_str_body",
+            "call:packer::pack_v4raw_body",
+            "call:packer::pack_bin_body",
+            "call:packer::pack_wchar",
+            "call:packer::pack<type::ext>",
+            "call:packer::pack<type::ext_ref>",
+            "call:packer::pack<type::raw_ref>",
+            "call:packer::pack<type::v4raw_ref>",
+            "call:packer::pack<type::array_ref>",
+            "call:packer::pack<type::fix_int>",
+            "call:packer::pack<type::tuple>",
+            "call:define_array::msgpack_pack",
+            "call:define_map::msgpack_pack"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:packer::pack_ext",
+            "ok:packer::pack_ext",
+            "call:packer::pack_ext_body",
+            "ok:packer::pack_ext_body",
+            "call:packer::pack_nil",
+            "ok:packer::pack_nil"
+          ],
+          "allowed": true,
+          "reason": "header, body, then other data"
+        },
+        {
+          "events": [
+            "call:packer::pack_ext_body"
+          ],
+          "allowed": false,
+          "reason": "body without header"
+        },
+        {
+          "events": [
+            "call:packer::pack_ext",
+            "ok:packer::pack_ext",
+            "call:packer::pack_int",
+            "ok:packer::pack_int"
+          ],
+          "allowed": false,
+          "reason": "another value between header and body"
+        },
+        {
+          "events": [
+            "call:packer::pack_ext",
+            "ok:packer::pack_ext",
+            "call:packer::pack_ext_body",
+            "ok:packer::pack_ext_body",
+            "call:packer::pack_ext_body"
+          ],
+          "allowed": false,
+          "reason": "two bodies for one header"
+        }
+      ]
+    },
+    {
+      "id": "vrefbuffer_lifecycle",
+      "rule": "vrefbuffer.hpp: write, append_ref, append_copy, vector, vector_size and clear are members of a constructed vrefbuffer; after destruction they are use-after-free. The harness keeps one vrefbuffer.",
+      "formula": "(!vref_use W vref_new) & G(vref_del -> X(!vref_use W vref_new))",
+      "apis": [
+        "vrefbuffer::vrefbuffer",
+        "vrefbuffer::write",
+        "vrefbuffer::append_copy",
+        "vrefbuffer::append_ref",
+        "vrefbuffer::vector",
+        "vrefbuffer::vector_size",
+        "vrefbuffer::clear",
+        "vrefbuffer::~vrefbuffer",
+        "vrefbuffer::migrate"
+      ],
+      "predicates": {
+        "vref_new": {
+          "meaning": "vrefbuffer constructed",
+          "events": [
+            "ok:vrefbuffer::vrefbuffer"
+          ]
+        },
+        "vref_del": {
+          "meaning": "vrefbuffer about to be destroyed",
+          "events": [
+            "call:vrefbuffer::~vrefbuffer"
+          ]
+        },
+        "vref_use": {
+          "meaning": "a vrefbuffer member is about to be called",
+          "events": [
+            "call:vrefbuffer::write",
+            "call:vrefbuffer::append_copy",
+            "call:vrefbuffer::append_ref",
+            "call:vrefbuffer::vector",
+            "call:vrefbuffer::vector_size",
+            "call:vrefbuffer::clear",
+            "call:vrefbuffer::~vrefbuffer",
+            "call:vrefbuffer::migrate"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:vrefbuffer::vrefbuffer",
+            "ok:vrefbuffer::vrefbuffer",
+            "call:vrefbuffer::append_ref",
+            "ok:vrefbuffer::append_ref",
+            "call:vrefbuffer::vector",
+            "ok:vrefbuffer::vector",
+            "call:vrefbuffer::~vrefbuffer",
+            "ok:vrefbuffer::~vrefbuffer"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:vrefbuffer::write"
+          ],
+          "allowed": false,
+          "reason": "not constructed"
+        },
+        {
+          "events": [
+            "call:vrefbuffer::vrefbuffer",
+            "ok:vrefbuffer::vrefbuffer",
+            "call:vrefbuffer::~vrefbuffer",
+            "ok:vrefbuffer::~vrefbuffer",
+            "call:vrefbuffer::clear"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        }
+      ]
+    },
+    {
+      "id": "zone_lifecycle",
+      "rule": "zone.hpp: allocate_align, allocate_no_align, push_finalizer, clear, swap, zone-constructed objects and unpack(zone, ...) use a live zone; memory from it dies with the zone. The harness keeps one zone.",
+      "formula": "(!zone_use W zone_new) & G(zone_del -> X(!zone_use W zone_new))",
+      "apis": [
+        "zone::zone",
+        "zone::allocate_align",
+        "zone::allocate_no_align",
+        "zone::push_finalizer",
+        "zone::clear",
+        "zone::swap",
+        "zone::~zone",
+        "msgpack::unpack(zone)",
+        "object::object(T,zone)",
+        "zone::allocate",
+        "zone::operator=",
+        "define_array::msgpack_object",
+        "define_map::msgpack_object"
+      ],
+      "predicates": {
+        "zone_new": {
+          "meaning": "zone constructed",
+          "events": [
+            "ok:zone::zone"
+          ]
+        },
+        "zone_del": {
+          "meaning": "zone about to be destroyed",
+          "events": [
+            "call:zone::~zone"
+          ]
+        },
+        "zone_use": {
+          "meaning": "a routine taking the zone is about to be called",
+          "events": [
+            "call:zone::allocate_align",
+            "call:zone::allocate_no_align",
+            "call:zone::push_finalizer",
+            "call:zone::clear",
+            "call:zone::swap",
+            "call:zone::~zone",
+            "call:msgpack::unpack(zone)",
+            "call:object::object(T,zone)",
+            "call:zone::allocate",
+            "call:zone::operator=",
+            "call:define_array::msgpack_object",
+            "call:define_map::msgpack_object"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:zone::zone",
+            "ok:zone::zone",
+            "call:msgpack::unpack(zone)",
+            "ok:msgpack::unpack(zone)",
+            "call:zone::clear",
+            "ok:zone::clear",
+            "call:zone::~zone",
+            "ok:zone::~zone"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:zone::allocate_align"
+          ],
+          "allowed": false,
+          "reason": "no zone"
+        },
+        {
+          "events": [
+            "call:zone::zone",
+            "ok:zone::zone",
+            "call:zone::~zone",
+            "ok:zone::~zone",
+            "call:zone::~zone"
+          ],
+          "allowed": false,
+          "reason": "double destroy"
+        }
+      ]
+    },
+    {
+      "id": "unpacker_lifecycle",
+      "rule": "unpack.hpp / wiki v1_1_cpp_unpacker: all unpacker members operate on a constructed unpacker; after destruction they are use-after-free. The harness keeps one unpacker.",
+      "formula": "(!unp_use W unp_new) & G(unp_del -> X(!unp_use W unp_new))",
+      "apis": [
+        "unpacker::unpacker",
+        "unpacker::reserve_buffer",
+        "unpacker::buffer_capacity",
+        "unpacker::buffer",
+        "unpacker::buffer_consumed",
+        "unpacker::next",
+        "unpacker::message_size",
+        "unpacker::parsed_size",
+        "unpacker::nonparsed_size",
+        "unpacker::nonparsed_buffer",
+        "unpacker::skip_nonparsed_buffer",
+        "unpacker::remove_nonparsed_buffer",
+        "unpacker::reset",
+        "unpacker::reset_zone",
+        "unpacker::release_zone",
+        "unpacker::flush_zone",
+        "unpacker::~unpacker"
+      ],
+      "predicates": {
+        "unp_new": {
+          "meaning": "unpacker constructed",
+          "events": [
+            "ok:unpacker::unpacker"
+          ]
+        },
+        "unp_del": {
+          "meaning": "unpacker about to be destroyed",
+          "events": [
+            "call:unpacker::~unpacker"
+          ]
+        },
+        "unp_use": {
+          "meaning": "an unpacker member is about to be called",
+          "events": [
+            "call:unpacker::reserve_buffer",
+            "call:unpacker::buffer_capacity",
+            "call:unpacker::buffer",
+            "call:unpacker::buffer_consumed",
+            "call:unpacker::next",
+            "call:unpacker::message_size",
+            "call:unpacker::parsed_size",
+            "call:unpacker::nonparsed_size",
+            "call:unpacker::nonparsed_buffer",
+            "call:unpacker::skip_nonparsed_buffer",
+            "call:unpacker::remove_nonparsed_buffer",
+            "call:unpacker::reset",
+            "call:unpacker::reset_zone",
+            "call:unpacker::release_zone",
+            "call:unpacker::flush_zone",
+            "call:unpacker::~unpacker"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:unpacker::unpacker",
+            "ok:unpacker::unpacker",
+            "call:unpacker::reserve_buffer",
+            "ok:unpacker::reserve_buffer",
+            "call:unpacker::buffer",
+            "ok:unpacker::buffer",
+            "call:unpacker::buffer_consumed",
+            "ok:unpacker::buffer_consumed",
+            "call:unpacker::next",
+            "fail:unpacker::next",
+            "call:unpacker::~unpacker",
+            "ok:unpacker::~unpacker"
+          ],
+          "allowed": true,
+          "reason": "documented feed loop"
+        },
+        {
+          "events": [
+            "call:unpacker::next"
+          ],
+          "allowed": false,
+          "reason": "not constructed"
+        },
+        {
+          "events": [
+            "call:unpacker::unpacker",
+            "ok:unpacker::unpacker",
+            "call:unpacker::~unpacker",
+            "ok:unpacker::~unpacker",
+            "call:unpacker::reset"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        }
+      ]
+    },
+    {
+      "id": "unpacker_feed_protocol",
+      "rule": "wiki v1_1_cpp_unpacker 'msgpack controls a buffer': data is written to buffer() only after reserve_buffer(), and buffer_consumed() must follow the write before next(). Writing to buffer() without a reservation may exceed buffer_capacity().",
+      "formula": "G(unp_write -> X(!unp_next W unp_consumed)) & (!unp_write W unp_reserve) & G(unp_consumed -> X(!unp_write W unp_reserve))",
+      "apis": [
+        "unpacker::reserve_buffer",
+        "unpacker::buffer",
+        "unpacker::buffer_consumed",
+        "unpacker::next"
+      ],
+      "predicates": {
+        "unp_reserve": {
+          "meaning": "reserve_buffer completed",
+          "events": [
+            "ok:unpacker::reserve_buffer"
+          ]
+        },
+        "unp_write": {
+          "meaning": "about to write into buffer()",
+          "events": [
+            "call:unpacker::buffer"
+          ]
+        },
+        "unp_consumed": {
+          "meaning": "buffer_consumed is about to be called",
+          "events": [
+            "call:unpacker::buffer_consumed"
+          ]
+        },
+        "unp_next": {
+          "meaning": "next() is about to be called",
+          "events": [
+            "call:unpacker::next"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:unpacker::reserve_buffer",
+            "ok:unpacker::reserve_buffer",
+            "call:unpacker::buffer",
+            "ok:unpacker::buffer",
+            "call:unpacker::buffer_consumed",
+            "ok:unpacker::buffer_consumed",
+            "call:unpacker::next",
+            "ok:unpacker::next",
+            "call:unpacker::reserve_buffer",
+            "ok:unpacker::reserve_buffer",
+            "call:unpacker::buffer"
+          ],
+          "allowed": true,
+          "reason": "reserve, write, consume, next, repeat"
+        },
+        {
+          "events": [
+            "call:unpacker::buffer"
+          ],
+          "allowed": false,
+          "reason": "write without reservation"
+        },
+        {
+          "events": [
+            "call:unpacker::reserve_buffer",
+            "ok:unpacker::reserve_buffer",
+            "call:unpacker::buffer",
+            "ok:unpacker::buffer",
+            "call:unpacker::next"
+          ],
+          "allowed": false,
+          "reason": "next before buffer_consumed"
+        },
+        {
+          "events": [
+            "call:unpacker::reserve_buffer",
+            "ok:unpacker::reserve_buffer",
+            "call:unpacker::buffer",
+            "ok:unpacker::buffer",
+            "call:unpacker::buffer_consumed",
+            "ok:unpacker::buffer_consumed",
+            "call:unpacker::buffer"
+          ],
+          "allowed": false,
+          "reason": "second write without a new reservation"
+        }
+      ]
+    },
+    {
+      "id": "object_handle_validity",
+      "rule": "object.hpp: an object_handle holds the object and the zone that owns its memory. The object is usable only after unpack() or unpacker::next() produced it; a failed unpack (exception) or next() returning false leaves no valid object.",
+      "formula": "(!obj_use W obj_ok) & G(obj_fail -> X(!obj_use W obj_ok))",
+      "apis": [
+        "msgpack::aligned_zone_size",
+        "msgpack::clone",
+        "msgpack::unpack",
+        "msgpack::unpack(off)",
+        "msgpack::unpack(referenced)",
+        "object::as<double>",
+        "object::as<int64_t>",
+        "object::as<std::map>",
+        "object::as<std::string>",
+        "object::as<std::vector>",
+        "object::convert",
+        "object::convert_if_not_nil",
+        "object::is_nil",
+        "object::operator<<",
+        "object::operator==",
+        "object::type",
+        "object_parser::parse",
+        "packer::pack<object>",
+        "unpacker::next",
+        "msgpack::v1::unpack",
+        "msgpack::v2::unpack",
+        "v1::unpacker::next",
+        "object_handle::operator*",
+        "object_handle::operator->",
+        "object::operator!=",
+        "object::convert()",
+        "msgpack::begin(array)",
+        "msgpack::begin(map)",
+        "object::as<type::ext>",
+        "object::convert<type::array_ref>",
+        "object::convert<type::size_equal_only>",
+        "define_array::msgpack_unpack",
+        "define_map::msgpack_unpack"
+      ],
+      "predicates": {
+        "obj_ok": {
+          "meaning": "unpack or next produced an object",
+          "events": [
+            "ok:msgpack::unpack",
+            "ok:msgpack::unpack(off)",
+            "ok:msgpack::unpack(referenced)",
+            "ok:unpacker::next",
+            "ok:msgpack::v1::unpack",
+            "ok:msgpack::v2::unpack",
+            "ok:v1::unpacker::next"
+          ]
+        },
+        "obj_fail": {
+          "meaning": "unpack threw or next returned false; the handle was reset",
+          "events": [
+            "fail:msgpack::unpack",
+            "fail:msgpack::unpack(off)",
+            "fail:msgpack::unpack(referenced)",
+            "fail:unpacker::next",
+            "fail:msgpack::v1::unpack",
+            "fail:msgpack::v2::unpack",
+            "fail:v1::unpacker::next"
+          ]
+        },
+        "obj_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:object::type",
+            "call:object::is_nil",
+            "call:object::as<int64_t>",
+            "call:object::as<double>",
+            "call:object::as<std::string>",
+            "call:object::as<std::vector>",
+            "call:object::as<std::map>",
+            "call:object::convert",
+            "call:object::convert_if_not_nil",
+            "call:object::operator==",
+            "call:object::operator<<",
+            "call:msgpack::clone",
+            "call:msgpack::aligned_zone_size",
+            "call:object_parser::parse",
+            "call:packer::pack<object>",
+            "call:object_handle::operator*",
+            "call:object_handle::operator->",
+            "call:object::operator!=",
+            "call:object::convert()",
+            "call:msgpack::begin(array)",
+            "call:msgpack::begin(map)",
+            "call:object::as<type::ext>",
+            "call:object::convert<type::array_ref>",
+            "call:object::convert<type::size_equal_only>",
+            "call:define_array::msgpack_unpack",
+            "call:define_map::msgpack_unpack"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:msgpack::unpack",
+            "ok:msgpack::unpack",
+            "call:object::as<int64_t>",
+            "fail:object::as<int64_t>",
+            "call:object::operator<<",
+            "ok:object::operator<<"
+          ],
+          "allowed": true,
+          "reason": "type_error from as<> is a documented exception, the object stays valid"
+        },
+        {
+          "events": [
+            "call:object::type"
+          ],
+          "allowed": false,
+          "reason": "nothing unpacked"
+        },
+        {
+          "events": [
+            "call:msgpack::unpack",
+            "fail:msgpack::unpack",
+            "call:msgpack::clone"
+          ],
+          "allowed": false,
+          "reason": "unpack threw"
+        },
+        {
+          "events": [
+            "call:unpacker::next",
+            "ok:unpacker::next",
+            "call:unpacker::next",
+            "fail:unpacker::next",
+            "call:object::is_nil"
+          ],
+          "allowed": false,
+          "reason": "next reset the handle"
+        }
+      ]
+    },
+    {
+      "id": "v1_unpacker_lifecycle",
+      "rule": "v1/unpack.hpp:866-1060 (class msgpack::v1::unpacker, wiki v1_1_cpp_unpacker): every member, including the move assignment (unpack.hpp:1106-1110, which destroys *this first), operates on a constructed unpacker; after delete they are use-after-free. The harness keeps one v1 unpacker, separate from the default (v2) unpacker.",
+      "formula": "(!v1unp_use W v1unp_new) & G(v1unp_del -> X(!v1unp_use W v1unp_new))",
+      "apis": [
+        "v1::unpacker::unpacker",
+        "v1::unpacker::operator=",
+        "v1::unpacker::reserve_buffer",
+        "v1::unpacker::buffer_capacity",
+        "v1::unpacker::buffer",
+        "v1::unpacker::buffer_consumed",
+        "v1::unpacker::next",
+        "v1::unpacker::execute",
+        "v1::unpacker::data",
+        "v1::unpacker::message_size",
+        "v1::unpacker::parsed_size",
+        "v1::unpacker::nonparsed_size",
+        "v1::unpacker::nonparsed_buffer",
+        "v1::unpacker::skip_nonparsed_buffer",
+        "v1::unpacker::remove_nonparsed_buffer",
+        "v1::unpacker::reset",
+        "v1::unpacker::reset_zone",
+        "v1::unpacker::release_zone",
+        "v1::unpacker::~unpacker"
+      ],
+      "predicates": {
+        "v1unp_new": {
+          "meaning": "v1 unpacker constructed",
+          "events": [
+            "ok:v1::unpacker::unpacker"
+          ]
+        },
+        "v1unp_del": {
+          "meaning": "v1 unpacker about to be destroyed",
+          "events": [
+            "call:v1::unpacker::~unpacker"
+          ]
+        },
+        "v1unp_use": {
+          "meaning": "a v1 unpacker member is about to be called",
+          "events": [
+            "call:v1::unpacker::operator=",
+            "call:v1::unpacker::reserve_buffer",
+            "call:v1::unpacker::buffer_capacity",
+            "call:v1::unpacker::buffer",
+            "call:v1::unpacker::buffer_consumed",
+            "call:v1::unpacker::next",
+            "call:v1::unpacker::execute",
+            "call:v1::unpacker::data",
+            "call:v1::unpacker::message_size",
+            "call:v1::unpacker::parsed_size",
+            "call:v1::unpacker::nonparsed_size",
+            "call:v1::unpacker::nonparsed_buffer",
+            "call:v1::unpacker::skip_nonparsed_buffer",
+            "call:v1::unpacker::remove_nonparsed_buffer",
+            "call:v1::unpacker::reset",
+            "call:v1::unpacker::reset_zone",
+            "call:v1::unpacker::release_zone",
+            "call:v1::unpacker::~unpacker"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:v1::unpacker::unpacker",
+            "ok:v1::unpacker::unpacker",
+            "call:v1::unpacker::reserve_buffer",
+            "ok:v1::unpacker::reserve_buffer",
+            "call:v1::unpacker::buffer",
+            "ok:v1::unpacker::buffer",
+            "call:v1::unpacker::buffer_consumed",
+            "ok:v1::unpacker::buffer_consumed",
+            "call:v1::unpacker::execute",
+            "ok:v1::unpacker::execute",
+            "call:v1::unpacker::data",
+            "ok:v1::unpacker::data",
+            "call:v1::unpacker::~unpacker",
+            "ok:v1::unpacker::~unpacker"
+          ],
+          "allowed": true,
+          "reason": "documented backward-compatible feed / execute / data loop"
+        },
+        {
+          "events": [
+            "call:v1::unpacker::next"
+          ],
+          "allowed": false,
+          "reason": "not constructed"
+        },
+        {
+          "events": [
+            "call:v1::unpacker::unpacker",
+            "ok:v1::unpacker::unpacker",
+            "call:v1::unpacker::~unpacker",
+            "ok:v1::unpacker::~unpacker",
+            "call:v1::unpacker::operator="
+          ],
+          "allowed": false,
+          "reason": "move assignment into a destroyed unpacker"
+        }
+      ]
+    },
+    {
+      "id": "v1_unpacker_feed_protocol",
+      "rule": "v1/unpack.hpp:883-925 (reserve_buffer, buffer, buffer_consumed) and wiki v1_1_cpp_unpacker 'msgpack controls a buffer': same protocol for msgpack::v1::unpacker: write to buffer() only after reserve_buffer(), and buffer_consumed() must follow the write before next(). Writing to buffer() without a reservation may exceed buffer_capacity().",
+      "formula": "G(v1unp_write -> X(!v1unp_next W v1unp_consumed)) & (!v1unp_write W v1unp_reserve) & G(v1unp_consumed -> X(!v1unp_write W v1unp_reserve))",
+      "apis": [
+        "v1::unpacker::reserve_buffer",
+        "v1::unpacker::buffer",
+        "v1::unpacker::buffer_consumed",
+        "v1::unpacker::next",
+        "v1::unpacker::execute"
+      ],
+      "predicates": {
+        "v1unp_reserve": {
+          "meaning": "reserve_buffer completed",
+          "events": [
+            "ok:v1::unpacker::reserve_buffer"
+          ]
+        },
+        "v1unp_write": {
+          "meaning": "about to write into buffer()",
+          "events": [
+            "call:v1::unpacker::buffer"
+          ]
+        },
+        "v1unp_consumed": {
+          "meaning": "buffer_consumed is about to be called",
+          "events": [
+            "call:v1::unpacker::buffer_consumed"
+          ]
+        },
+        "v1unp_next": {
+          "meaning": "next() or execute() is about to be called",
+          "events": [
+            "call:v1::unpacker::next",
+            "call:v1::unpacker::execute"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:v1::unpacker::reserve_buffer",
+            "ok:v1::unpacker::reserve_buffer",
+            "call:v1::unpacker::buffer",
+            "ok:v1::unpacker::buffer",
+            "call:v1::unpacker::buffer_consumed",
+            "ok:v1::unpacker::buffer_consumed",
+            "call:v1::unpacker::next",
+            "ok:v1::unpacker::next",
+            "call:v1::unpacker::reserve_buffer",
+            "ok:v1::unpacker::reserve_buffer",
+            "call:v1::unpacker::buffer"
+          ],
+          "allowed": true,
+          "reason": "reserve, write, consume, next, repeat"
+        },
+        {
+          "events": [
+            "call:v1::unpacker::buffer"
+          ],
+          "allowed": false,
+          "reason": "write without reservation"
+        },
+        {
+          "events": [
+            "call:v1::unpacker::reserve_buffer",
+            "ok:v1::unpacker::reserve_buffer",
+            "call:v1::unpacker::buffer",
+            "ok:v1::unpacker::buffer",
+            "call:v1::unpacker::next"
+          ],
+          "allowed": false,
+          "reason": "next before buffer_consumed"
+        },
+        {
+          "events": [
+            "call:v1::unpacker::reserve_buffer",
+            "ok:v1::unpacker::reserve_buffer",
+            "call:v1::unpacker::buffer",
+            "ok:v1::unpacker::buffer",
+            "call:v1::unpacker::buffer_consumed",
+            "ok:v1::unpacker::buffer_consumed",
+            "call:v1::unpacker::buffer"
+          ],
+          "allowed": false,
+          "reason": "second write without a new reservation"
+        }
+      ]
+    }
+  ]
+}

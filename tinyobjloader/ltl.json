@@ -1,0 +1,339 @@
+{
+  "properties": [
+    {
+      "id": "objreader_lifecycle",
+      "rule": "tiny_obj_loader.h class ObjReader: Parse* and the getters are members of a constructed reader; after destruction they are use-after-free. The harness keeps one reader.",
+      "formula": "(!r_use W r_new) & G(r_del -> X(!r_use W r_new))",
+      "apis": [
+        "ObjReader::ObjReader",
+        "ObjReader::ParseFromString",
+        "ObjReader::ParseFromFile",
+        "ObjReader::Valid",
+        "ObjReader::GetAttrib",
+        "ObjReader::GetShapes",
+        "ObjReader::GetMaterials",
+        "ObjReader::Warning",
+        "ObjReader::Error",
+        "ObjReader::~ObjReader"
+      ],
+      "predicates": {
+        "r_new": {
+          "meaning": "ObjReader constructed",
+          "events": [
+            "ok:ObjReader::ObjReader"
+          ]
+        },
+        "r_del": {
+          "meaning": "ObjReader about to be destroyed",
+          "events": [
+            "call:ObjReader::~ObjReader"
+          ]
+        },
+        "r_use": {
+          "meaning": "an ObjReader member is about to be called",
+          "events": [
+            "call:ObjReader::ParseFromString",
+            "call:ObjReader::ParseFromFile",
+            "call:ObjReader::Valid",
+            "call:ObjReader::GetAttrib",
+            "call:ObjReader::GetShapes",
+            "call:ObjReader::GetMaterials",
+            "call:ObjReader::Warning",
+            "call:ObjReader::Error",
+            "call:ObjReader::~ObjReader"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ObjReader::ObjReader",
+            "ok:ObjReader::ObjReader",
+            "call:ObjReader::ParseFromString",
+            "fail:ObjReader::ParseFromString",
+            "call:ObjReader::Error",
+            "ok:ObjReader::Error",
+            "call:ObjReader::~ObjReader",
+            "ok:ObjReader::~ObjReader"
+          ],
+          "allowed": true,
+          "reason": "parse failure is a return, Error() reads it"
+        },
+        {
+          "events": [
+            "call:ObjReader::ParseFromFile"
+          ],
+          "allowed": false,
+          "reason": "no reader"
+        },
+        {
+          "events": [
+            "call:ObjReader::ObjReader",
+            "ok:ObjReader::ObjReader",
+            "call:ObjReader::~ObjReader",
+            "ok:ObjReader::~ObjReader",
+            "call:ObjReader::GetShapes"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        }
+      ]
+    },
+    {
+      "id": "objreader_results_after_parse",
+      "rule": "tiny_obj_loader.h ObjReader: 'Valid()' and the Get*/Warning/Error accessors describe the result of the last Parse*; before any parse they refer to nothing (Valid() is false and the containers are empty). The doc says to call ParseFromFile/ParseFromString first, then check Valid(), then read results.",
+      "formula": "G(r_new -> X(!r_get W r_parsed))",
+      "apis": [
+        "ObjReader::ObjReader",
+        "ObjReader::ParseFromString",
+        "ObjReader::ParseFromFile",
+        "ObjReader::Valid",
+        "ObjReader::GetAttrib",
+        "ObjReader::GetShapes",
+        "ObjReader::GetMaterials",
+        "ObjReader::Warning",
+        "ObjReader::Error"
+      ],
+      "predicates": {
+        "r_new": {
+          "meaning": "ObjReader constructed",
+          "events": [
+            "ok:ObjReader::ObjReader"
+          ]
+        },
+        "r_parsed": {
+          "meaning": "a Parse* call completed (success or failure)",
+          "events": [
+            "ok:ObjReader::ParseFromString",
+            "ok:ObjReader::ParseFromFile",
+            "fail:ObjReader::ParseFromString",
+            "fail:ObjReader::ParseFromFile"
+          ]
+        },
+        "r_get": {
+          "meaning": "a result accessor is about to be called",
+          "events": [
+            "call:ObjReader::Valid",
+            "call:ObjReader::GetAttrib",
+            "call:ObjReader::GetShapes",
+            "call:ObjReader::GetMaterials",
+            "call:ObjReader::Warning",
+            "call:ObjReader::Error"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ObjReader::ObjReader",
+            "ok:ObjReader::ObjReader",
+            "call:ObjReader::ParseFromString",
+            "ok:ObjReader::ParseFromString",
+            "call:ObjReader::Valid",
+            "ok:ObjReader::Valid",
+            "call:ObjReader::GetAttrib",
+            "ok:ObjReader::GetAttrib"
+          ],
+          "allowed": true,
+          "reason": "parse before reading results"
+        },
+        {
+          "events": [
+            "call:ObjReader::ObjReader",
+            "ok:ObjReader::ObjReader",
+            "call:ObjReader::Valid"
+          ],
+          "allowed": false,
+          "reason": "result read before any parse"
+        }
+      ]
+    },
+    {
+      "id": "arena_lifecycle",
+      "rule": "tiny_obj_loader.h class ArenaAllocator: allocate, reset and move assignment are members of a constructed arena, and TypedArray::allocate takes the arena to allocate from; after destruction they are use-after-free. The harness keeps one arena.",
+      "formula": "(!a_use W a_new) & G(a_del -> X(!a_use W a_new))",
+      "apis": [
+        "ArenaAllocator::ArenaAllocator",
+        "ArenaAllocator::allocate",
+        "ArenaAllocator::reset",
+        "ArenaAllocator::operator=",
+        "TypedArray::allocate",
+        "ArenaAllocator::~ArenaAllocator"
+      ],
+      "predicates": {
+        "a_new": {
+          "meaning": "ArenaAllocator constructed",
+          "events": [
+            "ok:ArenaAllocator::ArenaAllocator"
+          ]
+        },
+        "a_del": {
+          "meaning": "ArenaAllocator about to be destroyed",
+          "events": [
+            "call:ArenaAllocator::~ArenaAllocator"
+          ]
+        },
+        "a_use": {
+          "meaning": "a call that needs the arena is about to run",
+          "events": [
+            "call:ArenaAllocator::allocate",
+            "call:ArenaAllocator::reset",
+            "call:ArenaAllocator::operator=",
+            "call:TypedArray::allocate",
+            "call:ArenaAllocator::~ArenaAllocator"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ArenaAllocator::ArenaAllocator",
+            "ok:ArenaAllocator::ArenaAllocator",
+            "call:ArenaAllocator::allocate",
+            "ok:ArenaAllocator::allocate",
+            "call:TypedArray::allocate",
+            "ok:TypedArray::allocate",
+            "call:ArenaAllocator::reset",
+            "ok:ArenaAllocator::reset",
+            "call:ArenaAllocator::~ArenaAllocator",
+            "ok:ArenaAllocator::~ArenaAllocator"
+          ],
+          "allowed": true,
+          "reason": "every use is between construction and destruction"
+        },
+        {
+          "events": [
+            "call:TypedArray::allocate"
+          ],
+          "allowed": false,
+          "reason": "no arena to allocate from"
+        },
+        {
+          "events": [
+            "call:ArenaAllocator::ArenaAllocator",
+            "ok:ArenaAllocator::ArenaAllocator",
+            "call:ArenaAllocator::~ArenaAllocator",
+            "ok:ArenaAllocator::~ArenaAllocator",
+            "call:ArenaAllocator::allocate"
+          ],
+          "allowed": false,
+          "reason": "allocate after the arena was destroyed"
+        },
+        {
+          "events": [
+            "call:ArenaAllocator::ArenaAllocator",
+            "ok:ArenaAllocator::ArenaAllocator",
+            "call:ArenaAllocator::~ArenaAllocator",
+            "ok:ArenaAllocator::~ArenaAllocator",
+            "call:ArenaAllocator::~ArenaAllocator"
+          ],
+          "allowed": false,
+          "reason": "destroyed twice"
+        }
+      ]
+    },
+    {
+      "id": "typed_array_view_tied_to_arena",
+      "rule": "tiny_obj_loader.h TypedArray: 'Non-owning, contiguous array view allocated from an ArenaAllocator ... Lifetime is tied to the arena'; ArenaAllocator: 'Memory is freed in bulk when the arena is destroyed or reset()', and move assignment destroys the old blocks too. After any of these the view dangles, so operator[] may not run until allocate, set or clear re-binds the view or a new TypedArray replaces it.",
+      "formula": "G(a_free -> X(!t_elem W t_bind))",
+      "apis": [
+        "ArenaAllocator::reset",
+        "ArenaAllocator::operator=",
+        "ArenaAllocator::~ArenaAllocator",
+        "TypedArray::operator[]",
+        "TypedArray::allocate",
+        "TypedArray::set",
+        "TypedArray::clear",
+        "TypedArray::TypedArray"
+      ],
+      "predicates": {
+        "a_free": {
+          "meaning": "the arena is about to release its blocks",
+          "events": [
+            "call:ArenaAllocator::reset",
+            "call:ArenaAllocator::operator=",
+            "call:ArenaAllocator::~ArenaAllocator"
+          ]
+        },
+        "t_elem": {
+          "meaning": "an element of the view is about to be accessed",
+          "events": [
+            "call:TypedArray::operator[]"
+          ]
+        },
+        "t_bind": {
+          "meaning": "the view was pointed at live arena memory or emptied",
+          "events": [
+            "ok:TypedArray::allocate",
+            "ok:TypedArray::set",
+            "ok:TypedArray::clear",
+            "ok:TypedArray::TypedArray"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ArenaAllocator::ArenaAllocator",
+            "ok:ArenaAllocator::ArenaAllocator",
+            "call:TypedArray::allocate",
+            "ok:TypedArray::allocate",
+            "call:TypedArray::operator[]",
+            "ok:TypedArray::operator[]",
+            "call:ArenaAllocator::reset",
+            "ok:ArenaAllocator::reset",
+            "call:TypedArray::allocate",
+            "ok:TypedArray::allocate",
+            "call:TypedArray::operator[]",
+            "ok:TypedArray::operator[]"
+          ],
+          "allowed": true,
+          "reason": "the view is allocated again after the reset before an element is read"
+        },
+        {
+          "events": [
+            "call:ArenaAllocator::ArenaAllocator",
+            "ok:ArenaAllocator::ArenaAllocator",
+            "call:TypedArray::allocate",
+            "ok:TypedArray::allocate",
+            "call:ArenaAllocator::reset",
+            "ok:ArenaAllocator::reset",
+            "call:TypedArray::operator[]"
+          ],
+          "allowed": false,
+          "reason": "element access after reset freed the block"
+        },
+        {
+          "events": [
+            "call:ArenaAllocator::ArenaAllocator",
+            "ok:ArenaAllocator::ArenaAllocator",
+            "call:TypedArray::allocate",
+            "ok:TypedArray::allocate",
+            "call:ArenaAllocator::~ArenaAllocator",
+            "ok:ArenaAllocator::~ArenaAllocator",
+            "call:TypedArray::size",
+            "ok:TypedArray::size",
+            "call:TypedArray::operator[]"
+          ],
+          "allowed": false,
+          "reason": "element access after the arena was destroyed"
+        },
+        {
+          "events": [
+            "call:ArenaAllocator::ArenaAllocator",
+            "ok:ArenaAllocator::ArenaAllocator",
+            "call:TypedArray::allocate",
+            "ok:TypedArray::allocate",
+            "call:ArenaAllocator::operator=",
+            "ok:ArenaAllocator::operator=",
+            "call:TypedArray::allocate",
+            "fail:TypedArray::allocate",
+            "call:TypedArray::operator[]"
+          ],
+          "allowed": false,
+          "reason": "the allocate that would re-bind the view failed"
+        }
+      ]
+    }
+  ]
+}

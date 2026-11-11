@@ -1,0 +1,6 @@
+{
+  "languageStandard": "c++17",
+  "includeRootGlobs": ["libs/*/include"],
+  "linkLibraries": [],
+  "implementationSources": ["libs/charconv/src/to_chars.cpp"]
+}

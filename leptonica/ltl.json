@@ -1,0 +1,119 @@
+{
+  "properties": [
+    {
+      "id": "byte_processing_pair",
+      "rule": "pix2.c:3494 (pixCleanupByteProcessing): \"This must be called after processing that was initiated by pixSetupByteProcessing() has finished.\" The harness keeps exactly one line-pointer array (pixSetupByteProcessing allocates it, pixCleanupByteProcessing frees it), so no object identity is needed at the event level: a cleanup may only run while a setup is outstanding.",
+      "formula": "(!cleanup_use W setup_ok) & G(cleanup_ok -> X(!cleanup_use W setup_ok))",
+      "apis": [
+        "pixSetupByteProcessing",
+        "pixCleanupByteProcessing"
+      ],
+      "predicates": {
+        "setup_ok": {
+          "meaning": "pixSetupByteProcessing produced the line-pointer array",
+          "events": ["ok:pixSetupByteProcessing"]
+        },
+        "cleanup_use": {
+          "meaning": "pixCleanupByteProcessing is about to be called",
+          "events": ["call:pixCleanupByteProcessing"]
+        },
+        "cleanup_ok": {
+          "meaning": "pixCleanupByteProcessing freed it and closed the pairing",
+          "events": ["ok:pixCleanupByteProcessing"]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:pixSetupByteProcessing",
+            "ok:pixSetupByteProcessing",
+            "call:pixCleanupByteProcessing",
+            "ok:pixCleanupByteProcessing"
+          ],
+          "allowed": true,
+          "reason": "setup then cleanup"
+        },
+        {
+          "events": [
+            "call:pixSetupByteProcessing",
+            "ok:pixSetupByteProcessing",
+            "call:pixSetupByteProcessing",
+            "ok:pixSetupByteProcessing",
+            "call:pixCleanupByteProcessing",
+            "ok:pixCleanupByteProcessing"
+          ],
+          "allowed": true,
+          "reason": "a second setup replaces the first outstanding array (utils1/pix2 pair, one live array)"
+        },
+        {
+          "events": ["call:pixCleanupByteProcessing"],
+          "allowed": false,
+          "reason": "cleanup with no setup"
+        },
+        {
+          "events": [
+            "call:pixSetupByteProcessing",
+            "ok:pixSetupByteProcessing",
+            "call:pixCleanupByteProcessing",
+            "ok:pixCleanupByteProcessing",
+            "call:pixCleanupByteProcessing"
+          ],
+          "allowed": false,
+          "reason": "the line-pointer array was already freed"
+        }
+      ]
+    },
+    {
+      "id": "nested_timer_pair",
+      "rule": "utils1.c:1146-1154 (startTimerNested/stopTimerNested): the example shows a L_TIMER from startTimerNested being handed to stopTimerNested, which frees it; a second stop for the same timer would free it twice. The harness keeps one outstanding timer, so the pairing is event-level.",
+      "formula": "(!stop_use W start_ok) & G(stop_ok -> X(!stop_use W start_ok))",
+      "apis": [
+        "startTimerNested",
+        "stopTimerNested"
+      ],
+      "predicates": {
+        "start_ok": {
+          "meaning": "startTimerNested allocated a rusage record",
+          "events": ["ok:startTimerNested"]
+        },
+        "stop_use": {
+          "meaning": "stopTimerNested is about to be called",
+          "events": ["call:stopTimerNested"]
+        },
+        "stop_ok": {
+          "meaning": "stopTimerNested freed it and closed the pairing",
+          "events": ["ok:stopTimerNested"]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:startTimerNested",
+            "ok:startTimerNested",
+            "call:stopTimerNested",
+            "ok:stopTimerNested"
+          ],
+          "allowed": true,
+          "reason": "start then stop"
+        },
+        {
+          "events": ["call:stopTimerNested"],
+          "allowed": false,
+          "reason": "no timer to stop"
+        },
+        {
+          "events": [
+            "call:startTimerNested",
+            "ok:startTimerNested",
+            "call:stopTimerNested",
+            "ok:stopTimerNested",
+            "call:stopTimerNested"
+          ],
+          "allowed": false,
+          "reason": "the timer was already freed by the first stop"
+        }
+      ]
+    }
+  ],
+  "unconstrainedReason": "Everything else is left unconstrained on purpose. leptonica's object arguments come from typed pools with K slots per type (K = 3, 4 for PIX/PIXA/BOXA/NUMA/L_DNA/PTA/SARRAY}, and a pool slot is addressed by a payload byte, not by identity: two calls that mention PIX #2 may or may not be the same object, since a slot can be refilled (by a creator, by an out-parameter, or by the harness's default object) between them. Any rule of the form 'object X may not be used after it was destroyed' is therefore not expressible in an alphabet of call/ok events: the events do not name the object. What the library documents as a sequence rule at that level is also not a rule: leptonica overloads NULL and mismatched arguments as documented error returns (`l_ok` 0/1, or NULL), and it does not define 'use after destroy' as an error - pixDestroy() nulls the caller's pointer (pix1.c:599), so the caller cannot pass a stale object through the API at all. The one family that IS identity-free is the pair of functions whose argument is a harness-owned singleton (the byte-processing line-pointer array and the nested timer), and those are the two properties above."
+}

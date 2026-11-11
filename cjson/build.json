@@ -1,0 +1,4 @@
+{
+  "languageStandard": "c11",
+  "implementationSources": ["cJSON.c", "cJSON_Utils.c"]
+}

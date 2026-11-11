@@ -1,0 +1,8 @@
+{
+  "languageStandard": "c11",
+  "includeRoots": ["ext/yajl"],
+  "implementationSources": [
+    "ext/yajl/yajl_alloc.c", "ext/yajl/yajl_buf.c", "ext/yajl/yajl_encode.c", "ext/yajl/yajl_lex.c",
+    "ext/yajl/yajl_parser.c", "ext/yajl/yajl.c", "ext/yajl/yajl_gen.c", "ext/yajl/yajl_version.c"
+  ]
+}

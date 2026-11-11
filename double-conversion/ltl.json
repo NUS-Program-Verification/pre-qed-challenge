@@ -1,0 +1,320 @@
+{
+  "properties": [
+    {
+      "id": "d2s_converter_lifecycle",
+      "rule": "double-to-string.h: To* are member functions of a DoubleToStringConverter; the object comes from the constructor or EcmaScriptConverter() and the To* calls need it alive. The harness keeps one converter.",
+      "formula": "(!d2s_use W d2s_new) & G(d2s_del -> X(!d2s_use W d2s_new))",
+      "apis": [
+        "DoubleToStringConverter::DoubleToStringConverter",
+        "DoubleToStringConverter::EcmaScriptConverter",
+        "DoubleToStringConverter::ToShortest",
+        "DoubleToStringConverter::ToShortestSingle",
+        "DoubleToStringConverter::ToFixed",
+        "DoubleToStringConverter::ToExponential",
+        "DoubleToStringConverter::ToPrecision",
+        "DoubleToStringConverter::~DoubleToStringConverter"
+      ],
+      "predicates": {
+        "d2s_new": {
+          "meaning": "a converter is available",
+          "events": [
+            "ok:DoubleToStringConverter::DoubleToStringConverter",
+            "ok:DoubleToStringConverter::EcmaScriptConverter"
+          ]
+        },
+        "d2s_del": {
+          "meaning": "the converter is about to be destroyed",
+          "events": [
+            "call:DoubleToStringConverter::~DoubleToStringConverter"
+          ]
+        },
+        "d2s_use": {
+          "meaning": "a converter member is about to be called",
+          "events": [
+            "call:DoubleToStringConverter::ToShortest",
+            "call:DoubleToStringConverter::ToShortestSingle",
+            "call:DoubleToStringConverter::ToFixed",
+            "call:DoubleToStringConverter::ToExponential",
+            "call:DoubleToStringConverter::ToPrecision",
+            "call:DoubleToStringConverter::~DoubleToStringConverter"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:DoubleToStringConverter::EcmaScriptConverter",
+            "ok:DoubleToStringConverter::EcmaScriptConverter",
+            "call:DoubleToStringConverter::ToShortest",
+            "ok:DoubleToStringConverter::ToShortest"
+          ],
+          "allowed": true,
+          "reason": "converter then use"
+        },
+        {
+          "events": [
+            "call:DoubleToStringConverter::ToFixed"
+          ],
+          "allowed": false,
+          "reason": "no converter"
+        },
+        {
+          "events": [
+            "call:DoubleToStringConverter::DoubleToStringConverter",
+            "ok:DoubleToStringConverter::DoubleToStringConverter",
+            "call:DoubleToStringConverter::~DoubleToStringConverter",
+            "ok:DoubleToStringConverter::~DoubleToStringConverter",
+            "call:DoubleToStringConverter::ToPrecision"
+          ],
+          "allowed": false,
+          "reason": "use after destruction"
+        }
+      ]
+    },
+    {
+      "id": "s2d_converter_lifecycle",
+      "rule": "string-to-double.h: StringToDouble/StringToFloat and the StringTo<T> templates ('Same as StringToDouble for T = double, and StringToFloat for T = float') are members of a constructed StringToDoubleConverter. The harness keeps one converter.",
+      "formula": "(!s2d_use W s2d_new) & G(s2d_del -> X(!s2d_use W s2d_new))",
+      "apis": [
+        "StringToDoubleConverter::StringToDoubleConverter",
+        "StringToDoubleConverter::StringToDouble",
+        "StringToDoubleConverter::StringToDouble(uc16)",
+        "StringToDoubleConverter::StringToFloat",
+        "StringToDoubleConverter::StringToFloat(uc16)",
+        "StringToDoubleConverter::StringTo<double>",
+        "StringToDoubleConverter::StringTo<float>",
+        "StringToDoubleConverter::StringTo<double>(uc16)",
+        "StringToDoubleConverter::StringTo<float>(uc16)",
+        "StringToDoubleConverter::~StringToDoubleConverter"
+      ],
+      "predicates": {
+        "s2d_new": {
+          "meaning": "a converter was constructed",
+          "events": [
+            "ok:StringToDoubleConverter::StringToDoubleConverter"
+          ]
+        },
+        "s2d_del": {
+          "meaning": "the converter is about to be destroyed",
+          "events": [
+            "call:StringToDoubleConverter::~StringToDoubleConverter"
+          ]
+        },
+        "s2d_use": {
+          "meaning": "a converter member is about to be called",
+          "events": [
+            "call:StringToDoubleConverter::StringToDouble",
+            "call:StringToDoubleConverter::StringToDouble(uc16)",
+            "call:StringToDoubleConverter::StringToFloat",
+            "call:StringToDoubleConverter::StringToFloat(uc16)",
+            "call:StringToDoubleConverter::StringTo<double>",
+            "call:StringToDoubleConverter::StringTo<float>",
+            "call:StringToDoubleConverter::StringTo<double>(uc16)",
+            "call:StringToDoubleConverter::StringTo<float>(uc16)",
+            "call:StringToDoubleConverter::~StringToDoubleConverter"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:StringToDoubleConverter::StringToDoubleConverter",
+            "ok:StringToDoubleConverter::StringToDoubleConverter",
+            "call:StringToDoubleConverter::StringToDouble",
+            "ok:StringToDoubleConverter::StringToDouble",
+            "call:StringToDoubleConverter::~StringToDoubleConverter",
+            "ok:StringToDoubleConverter::~StringToDoubleConverter"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:StringToDoubleConverter::StringToDoubleConverter",
+            "ok:StringToDoubleConverter::StringToDoubleConverter",
+            "call:StringToDoubleConverter::StringTo<double>",
+            "ok:StringToDoubleConverter::StringTo<double>",
+            "call:StringToDoubleConverter::StringTo<float>(uc16)",
+            "ok:StringToDoubleConverter::StringTo<float>(uc16)"
+          ],
+          "allowed": true,
+          "reason": "StringTo<T> on a live converter"
+        },
+        {
+          "events": [
+            "call:StringToDoubleConverter::StringToFloat"
+          ],
+          "allowed": false,
+          "reason": "no converter"
+        },
+        {
+          "events": [
+            "call:StringToDoubleConverter::StringToDoubleConverter",
+            "ok:StringToDoubleConverter::StringToDoubleConverter",
+            "call:StringToDoubleConverter::~StringToDoubleConverter",
+            "ok:StringToDoubleConverter::~StringToDoubleConverter",
+            "call:StringToDoubleConverter::~StringToDoubleConverter"
+          ],
+          "allowed": false,
+          "reason": "double destroy"
+        },
+        {
+          "events": [
+            "call:StringToDoubleConverter::StringToDoubleConverter",
+            "ok:StringToDoubleConverter::StringToDoubleConverter",
+            "call:StringToDoubleConverter::~StringToDoubleConverter",
+            "ok:StringToDoubleConverter::~StringToDoubleConverter",
+            "call:StringToDoubleConverter::StringTo<double>"
+          ],
+          "allowed": false,
+          "reason": "StringTo<double> after the converter was destroyed"
+        },
+        {
+          "events": [
+            "call:StringToDoubleConverter::StringTo<float>(uc16)"
+          ],
+          "allowed": false,
+          "reason": "no converter"
+        }
+      ]
+    },
+    {
+      "id": "string_builder_lifecycle_and_finalize",
+      "rule": "utils.h StringBuilder: Add*, position, Reset and the To* functions that write into it require a live, not yet finalized builder (DOUBLE_CONVERSION_ASSERT(!is_finalized())). Finalize may be called once; afterwards only size() and destruction are legal until a new builder is constructed. The harness keeps one builder.",
+      "formula": "(!sb_use W sb_new) & G(sb_del -> X(!sb_use W sb_new)) & G(sb_finalize -> X(!sb_add W sb_new))",
+      "apis": [
+        "StringBuilder::StringBuilder",
+        "StringBuilder::AddCharacter",
+        "StringBuilder::AddString",
+        "StringBuilder::AddSubstring",
+        "StringBuilder::AddPadding",
+        "StringBuilder::position",
+        "StringBuilder::Reset",
+        "StringBuilder::Finalize",
+        "DoubleToStringConverter::ToShortest",
+        "DoubleToStringConverter::ToShortestSingle",
+        "DoubleToStringConverter::ToFixed",
+        "DoubleToStringConverter::ToExponential",
+        "DoubleToStringConverter::ToPrecision",
+        "StringBuilder::size",
+        "StringBuilder::~StringBuilder"
+      ],
+      "predicates": {
+        "sb_new": {
+          "meaning": "a builder was constructed",
+          "events": [
+            "ok:StringBuilder::StringBuilder"
+          ]
+        },
+        "sb_del": {
+          "meaning": "the builder is about to be destroyed",
+          "events": [
+            "call:StringBuilder::~StringBuilder"
+          ]
+        },
+        "sb_finalize": {
+          "meaning": "Finalize is about to be called",
+          "events": [
+            "call:StringBuilder::Finalize"
+          ]
+        },
+        "sb_add": {
+          "meaning": "a routine that writes to or reads the position of the builder is about to be called",
+          "events": [
+            "call:StringBuilder::AddCharacter",
+            "call:StringBuilder::AddString",
+            "call:StringBuilder::AddSubstring",
+            "call:StringBuilder::AddPadding",
+            "call:StringBuilder::position",
+            "call:StringBuilder::Reset",
+            "call:StringBuilder::Finalize",
+            "call:DoubleToStringConverter::ToShortest",
+            "call:DoubleToStringConverter::ToShortestSingle",
+            "call:DoubleToStringConverter::ToFixed",
+            "call:DoubleToStringConverter::ToExponential",
+            "call:DoubleToStringConverter::ToPrecision"
+          ]
+        },
+        "sb_use": {
+          "meaning": "any builder member or writer is about to be called",
+          "events": [
+            "call:StringBuilder::AddCharacter",
+            "call:StringBuilder::AddString",
+            "call:StringBuilder::AddSubstring",
+            "call:StringBuilder::AddPadding",
+            "call:StringBuilder::position",
+            "call:StringBuilder::Reset",
+            "call:StringBuilder::Finalize",
+            "call:DoubleToStringConverter::ToShortest",
+            "call:DoubleToStringConverter::ToShortestSingle",
+            "call:DoubleToStringConverter::ToFixed",
+            "call:DoubleToStringConverter::ToExponential",
+            "call:DoubleToStringConverter::ToPrecision",
+            "call:StringBuilder::size",
+            "call:StringBuilder::~StringBuilder"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:StringBuilder::StringBuilder",
+            "ok:StringBuilder::StringBuilder",
+            "call:StringBuilder::AddString",
+            "ok:StringBuilder::AddString",
+            "call:DoubleToStringConverter::ToFixed",
+            "ok:DoubleToStringConverter::ToFixed",
+            "call:StringBuilder::Finalize",
+            "ok:StringBuilder::Finalize",
+            "call:StringBuilder::size",
+            "ok:StringBuilder::size",
+            "call:StringBuilder::~StringBuilder",
+            "ok:StringBuilder::~StringBuilder"
+          ],
+          "allowed": true,
+          "reason": "build, finalize once, query size, destroy"
+        },
+        {
+          "events": [
+            "call:StringBuilder::AddCharacter"
+          ],
+          "allowed": false,
+          "reason": "no builder"
+        },
+        {
+          "events": [
+            "call:StringBuilder::StringBuilder",
+            "ok:StringBuilder::StringBuilder",
+            "call:StringBuilder::Finalize",
+            "ok:StringBuilder::Finalize",
+            "call:StringBuilder::AddCharacter"
+          ],
+          "allowed": false,
+          "reason": "add after finalize"
+        },
+        {
+          "events": [
+            "call:StringBuilder::StringBuilder",
+            "ok:StringBuilder::StringBuilder",
+            "call:StringBuilder::Finalize",
+            "ok:StringBuilder::Finalize",
+            "call:StringBuilder::Finalize"
+          ],
+          "allowed": false,
+          "reason": "double finalize"
+        },
+        {
+          "events": [
+            "call:StringBuilder::StringBuilder",
+            "ok:StringBuilder::StringBuilder",
+            "call:StringBuilder::Finalize",
+            "ok:StringBuilder::Finalize",
+            "call:DoubleToStringConverter::ToShortest"
+          ],
+          "allowed": false,
+          "reason": "converter writing into a finalized builder"
+        }
+      ]
+    }
+  ]
+}

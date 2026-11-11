@@ -1,0 +1,458 @@
+{
+  "properties": [
+    {
+      "id": "encoder_lifecycle",
+      "rule": "speex.h: speex_encode*/speex_encoder_ctl take the state from speex_encoder_init; speex_encoder_destroy frees it. The in-band mode/vbr request handlers are given the encoder as their data pointer (speex_callbacks.h). The harness keeps one encoder.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "speex_encode",
+        "speex_encode_int",
+        "speex_encoder_ctl",
+        "speex_encoder_destroy",
+        "speex_encoder_init",
+        "speex_std_high_mode_request_handler",
+        "speex_std_low_mode_request_handler",
+        "speex_std_mode_request_handler",
+        "speex_std_vbr_quality_request_handler",
+        "speex_std_vbr_request_handler"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:speex_encoder_init"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:speex_encoder_destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:speex_encoder_ctl",
+            "call:speex_encode",
+            "call:speex_encode_int",
+            "call:speex_encoder_destroy",
+            "call:speex_std_mode_request_handler",
+            "call:speex_std_low_mode_request_handler",
+            "call:speex_std_high_mode_request_handler",
+            "call:speex_std_vbr_request_handler",
+            "call:speex_std_vbr_quality_request_handler"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:speex_encoder_init",
+            "ok:speex_encoder_init",
+            "call:speex_encoder_ctl",
+            "fail:speex_encoder_ctl",
+            "call:speex_encode_int",
+            "ok:speex_encode_int",
+            "call:speex_encoder_destroy",
+            "ok:speex_encoder_destroy"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:speex_encode"
+          ],
+          "allowed": false,
+          "reason": "no encoder"
+        },
+        {
+          "events": [
+            "call:speex_encoder_init",
+            "ok:speex_encoder_init",
+            "call:speex_encoder_destroy",
+            "ok:speex_encoder_destroy",
+            "call:speex_encoder_ctl"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "decoder_lifecycle",
+      "rule": "speex.h: speex_decode*/speex_decoder_ctl take the state from speex_decoder_init; speex_decoder_destroy frees it. speex_inband_handler and the enhancer request handler act on the decoder.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "speex_decode",
+        "speex_decode_int",
+        "speex_decoder_ctl",
+        "speex_decoder_ctl(SPEEX_SET_HANDLER)",
+        "speex_decoder_ctl(SPEEX_SET_USER_HANDLER)",
+        "speex_decoder_destroy",
+        "speex_decoder_init",
+        "speex_inband_handler",
+        "speex_std_enh_request_handler"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:speex_decoder_init"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:speex_decoder_destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:speex_decoder_ctl",
+            "call:speex_decoder_ctl(SPEEX_SET_HANDLER)",
+            "call:speex_decoder_ctl(SPEEX_SET_USER_HANDLER)",
+            "call:speex_decode",
+            "call:speex_decode_int",
+            "call:speex_decoder_destroy",
+            "call:speex_inband_handler",
+            "call:speex_std_enh_request_handler"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:speex_decoder_init",
+            "ok:speex_decoder_init",
+            "call:speex_decode",
+            "fail:speex_decode",
+            "call:speex_decoder_destroy",
+            "ok:speex_decoder_destroy"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:speex_decode_int"
+          ],
+          "allowed": false,
+          "reason": "no decoder"
+        },
+        {
+          "events": [
+            "call:speex_decoder_init",
+            "ok:speex_decoder_init",
+            "call:speex_decoder_destroy",
+            "ok:speex_decoder_destroy",
+            "call:speex_decoder_destroy"
+          ],
+          "allowed": false,
+          "reason": "double destroy"
+        }
+      ]
+    },
+    {
+      "id": "bits_lifecycle",
+      "rule": "speex_bits.h: every speex_bits_* routine and the codecs read or write a SpeexBits set up by speex_bits_init, speex_bits_init_buffer or speex_bits_set_bit_buffer; speex_bits_destroy releases it.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "speex_bits_advance",
+        "speex_bits_destroy",
+        "speex_bits_init",
+        "speex_bits_init_buffer",
+        "speex_bits_insert_terminator",
+        "speex_bits_nbytes",
+        "speex_bits_pack",
+        "speex_bits_peek",
+        "speex_bits_peek_unsigned",
+        "speex_bits_read_from",
+        "speex_bits_read_whole_bytes",
+        "speex_bits_remaining",
+        "speex_bits_reset",
+        "speex_bits_rewind",
+        "speex_bits_set_bit_buffer",
+        "speex_bits_unpack_signed",
+        "speex_bits_unpack_unsigned",
+        "speex_bits_write",
+        "speex_bits_write_whole_bytes",
+        "speex_decode",
+        "speex_decode_int",
+        "speex_default_user_handler",
+        "speex_encode",
+        "speex_encode_int",
+        "speex_encode_stereo",
+        "speex_encode_stereo_int",
+        "speex_inband_handler",
+        "speex_std_char_handler",
+        "speex_std_enh_request_handler",
+        "speex_std_high_mode_request_handler",
+        "speex_std_low_mode_request_handler",
+        "speex_std_mode_request_handler",
+        "speex_std_stereo_request_handler",
+        "speex_std_vbr_quality_request_handler",
+        "speex_std_vbr_request_handler"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:speex_bits_init",
+            "ok:speex_bits_init_buffer",
+            "ok:speex_bits_set_bit_buffer"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:speex_bits_destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:speex_bits_destroy",
+            "call:speex_bits_reset",
+            "call:speex_bits_rewind",
+            "call:speex_bits_read_from",
+            "call:speex_bits_read_whole_bytes",
+            "call:speex_bits_write",
+            "call:speex_bits_write_whole_bytes",
+            "call:speex_bits_pack",
+            "call:speex_bits_unpack_signed",
+            "call:speex_bits_unpack_unsigned",
+            "call:speex_bits_peek_unsigned",
+            "call:speex_bits_peek",
+            "call:speex_bits_advance",
+            "call:speex_bits_remaining",
+            "call:speex_bits_nbytes",
+            "call:speex_bits_insert_terminator",
+            "call:speex_encode",
+            "call:speex_encode_int",
+            "call:speex_decode",
+            "call:speex_decode_int",
+            "call:speex_encode_stereo",
+            "call:speex_encode_stereo_int",
+            "call:speex_inband_handler",
+            "call:speex_std_mode_request_handler",
+            "call:speex_std_low_mode_request_handler",
+            "call:speex_std_high_mode_request_handler",
+            "call:speex_std_vbr_request_handler",
+            "call:speex_std_vbr_quality_request_handler",
+            "call:speex_std_enh_request_handler",
+            "call:speex_std_stereo_request_handler",
+            "call:speex_default_user_handler",
+            "call:speex_std_char_handler"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:speex_bits_init",
+            "ok:speex_bits_init",
+            "call:speex_bits_pack",
+            "ok:speex_bits_pack",
+            "call:speex_bits_write",
+            "ok:speex_bits_write",
+            "call:speex_bits_destroy",
+            "ok:speex_bits_destroy",
+            "call:speex_bits_init_buffer",
+            "ok:speex_bits_init_buffer",
+            "call:speex_bits_peek"
+          ],
+          "allowed": true,
+          "reason": "re-initialised after destroy"
+        },
+        {
+          "events": [
+            "call:speex_bits_pack"
+          ],
+          "allowed": false,
+          "reason": "not initialised"
+        },
+        {
+          "events": [
+            "call:speex_bits_init",
+            "ok:speex_bits_init",
+            "call:speex_bits_destroy",
+            "ok:speex_bits_destroy",
+            "call:speex_encode"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "stereo_state_lifecycle",
+      "rule": "speex_stereo.h: speex_decode_stereo*, speex_stereo_state_reset and the stereo request handler take the state from speex_stereo_state_init; speex_stereo_state_destroy frees it.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "speex_decode_stereo",
+        "speex_decode_stereo_int",
+        "speex_decoder_ctl(SPEEX_SET_HANDLER)",
+        "speex_std_stereo_request_handler",
+        "speex_stereo_state_destroy",
+        "speex_stereo_state_init",
+        "speex_stereo_state_reset"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:speex_stereo_state_init"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:speex_stereo_state_destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:speex_stereo_state_reset",
+            "call:speex_stereo_state_destroy",
+            "call:speex_decode_stereo",
+            "call:speex_decode_stereo_int",
+            "call:speex_std_stereo_request_handler",
+            "call:speex_decoder_ctl(SPEEX_SET_HANDLER)"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:speex_stereo_state_init",
+            "ok:speex_stereo_state_init",
+            "call:speex_decode_stereo",
+            "ok:speex_decode_stereo",
+            "call:speex_stereo_state_destroy",
+            "ok:speex_stereo_state_destroy"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:speex_decode_stereo_int"
+          ],
+          "allowed": false,
+          "reason": "no stereo state"
+        },
+        {
+          "events": [
+            "call:speex_stereo_state_init",
+            "ok:speex_stereo_state_init",
+            "call:speex_stereo_state_destroy",
+            "ok:speex_stereo_state_destroy",
+            "call:speex_stereo_state_reset"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "stereo_state_outlives_decoder_handler",
+      "rule": "speex_callbacks.h: SPEEX_SET_HANDLER stores the SpeexCallback, including its data pointer (the stereo state), inside the decoder; the decoder calls it whenever an in-band stereo request arrives. The stereo state must not be destroyed while a decoder that holds it lives.",
+      "formula": "G(handler_set -> X(!stereo_free W dec_free))",
+      "apis": [
+        "speex_decoder_ctl(SPEEX_SET_HANDLER)",
+        "speex_stereo_state_destroy",
+        "speex_decoder_destroy"
+      ],
+      "predicates": {
+        "handler_set": {
+          "meaning": "the decoder accepted the stereo handler",
+          "events": [
+            "ok:speex_decoder_ctl(SPEEX_SET_HANDLER)"
+          ]
+        },
+        "stereo_free": {
+          "meaning": "the stereo state is about to be destroyed",
+          "events": [
+            "call:speex_stereo_state_destroy"
+          ]
+        },
+        "dec_free": {
+          "meaning": "the decoder holding the callback is destroyed",
+          "events": [
+            "call:speex_decoder_destroy"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:speex_decoder_ctl(SPEEX_SET_HANDLER)",
+            "ok:speex_decoder_ctl(SPEEX_SET_HANDLER)",
+            "call:speex_decoder_destroy",
+            "ok:speex_decoder_destroy",
+            "call:speex_stereo_state_destroy",
+            "ok:speex_stereo_state_destroy"
+          ],
+          "allowed": true,
+          "reason": "decoder released first"
+        },
+        {
+          "events": [
+            "call:speex_decoder_ctl(SPEEX_SET_HANDLER)",
+            "ok:speex_decoder_ctl(SPEEX_SET_HANDLER)",
+            "call:speex_stereo_state_destroy"
+          ],
+          "allowed": false,
+          "reason": "decoder still points at the stereo state"
+        }
+      ]
+    },
+    {
+      "id": "header_buffers_freed_once",
+      "rule": "speex_header.h: speex_header_to_packet and speex_packet_to_header return memory that speex_header_free releases. The harness reports both frees as speex_header_free; since they are separate objects the rule is only that a free follows an allocation.",
+      "formula": "!h_free W h_new",
+      "apis": [
+        "speex_header_to_packet",
+        "speex_packet_to_header",
+        "speex_header_free"
+      ],
+      "predicates": {
+        "h_new": {
+          "meaning": "a header buffer was allocated",
+          "events": [
+            "ok:speex_header_to_packet",
+            "ok:speex_packet_to_header"
+          ]
+        },
+        "h_free": {
+          "meaning": "speex_header_free is about to be called",
+          "events": [
+            "call:speex_header_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:speex_header_to_packet",
+            "ok:speex_header_to_packet",
+            "call:speex_header_free",
+            "ok:speex_header_free"
+          ],
+          "allowed": true,
+          "reason": "allocate then free"
+        },
+        {
+          "events": [
+            "call:speex_header_free"
+          ],
+          "allowed": false,
+          "reason": "nothing allocated"
+        }
+      ]
+    }
+  ]
+}

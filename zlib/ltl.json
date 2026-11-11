@@ -1,0 +1,101 @@
+{
+  "properties": [
+    {
+      "id": "deflate_stream_lifecycle",
+      "rule": "zlib.h: deflateInit/deflateInit2 'must be called before any other compression function'; every deflate-side routine takes the initialized stream and deflateEnd frees it, so after deflateEnd nothing may touch the stream until it is initialized again.",
+      "formula": "(!def_use W def_init_ok) & G(def_end -> X(!def_use W def_init_ok))",
+      "apis": ["deflateInit", "deflateInit2", "deflate", "deflateSetDictionary", "deflateGetDictionary", "deflateParams", "deflateTune", "deflateBound", "deflatePending", "deflatePrime", "deflateSetHeader", "deflateReset", "deflateResetKeep", "deflateCopy", "deflateEnd"],
+      "predicates": {
+        "def_init_ok": { "meaning": "deflateInit or deflateInit2 returned Z_OK", "events": ["ok:deflateInit", "ok:deflateInit2"] },
+        "def_use": { "meaning": "a routine that operates on the deflate stream is about to be called", "events": ["call:deflate", "call:deflateSetDictionary", "call:deflateGetDictionary", "call:deflateParams", "call:deflateTune", "call:deflateBound", "call:deflatePending", "call:deflatePrime", "call:deflateSetHeader", "call:deflateReset", "call:deflateResetKeep", "call:deflateCopy", "call:deflateEnd"] },
+        "def_end": { "meaning": "deflateEnd is about to be called", "events": ["call:deflateEnd"] }
+      },
+      "examples": [
+        { "events": ["call:deflateInit", "ok:deflateInit", "call:deflate", "ok:deflate", "call:deflateEnd", "ok:deflateEnd", "call:deflateInit2", "ok:deflateInit2", "call:deflate"], "allowed": true, "reason": "every use follows a successful init with no end in between" },
+        { "events": ["call:deflate"], "allowed": false, "reason": "deflate before deflateInit" },
+        { "events": ["call:deflateInit", "fail:deflateInit", "call:deflateParams"], "allowed": false, "reason": "init failed, the stream is not initialized" },
+        { "events": ["call:deflateInit", "ok:deflateInit", "call:deflateEnd", "ok:deflateEnd", "call:deflateEnd"], "allowed": false, "reason": "deflateEnd twice without re-init" }
+      ]
+    },
+    {
+      "id": "inflate_stream_lifecycle",
+      "rule": "zlib.h: inflateInit/inflateInit2 'must be called before any other decompression function'; inflateEnd frees the stream, so nothing may touch it afterwards until it is initialized again.",
+      "formula": "(!inf_use W inf_init_ok) & G(inf_end -> X(!inf_use W inf_init_ok))",
+      "apis": ["inflateInit", "inflateInit2", "inflate", "inflateSetDictionary", "inflateGetDictionary", "inflateSync", "inflateSyncPoint", "inflateReset", "inflateReset2", "inflateResetKeep", "inflatePrime", "inflateMark", "inflateGetHeader", "inflateUndermine", "inflateValidate", "inflateCodesUsed", "inflateCopy", "inflateEnd"],
+      "predicates": {
+        "inf_init_ok": { "meaning": "inflateInit or inflateInit2 returned Z_OK", "events": ["ok:inflateInit", "ok:inflateInit2"] },
+        "inf_use": { "meaning": "a routine that operates on the inflate stream is about to be called", "events": ["call:inflate", "call:inflateSetDictionary", "call:inflateGetDictionary", "call:inflateSync", "call:inflateSyncPoint", "call:inflateReset", "call:inflateReset2", "call:inflateResetKeep", "call:inflatePrime", "call:inflateMark", "call:inflateGetHeader", "call:inflateUndermine", "call:inflateValidate", "call:inflateCodesUsed", "call:inflateCopy", "call:inflateEnd"] },
+        "inf_end": { "meaning": "inflateEnd is about to be called", "events": ["call:inflateEnd"] }
+      },
+      "examples": [
+        { "events": ["call:inflateInit2", "ok:inflateInit2", "call:inflate", "ok:inflate", "call:inflateReset", "ok:inflateReset", "call:inflateEnd", "ok:inflateEnd"], "allowed": true, "reason": "all uses follow a successful init" },
+        { "events": ["call:inflateSync"], "allowed": false, "reason": "use before init" },
+        { "events": ["call:inflateInit", "ok:inflateInit", "call:inflateEnd", "ok:inflateEnd", "call:inflate"], "allowed": false, "reason": "inflate after inflateEnd without re-init" }
+      ]
+    },
+    {
+      "id": "inflateback_stream_lifecycle",
+      "rule": "zlib.h: inflateBackInit 'must be called before any other inflateBack routine'; inflateBack returns Z_STREAM_ERROR for an uninitialized stream and inflateBackEnd frees the state, so no inflateBack routine may run between inflateBackEnd and the next successful inflateBackInit.",
+      "formula": "(!back_use W back_init_ok) & G(back_end -> X(!back_use W back_init_ok))",
+      "apis": ["inflateBackInit", "inflateBack", "inflateBackEnd"],
+      "predicates": {
+        "back_init_ok": { "meaning": "inflateBackInit returned Z_OK", "events": ["ok:inflateBackInit"] },
+        "back_use": { "meaning": "inflateBack or inflateBackEnd is about to be called", "events": ["call:inflateBack", "call:inflateBackEnd"] },
+        "back_end": { "meaning": "inflateBackEnd is about to be called", "events": ["call:inflateBackEnd"] }
+      },
+      "examples": [
+        { "events": ["call:inflateBackInit", "ok:inflateBackInit", "call:inflateBack", "fail:inflateBack", "call:inflateBack", "ok:inflateBack", "call:inflateBackEnd", "ok:inflateBackEnd"], "allowed": true, "reason": "inflateBack may be repeated on an initialized stream" },
+        { "events": ["call:inflateBack"], "allowed": false, "reason": "inflateBack before inflateBackInit" },
+        { "events": ["call:inflateBackInit", "ok:inflateBackInit", "call:inflateBackEnd", "ok:inflateBackEnd", "call:inflateBackEnd"], "allowed": false, "reason": "inflateBackEnd twice" }
+      ]
+    },
+    {
+      "id": "deflate_dictionary_before_data",
+      "rule": "zlib.h deflateSetDictionary: it 'can be called ... immediately after deflateInit, deflateInit2 or deflateReset, before any call of deflate'. Once deflate has been called, the dictionary may not be set until the stream is reset or re-initialized.",
+      "formula": "G(deflate_called -> X(!set_dict W def_fresh))",
+      "apis": ["deflate", "deflateSetDictionary", "deflateReset", "deflateInit", "deflateInit2"],
+      "predicates": {
+        "deflate_called": { "meaning": "deflate is about to be called", "events": ["call:deflate"] },
+        "set_dict": { "meaning": "deflateSetDictionary is about to be called", "events": ["call:deflateSetDictionary"] },
+        "def_fresh": { "meaning": "the stream was just initialized or reset", "events": ["ok:deflateInit", "ok:deflateInit2", "ok:deflateReset"] }
+      },
+      "examples": [
+        { "events": ["call:deflateInit", "ok:deflateInit", "call:deflateSetDictionary", "ok:deflateSetDictionary", "call:deflate", "ok:deflate", "call:deflateReset", "ok:deflateReset", "call:deflateSetDictionary"], "allowed": true, "reason": "dictionary set right after init and again right after reset" },
+        { "events": ["call:deflateInit", "ok:deflateInit", "call:deflate", "ok:deflate", "call:deflateSetDictionary"], "allowed": false, "reason": "dictionary set after deflate already consumed data" }
+      ]
+    },
+    {
+      "id": "gzfile_lifecycle",
+      "rule": "zlib.h: every gz* routine takes the gzFile returned by a successful gzopen/gzopen64/gzdopen; gzclose, and gzclose_r/gzclose_w when they succeed, free it. gzclose_r/gzclose_w on a handle of the wrong mode return Z_STREAM_ERROR and leave it open (gzread.c gzclose_r, gzwrite.c gzclose_w).",
+      "formula": "(!gz_use W gz_open_ok) & G(gz_closed -> X(!gz_use W gz_open_ok))",
+      "apis": ["gzopen", "gzopen64", "gzdopen", "gzbuffer", "gzsetparams", "gzread", "gzfread", "gzwrite", "gzfwrite", "gzprintf", "gzputs", "gzgets", "gzputc", "gzgetc", "gzgetc_", "gzungetc", "gzflush", "gzseek", "gzrewind", "gztell", "gzoffset", "gzeof", "gzdirect", "gzerror", "gzclearerr", "gzclose", "gzclose_r", "gzclose_w"],
+      "predicates": {
+        "gz_open_ok": { "meaning": "gzopen, gzopen64 or gzdopen returned a non-NULL gzFile", "events": ["ok:gzopen", "ok:gzopen64", "ok:gzdopen"] },
+        "gz_use": { "meaning": "a routine taking the gzFile is about to be called", "events": ["call:gzbuffer", "call:gzsetparams", "call:gzread", "call:gzfread", "call:gzwrite", "call:gzfwrite", "call:gzprintf", "call:gzputs", "call:gzgets", "call:gzputc", "call:gzgetc", "call:gzgetc_", "call:gzungetc", "call:gzflush", "call:gzseek", "call:gzrewind", "call:gztell", "call:gzoffset", "call:gzeof", "call:gzdirect", "call:gzerror", "call:gzclearerr", "call:gzclose", "call:gzclose_r", "call:gzclose_w"] },
+        "gz_closed": { "meaning": "the gzFile has been freed", "events": ["call:gzclose", "ok:gzclose_r", "ok:gzclose_w"] }
+      },
+      "examples": [
+        { "events": ["call:gzopen", "ok:gzopen", "call:gzwrite", "ok:gzwrite", "call:gzclose_r", "fail:gzclose_r", "call:gzclose_w", "ok:gzclose_w", "call:gzopen", "ok:gzopen", "call:gzread"], "allowed": true, "reason": "failed gzclose_r leaves the handle open; after the successful gzclose_w a reopen precedes the next use" },
+        { "events": ["call:gzopen64", "ok:gzopen64", "call:gzgetc_", "ok:gzgetc_", "call:gzclose"], "allowed": true, "reason": "gzopen64 opens the handle like gzopen; gzgetc_ is a use like gzgetc" },
+        { "events": ["call:gzread"], "allowed": false, "reason": "no open handle" },
+        { "events": ["call:gzopen64", "fail:gzopen64", "call:gzgetc_"], "allowed": false, "reason": "gzopen64 returned NULL" },
+        { "events": ["call:gzopen", "fail:gzopen", "call:gzclose"], "allowed": false, "reason": "gzopen returned NULL" },
+        { "events": ["call:gzdopen", "ok:gzdopen", "call:gzclose", "ok:gzclose", "call:gzeof"], "allowed": false, "reason": "use after gzclose" }
+      ]
+    },
+    {
+      "id": "crc32_combine_op_needs_generated_op",
+      "rule": "zlib.h crc32_combine_op: 'op is generated from len2 by crc32_combine_gen()'. crc32.c multmodp() loops forever when op is 0, so calling crc32_combine_op with no generated op hangs.",
+      "formula": "!combine_op W gen_ok",
+      "apis": ["crc32_combine_gen", "crc32_combine_op"],
+      "predicates": {
+        "gen_ok": { "meaning": "crc32_combine_gen returned an operator", "events": ["ok:crc32_combine_gen"] },
+        "combine_op": { "meaning": "crc32_combine_op is about to be called", "events": ["call:crc32_combine_op"] }
+      },
+      "examples": [
+        { "events": ["call:crc32_combine_gen", "ok:crc32_combine_gen", "call:crc32_combine_op", "ok:crc32_combine_op", "call:crc32_combine_op"], "allowed": true, "reason": "an operator exists and may be reused" },
+        { "events": ["call:crc32", "ok:crc32", "call:crc32_combine_op"], "allowed": false, "reason": "no operator was generated" }
+      ]
+    }
+  ]
+}

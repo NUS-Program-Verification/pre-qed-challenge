@@ -1,0 +1,2419 @@
+{
+  "properties": [
+    {
+      "id": "document_lifecycle",
+      "rule": "ixml.h: every routine that takes an IXML_Document requires one returned by a successful ixmlParseBuffer*, ixmlLoadDocument* or ixmlDocument_createDocument*. ixmlDocument_free frees the document and every node still in it; using the document afterwards is use-after-free until a new one is produced. The harness keeps one live document. The generated objects only borrow a document (Upnp<Class>_set_* of an IXML_Document field stores the pointer, the *_delete functions do not free it), and UpnpSendActionEx* sends it as the SOAP header; UpnpDownloadXmlDoc returns a new document.",
+      "formula": "(!doc_use W doc_ok) & G(doc_gone -> X(!doc_use W doc_ok))",
+      "apis": [
+        "ixmlParseBuffer",
+        "ixmlParseBufferEx",
+        "ixmlLoadDocument",
+        "ixmlLoadDocumentEx",
+        "ixmlDocument_createDocument",
+        "ixmlDocument_createDocumentEx",
+        "ixmlDocument_createElement",
+        "ixmlDocument_createElementEx",
+        "ixmlDocument_createTextNode",
+        "ixmlDocument_createTextNodeEx",
+        "ixmlDocument_createCDATASection",
+        "ixmlDocument_createCDATASectionEx",
+        "ixmlDocument_createAttribute",
+        "ixmlDocument_createAttributeEx",
+        "ixmlDocument_createElementNS",
+        "ixmlDocument_createElementNSEx",
+        "ixmlDocument_createAttributeNS",
+        "ixmlDocument_createAttributeNSEx",
+        "ixmlDocument_getElementsByTagName",
+        "ixmlDocument_getElementsByTagNameNS",
+        "ixmlDocument_getElementById",
+        "ixmlDocument_importNode",
+        "ixmlDocument_free",
+        "ixmlPrintDocument",
+        "ixmlDocumenttoString",
+        "UpnpActionComplete_set_ActionRequest",
+        "UpnpActionComplete_set_ActionResult",
+        "UpnpActionRequest_set_ActionRequest",
+        "UpnpActionRequest_set_ActionResult",
+        "UpnpActionRequest_set_SoapHeader",
+        "UpnpEvent_set_ChangedVariables",
+        "UpnpSendActionEx",
+        "UpnpSendActionExAsync",
+        "UpnpDownloadXmlDoc"
+      ],
+      "predicates": {
+        "doc_ok": {
+          "meaning": "a parse, load or create returned a usable document",
+          "events": [
+            "ok:ixmlParseBuffer",
+            "ok:ixmlParseBufferEx",
+            "ok:ixmlLoadDocument",
+            "ok:ixmlLoadDocumentEx",
+            "ok:ixmlDocument_createDocument",
+            "ok:ixmlDocument_createDocumentEx",
+            "ok:UpnpDownloadXmlDoc"
+          ]
+        },
+        "doc_gone": {
+          "meaning": "the document is about to be freed",
+          "events": [
+            "call:ixmlDocument_free"
+          ]
+        },
+        "doc_use": {
+          "meaning": "a routine taking the live document is about to be called",
+          "events": [
+            "call:ixmlDocument_createElement",
+            "call:ixmlDocument_createElementEx",
+            "call:ixmlDocument_createTextNode",
+            "call:ixmlDocument_createTextNodeEx",
+            "call:ixmlDocument_createCDATASection",
+            "call:ixmlDocument_createCDATASectionEx",
+            "call:ixmlDocument_createAttribute",
+            "call:ixmlDocument_createAttributeEx",
+            "call:ixmlDocument_createElementNS",
+            "call:ixmlDocument_createElementNSEx",
+            "call:ixmlDocument_createAttributeNS",
+            "call:ixmlDocument_createAttributeNSEx",
+            "call:ixmlDocument_getElementsByTagName",
+            "call:ixmlDocument_getElementsByTagNameNS",
+            "call:ixmlDocument_getElementById",
+            "call:ixmlDocument_importNode",
+            "call:ixmlDocument_free",
+            "call:ixmlPrintDocument",
+            "call:ixmlDocumenttoString",
+            "call:UpnpActionComplete_set_ActionRequest",
+            "call:UpnpActionComplete_set_ActionResult",
+            "call:UpnpActionRequest_set_ActionRequest",
+            "call:UpnpActionRequest_set_ActionResult",
+            "call:UpnpActionRequest_set_SoapHeader",
+            "call:UpnpEvent_set_ChangedVariables",
+            "call:UpnpSendActionEx",
+            "call:UpnpSendActionExAsync"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ixmlParseBuffer",
+            "ok:ixmlParseBuffer",
+            "call:ixmlDocument_createElement",
+            "ok:ixmlDocument_createElement",
+            "call:ixmlDocument_free",
+            "ok:ixmlDocument_free"
+          ],
+          "allowed": true,
+          "reason": "every use sits between a successful parse and the free"
+        },
+        {
+          "events": [
+            "call:ixmlDocument_createDocument",
+            "ok:ixmlDocument_createDocument",
+            "call:ixmlPrintDocument",
+            "ok:ixmlPrintDocument",
+            "call:ixmlDocument_free",
+            "ok:ixmlDocument_free",
+            "call:ixmlLoadDocument",
+            "ok:ixmlLoadDocument",
+            "call:ixmlDocumenttoString"
+          ],
+          "allowed": true,
+          "reason": "a fresh document replaces the freed one"
+        },
+        {
+          "events": [
+            "call:ixmlPrintDocument"
+          ],
+          "allowed": false,
+          "reason": "no document was created"
+        },
+        {
+          "events": [
+            "call:ixmlParseBuffer",
+            "fail:ixmlParseBuffer",
+            "call:ixmlDocument_createElement"
+          ],
+          "allowed": false,
+          "reason": "the parse failed, there is no document"
+        },
+        {
+          "events": [
+            "call:ixmlParseBuffer",
+            "ok:ixmlParseBuffer",
+            "call:ixmlDocument_free",
+            "ok:ixmlDocument_free",
+            "call:ixmlDocument_getElementById"
+          ],
+          "allowed": false,
+          "reason": "use after ixmlDocument_free"
+        }
+      ]
+    },
+    {
+      "id": "borrowed_node_validity",
+      "rule": "ixml.h: ixmlNode_getFirstChild, ixmlNode_getLastChild, ixmlNode_getParentNode, ixmlNode_getNextSibling, ixmlNode_getPreviousSibling, ixmlNodeList_item, ixmlNamedNodeMap_item, ixmlNamedNodeMap_getNamedItem, ixmlElement_getAttributeNode*, ixmlDocument_getElementById return pointers owned by the tree. Restructuring the tree (append, insert, remove, replace) or removing/replacing an attribute may free or relink that node, and ixmlDocument_free frees all of it, so the pointer must be looked up again before further use. The document node itself is a stable handle: the structural routines may take it as parent and are modelled only as mutations.",
+      "formula": "(!node_use W node_ok) & G(tree_mutated -> X(!node_use W node_ok))",
+      "apis": [
+        "ixmlNode_getFirstChild",
+        "ixmlNode_getLastChild",
+        "ixmlNode_getParentNode",
+        "ixmlNode_getNextSibling",
+        "ixmlNode_getPreviousSibling",
+        "ixmlNodeList_item",
+        "ixmlNamedNodeMap_item",
+        "ixmlNamedNodeMap_getNamedItem",
+        "ixmlElement_getAttributeNode",
+        "ixmlElement_getAttributeNodeNS",
+        "ixmlDocument_getElementById",
+        "ixmlNode_getNodeName",
+        "ixmlNode_getNodeValue",
+        "ixmlNode_setNodeValue",
+        "ixmlNode_getNodeType",
+        "ixmlNode_getChildNodes",
+        "ixmlNode_getAttributes",
+        "ixmlNode_getOwnerDocument",
+        "ixmlNode_getNamespaceURI",
+        "ixmlNode_getPrefix",
+        "ixmlNode_getLocalName",
+        "ixmlNode_hasChildNodes",
+        "ixmlNode_hasAttributes",
+        "ixmlNode_cloneNode",
+        "ixmlDocument_importNode",
+        "ixmlPrintNode",
+        "ixmlNodetoString"
+      ],
+      "predicates": {
+        "node_ok": {
+          "meaning": "a lookup returned a non-NULL node inside the tree",
+          "events": [
+            "ok:ixmlNode_getFirstChild",
+            "ok:ixmlNode_getLastChild",
+            "ok:ixmlNode_getParentNode",
+            "ok:ixmlNode_getNextSibling",
+            "ok:ixmlNode_getPreviousSibling",
+            "ok:ixmlNodeList_item",
+            "ok:ixmlNamedNodeMap_item",
+            "ok:ixmlNamedNodeMap_getNamedItem",
+            "ok:ixmlElement_getAttributeNode",
+            "ok:ixmlElement_getAttributeNodeNS",
+            "ok:ixmlDocument_getElementById"
+          ]
+        },
+        "node_use": {
+          "meaning": "a routine taking the borrowed node is about to be called",
+          "events": [
+            "call:ixmlNode_getNodeName",
+            "call:ixmlNode_getNodeValue",
+            "call:ixmlNode_setNodeValue",
+            "call:ixmlNode_getNodeType",
+            "call:ixmlNode_getChildNodes",
+            "call:ixmlNode_getAttributes",
+            "call:ixmlNode_getOwnerDocument",
+            "call:ixmlNode_getNamespaceURI",
+            "call:ixmlNode_getPrefix",
+            "call:ixmlNode_getLocalName",
+            "call:ixmlNode_hasChildNodes",
+            "call:ixmlNode_hasAttributes",
+            "call:ixmlNode_cloneNode",
+            "call:ixmlDocument_importNode",
+            "call:ixmlPrintNode",
+            "call:ixmlNodetoString"
+          ]
+        },
+        "tree_mutated": {
+          "meaning": "the tree is about to be restructured, an attribute replaced, or the document freed",
+          "events": [
+            "call:ixmlNode_appendChild",
+            "call:ixmlNode_insertBefore",
+            "call:ixmlNode_removeChild",
+            "call:ixmlNode_replaceChild",
+            "call:ixmlElement_setAttribute",
+            "call:ixmlElement_removeAttribute",
+            "call:ixmlElement_setAttributeNS",
+            "call:ixmlElement_removeAttributeNS",
+            "call:ixmlElement_setAttributeNode",
+            "call:ixmlElement_removeAttributeNode",
+            "call:ixmlElement_setAttributeNodeNS",
+            "call:ixmlDocument_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ixmlNode_getFirstChild",
+            "ok:ixmlNode_getFirstChild",
+            "call:ixmlNode_getNodeName",
+            "ok:ixmlNode_getNodeName",
+            "call:ixmlNode_getFirstChild",
+            "ok:ixmlNode_getFirstChild",
+            "call:ixmlNode_cloneNode",
+            "ok:ixmlNode_cloneNode"
+          ],
+          "allowed": true,
+          "reason": "each use follows a lookup"
+        },
+        {
+          "events": [
+            "call:ixmlNode_getNodeName"
+          ],
+          "allowed": false,
+          "reason": "nothing was looked up"
+        },
+        {
+          "events": [
+            "call:ixmlNode_getFirstChild",
+            "fail:ixmlNode_getFirstChild",
+            "call:ixmlNode_getNodeName"
+          ],
+          "allowed": false,
+          "reason": "the lookup returned NULL"
+        },
+        {
+          "events": [
+            "call:ixmlNode_getFirstChild",
+            "ok:ixmlNode_getFirstChild",
+            "call:ixmlElement_removeAttributeNode",
+            "ok:ixmlElement_removeAttributeNode",
+            "call:ixmlNode_getNodeName"
+          ],
+          "allowed": false,
+          "reason": "removing the attribute may have freed the borrowed node"
+        },
+        {
+          "events": [
+            "call:ixmlNode_getFirstChild",
+            "ok:ixmlNode_getFirstChild",
+            "call:ixmlDocument_free",
+            "ok:ixmlDocument_free",
+            "call:ixmlNode_getNodeName"
+          ],
+          "allowed": false,
+          "reason": "the document and every node in it are gone"
+        }
+      ]
+    },
+    {
+      "id": "detached_node_ownership",
+      "rule": "ixml.h: ixmlDocument_create*, ixmlNode_cloneNode, ixmlDocument_importNode, ixmlNode_removeChild, ixmlNode_replaceChild and ixmlElement_removeAttributeNode return a node the caller owns; ixmlElement_setAttributeNode* and ixmlNode_replaceChild also hand back the replaced node. ixmlNode_appendChild, ixmlNode_insertBefore, ixmlElement_setAttributeNode* transfer ownership to the element/tree on success, and ixmlNode_free/ixmlAttr_free/ixmlElement_free/ixmlCDATASection_free consume a detached node. The harness keeps one detached node. replaceChild and setAttributeNode* both consume and return a node, so they only re-establish ownership.",
+      "formula": "(!loose_use W loose_owned) & G(loose_given -> X(!loose_use W loose_owned))",
+      "apis": [
+        "ixmlDocument_createElement",
+        "ixmlDocument_createElementEx",
+        "ixmlDocument_createTextNode",
+        "ixmlDocument_createTextNodeEx",
+        "ixmlDocument_createCDATASection",
+        "ixmlDocument_createCDATASectionEx",
+        "ixmlDocument_createAttribute",
+        "ixmlDocument_createAttributeEx",
+        "ixmlDocument_createElementNS",
+        "ixmlDocument_createElementNSEx",
+        "ixmlDocument_createAttributeNS",
+        "ixmlDocument_createAttributeNSEx",
+        "ixmlNode_cloneNode",
+        "ixmlDocument_importNode",
+        "ixmlNode_removeChild",
+        "ixmlNode_replaceChild",
+        "ixmlElement_removeAttributeNode",
+        "ixmlElement_setAttributeNode",
+        "ixmlElement_setAttributeNodeNS",
+        "ixmlNode_appendChild",
+        "ixmlNode_insertBefore",
+        "ixmlNode_free",
+        "ixmlAttr_free",
+        "ixmlElement_free",
+        "ixmlCDATASection_free"
+      ],
+      "predicates": {
+        "loose_owned": {
+          "meaning": "a create, clone, import, detach or replace returned a node the caller owns",
+          "events": [
+            "ok:ixmlDocument_createElement",
+            "ok:ixmlDocument_createElementEx",
+            "ok:ixmlDocument_createTextNode",
+            "ok:ixmlDocument_createTextNodeEx",
+            "ok:ixmlDocument_createCDATASection",
+            "ok:ixmlDocument_createCDATASectionEx",
+            "ok:ixmlDocument_createAttribute",
+            "ok:ixmlDocument_createAttributeEx",
+            "ok:ixmlDocument_createElementNS",
+            "ok:ixmlDocument_createElementNSEx",
+            "ok:ixmlDocument_createAttributeNS",
+            "ok:ixmlDocument_createAttributeNSEx",
+            "ok:ixmlNode_cloneNode",
+            "ok:ixmlDocument_importNode",
+            "ok:ixmlNode_removeChild",
+            "ok:ixmlNode_replaceChild",
+            "ok:ixmlElement_removeAttributeNode",
+            "ok:ixmlElement_setAttributeNode",
+            "ok:ixmlElement_setAttributeNodeNS"
+          ]
+        },
+        "loose_given": {
+          "meaning": "the parent or element accepted the detached node, or the node was freed",
+          "events": [
+            "ok:ixmlNode_appendChild",
+            "ok:ixmlNode_insertBefore",
+            "ok:ixmlNode_free",
+            "ok:ixmlAttr_free",
+            "ok:ixmlElement_free",
+            "ok:ixmlCDATASection_free"
+          ]
+        },
+        "loose_use": {
+          "meaning": "a routine taking the detached node is about to be called",
+          "events": [
+            "call:ixmlNode_appendChild",
+            "call:ixmlNode_insertBefore",
+            "call:ixmlNode_replaceChild",
+            "call:ixmlElement_setAttributeNode",
+            "call:ixmlElement_setAttributeNodeNS",
+            "call:ixmlNode_free",
+            "call:ixmlAttr_free",
+            "call:ixmlElement_free",
+            "call:ixmlCDATASection_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ixmlDocument_createAttribute",
+            "ok:ixmlDocument_createAttribute",
+            "call:ixmlElement_setAttributeNode",
+            "ok:ixmlElement_setAttributeNode",
+            "call:ixmlDocument_createElement",
+            "ok:ixmlDocument_createElement",
+            "call:ixmlNode_appendChild",
+            "ok:ixmlNode_appendChild"
+          ],
+          "allowed": true,
+          "reason": "the attribute moved into the element and a new node was created before the next use"
+        },
+        {
+          "events": [
+            "call:ixmlNode_removeChild",
+            "ok:ixmlNode_removeChild",
+            "call:ixmlNode_cloneNode",
+            "ok:ixmlNode_cloneNode",
+            "call:ixmlNode_free",
+            "ok:ixmlNode_free",
+            "call:ixmlDocument_createElement",
+            "ok:ixmlDocument_createElement",
+            "call:ixmlNode_appendChild"
+          ],
+          "allowed": true,
+          "reason": "after the detached node is freed a new one is created before the next use"
+        },
+        {
+          "events": [
+            "call:ixmlNode_appendChild"
+          ],
+          "allowed": false,
+          "reason": "no node is owned"
+        },
+        {
+          "events": [
+            "call:ixmlDocument_createElement",
+            "ok:ixmlDocument_createElement",
+            "call:ixmlNode_appendChild",
+            "ok:ixmlNode_appendChild",
+            "call:ixmlNode_appendChild"
+          ],
+          "allowed": false,
+          "reason": "adding the same node twice after ownership moved"
+        },
+        {
+          "events": [
+            "call:ixmlDocument_createTextNode",
+            "ok:ixmlDocument_createTextNode",
+            "call:ixmlNode_free",
+            "ok:ixmlNode_free",
+            "call:ixmlNode_insertBefore"
+          ],
+          "allowed": false,
+          "reason": "the node was freed"
+        }
+      ]
+    },
+    {
+      "id": "domstring_free_once",
+      "rule": "ixml.h: ixmlPrintDocument, ixmlPrintNode, ixmlDocumenttoString, ixmlNodetoString and ixmlCloneDOMString return a DOMString owned by the caller and released with ixmlFreeDOMString exactly once. Freeing when none is held is a double free. The harness keeps one DOMString.",
+      "formula": "(!free_call W str_ok) & G(free_call -> X(!free_call W str_ok))",
+      "apis": [
+        "ixmlPrintDocument",
+        "ixmlPrintNode",
+        "ixmlDocumenttoString",
+        "ixmlNodetoString",
+        "ixmlCloneDOMString",
+        "ixmlFreeDOMString"
+      ],
+      "predicates": {
+        "str_ok": {
+          "meaning": "a render or clone returned a non-NULL DOMString",
+          "events": [
+            "ok:ixmlPrintDocument",
+            "ok:ixmlPrintNode",
+            "ok:ixmlDocumenttoString",
+            "ok:ixmlNodetoString",
+            "ok:ixmlCloneDOMString"
+          ]
+        },
+        "free_call": {
+          "meaning": "ixmlFreeDOMString is about to be called on the held DOMString",
+          "events": [
+            "call:ixmlFreeDOMString"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ixmlPrintDocument",
+            "ok:ixmlPrintDocument",
+            "call:ixmlFreeDOMString",
+            "ok:ixmlFreeDOMString",
+            "call:ixmlCloneDOMString",
+            "ok:ixmlCloneDOMString",
+            "call:ixmlFreeDOMString"
+          ],
+          "allowed": true,
+          "reason": "each free follows a fresh DOMString"
+        },
+        {
+          "events": [
+            "call:ixmlFreeDOMString"
+          ],
+          "allowed": false,
+          "reason": "nothing to free"
+        },
+        {
+          "events": [
+            "call:ixmlPrintDocument",
+            "ok:ixmlPrintDocument",
+            "call:ixmlFreeDOMString",
+            "ok:ixmlFreeDOMString",
+            "call:ixmlFreeDOMString"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        }
+      ]
+    },
+    {
+      "id": "action_complete_lifecycle",
+      "rule": "UpnpActionComplete.h:31-33: every UpnpActionComplete_* routine takes an object returned by UpnpActionComplete_new (or UpnpActionComplete_dup); UpnpActionComplete_delete frees it (UpnpActionComplete.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!action_complete_use W action_complete_ok) & G(action_complete_gone -> X(!action_complete_use W action_complete_ok))",
+      "apis": [
+        "UpnpActionComplete_new",
+        "UpnpActionComplete_delete",
+        "UpnpActionComplete_dup",
+        "UpnpActionComplete_assign",
+        "UpnpActionComplete_get_ErrCode",
+        "UpnpActionComplete_set_ErrCode",
+        "UpnpActionComplete_get_CtrlUrl",
+        "UpnpActionComplete_set_CtrlUrl",
+        "UpnpActionComplete_get_CtrlUrl_Length",
+        "UpnpActionComplete_get_CtrlUrl_cstr",
+        "UpnpActionComplete_strcpy_CtrlUrl",
+        "UpnpActionComplete_strncpy_CtrlUrl",
+        "UpnpActionComplete_clear_CtrlUrl",
+        "UpnpActionComplete_get_ActionRequest",
+        "UpnpActionComplete_set_ActionRequest",
+        "UpnpActionComplete_get_ActionResult",
+        "UpnpActionComplete_set_ActionResult"
+      ],
+      "predicates": {
+        "action_complete_ok": {
+          "meaning": "UpnpActionComplete_new returned an object",
+          "events": [
+            "ok:UpnpActionComplete_new"
+          ]
+        },
+        "action_complete_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpActionComplete_delete"
+          ]
+        },
+        "action_complete_use": {
+          "meaning": "a routine taking the UpnpActionComplete is about to be called",
+          "events": [
+            "call:UpnpActionComplete_dup",
+            "call:UpnpActionComplete_delete",
+            "call:UpnpActionComplete_assign",
+            "call:UpnpActionComplete_get_ErrCode",
+            "call:UpnpActionComplete_set_ErrCode",
+            "call:UpnpActionComplete_get_CtrlUrl",
+            "call:UpnpActionComplete_set_CtrlUrl",
+            "call:UpnpActionComplete_get_CtrlUrl_Length",
+            "call:UpnpActionComplete_get_CtrlUrl_cstr",
+            "call:UpnpActionComplete_strcpy_CtrlUrl",
+            "call:UpnpActionComplete_strncpy_CtrlUrl",
+            "call:UpnpActionComplete_clear_CtrlUrl",
+            "call:UpnpActionComplete_get_ActionRequest",
+            "call:UpnpActionComplete_set_ActionRequest",
+            "call:UpnpActionComplete_get_ActionResult",
+            "call:UpnpActionComplete_set_ActionResult"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpActionComplete_new",
+            "ok:UpnpActionComplete_new",
+            "call:UpnpActionComplete_get_ErrCode",
+            "ok:UpnpActionComplete_get_ErrCode",
+            "call:UpnpActionComplete_delete",
+            "ok:UpnpActionComplete_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpActionComplete_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpActionComplete_new",
+            "ok:UpnpActionComplete_new",
+            "call:UpnpActionComplete_delete",
+            "ok:UpnpActionComplete_delete",
+            "call:UpnpActionComplete_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "action_request_lifecycle",
+      "rule": "UpnpActionRequest.h:32-34: every UpnpActionRequest_* routine takes an object returned by UpnpActionRequest_new (or UpnpActionRequest_dup); UpnpActionRequest_delete frees it (UpnpActionRequest.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!action_request_use W action_request_ok) & G(action_request_gone -> X(!action_request_use W action_request_ok))",
+      "apis": [
+        "UpnpActionRequest_new",
+        "UpnpActionRequest_delete",
+        "UpnpActionRequest_dup",
+        "UpnpActionRequest_assign",
+        "UpnpActionRequest_get_ErrCode",
+        "UpnpActionRequest_set_ErrCode",
+        "UpnpActionRequest_get_Socket",
+        "UpnpActionRequest_set_Socket",
+        "UpnpActionRequest_get_ErrStr",
+        "UpnpActionRequest_set_ErrStr",
+        "UpnpActionRequest_get_ErrStr_Length",
+        "UpnpActionRequest_get_ErrStr_cstr",
+        "UpnpActionRequest_strcpy_ErrStr",
+        "UpnpActionRequest_strncpy_ErrStr",
+        "UpnpActionRequest_clear_ErrStr",
+        "UpnpActionRequest_get_ActionName",
+        "UpnpActionRequest_set_ActionName",
+        "UpnpActionRequest_get_ActionName_Length",
+        "UpnpActionRequest_get_ActionName_cstr",
+        "UpnpActionRequest_strcpy_ActionName",
+        "UpnpActionRequest_strncpy_ActionName",
+        "UpnpActionRequest_clear_ActionName",
+        "UpnpActionRequest_get_DevUDN",
+        "UpnpActionRequest_set_DevUDN",
+        "UpnpActionRequest_get_DevUDN_Length",
+        "UpnpActionRequest_get_DevUDN_cstr",
+        "UpnpActionRequest_strcpy_DevUDN",
+        "UpnpActionRequest_strncpy_DevUDN",
+        "UpnpActionRequest_clear_DevUDN",
+        "UpnpActionRequest_get_ServiceID",
+        "UpnpActionRequest_set_ServiceID",
+        "UpnpActionRequest_get_ServiceID_Length",
+        "UpnpActionRequest_get_ServiceID_cstr",
+        "UpnpActionRequest_strcpy_ServiceID",
+        "UpnpActionRequest_strncpy_ServiceID",
+        "UpnpActionRequest_clear_ServiceID",
+        "UpnpActionRequest_get_ActionRequest",
+        "UpnpActionRequest_set_ActionRequest",
+        "UpnpActionRequest_get_ActionResult",
+        "UpnpActionRequest_set_ActionResult",
+        "UpnpActionRequest_get_SoapHeader",
+        "UpnpActionRequest_set_SoapHeader",
+        "UpnpActionRequest_get_CtrlPtIPAddr",
+        "UpnpActionRequest_set_CtrlPtIPAddr",
+        "UpnpActionRequest_clear_CtrlPtIPAddr",
+        "UpnpActionRequest_get_Os",
+        "UpnpActionRequest_set_Os",
+        "UpnpActionRequest_get_Os_Length",
+        "UpnpActionRequest_get_Os_cstr",
+        "UpnpActionRequest_strcpy_Os",
+        "UpnpActionRequest_strncpy_Os",
+        "UpnpActionRequest_clear_Os"
+      ],
+      "predicates": {
+        "action_request_ok": {
+          "meaning": "UpnpActionRequest_new returned an object",
+          "events": [
+            "ok:UpnpActionRequest_new"
+          ]
+        },
+        "action_request_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpActionRequest_delete"
+          ]
+        },
+        "action_request_use": {
+          "meaning": "a routine taking the UpnpActionRequest is about to be called",
+          "events": [
+            "call:UpnpActionRequest_dup",
+            "call:UpnpActionRequest_delete",
+            "call:UpnpActionRequest_assign",
+            "call:UpnpActionRequest_get_ErrCode",
+            "call:UpnpActionRequest_set_ErrCode",
+            "call:UpnpActionRequest_get_Socket",
+            "call:UpnpActionRequest_set_Socket",
+            "call:UpnpActionRequest_get_ErrStr",
+            "call:UpnpActionRequest_set_ErrStr",
+            "call:UpnpActionRequest_get_ErrStr_Length",
+            "call:UpnpActionRequest_get_ErrStr_cstr",
+            "call:UpnpActionRequest_strcpy_ErrStr",
+            "call:UpnpActionRequest_strncpy_ErrStr",
+            "call:UpnpActionRequest_clear_ErrStr",
+            "call:UpnpActionRequest_get_ActionName",
+            "call:UpnpActionRequest_set_ActionName",
+            "call:UpnpActionRequest_get_ActionName_Length",
+            "call:UpnpActionRequest_get_ActionName_cstr",
+            "call:UpnpActionRequest_strcpy_ActionName",
+            "call:UpnpActionRequest_strncpy_ActionName",
+            "call:UpnpActionRequest_clear_ActionName",
+            "call:UpnpActionRequest_get_DevUDN",
+            "call:UpnpActionRequest_set_DevUDN",
+            "call:UpnpActionRequest_get_DevUDN_Length",
+            "call:UpnpActionRequest_get_DevUDN_cstr",
+            "call:UpnpActionRequest_strcpy_DevUDN",
+            "call:UpnpActionRequest_strncpy_DevUDN",
+            "call:UpnpActionRequest_clear_DevUDN",
+            "call:UpnpActionRequest_get_ServiceID",
+            "call:UpnpActionRequest_set_ServiceID",
+            "call:UpnpActionRequest_get_ServiceID_Length",
+            "call:UpnpActionRequest_get_ServiceID_cstr",
+            "call:UpnpActionRequest_strcpy_ServiceID",
+            "call:UpnpActionRequest_strncpy_ServiceID",
+            "call:UpnpActionRequest_clear_ServiceID",
+            "call:UpnpActionRequest_get_ActionRequest",
+            "call:UpnpActionRequest_set_ActionRequest",
+            "call:UpnpActionRequest_get_ActionResult",
+            "call:UpnpActionRequest_set_ActionResult",
+            "call:UpnpActionRequest_get_SoapHeader",
+            "call:UpnpActionRequest_set_SoapHeader",
+            "call:UpnpActionRequest_get_CtrlPtIPAddr",
+            "call:UpnpActionRequest_set_CtrlPtIPAddr",
+            "call:UpnpActionRequest_clear_CtrlPtIPAddr",
+            "call:UpnpActionRequest_get_Os",
+            "call:UpnpActionRequest_set_Os",
+            "call:UpnpActionRequest_get_Os_Length",
+            "call:UpnpActionRequest_get_Os_cstr",
+            "call:UpnpActionRequest_strcpy_Os",
+            "call:UpnpActionRequest_strncpy_Os",
+            "call:UpnpActionRequest_clear_Os"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpActionRequest_new",
+            "ok:UpnpActionRequest_new",
+            "call:UpnpActionRequest_get_ErrCode",
+            "ok:UpnpActionRequest_get_ErrCode",
+            "call:UpnpActionRequest_delete",
+            "ok:UpnpActionRequest_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpActionRequest_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpActionRequest_new",
+            "ok:UpnpActionRequest_new",
+            "call:UpnpActionRequest_delete",
+            "ok:UpnpActionRequest_delete",
+            "call:UpnpActionRequest_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "discovery_lifecycle",
+      "rule": "UpnpDiscovery.h:31-33: every UpnpDiscovery_* routine takes an object returned by UpnpDiscovery_new (or UpnpDiscovery_dup); UpnpDiscovery_delete frees it (UpnpDiscovery.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!discovery_use W discovery_ok) & G(discovery_gone -> X(!discovery_use W discovery_ok))",
+      "apis": [
+        "UpnpDiscovery_new",
+        "UpnpDiscovery_delete",
+        "UpnpDiscovery_dup",
+        "UpnpDiscovery_assign",
+        "UpnpDiscovery_get_ErrCode",
+        "UpnpDiscovery_set_ErrCode",
+        "UpnpDiscovery_get_Expires",
+        "UpnpDiscovery_set_Expires",
+        "UpnpDiscovery_get_DeviceID",
+        "UpnpDiscovery_set_DeviceID",
+        "UpnpDiscovery_get_DeviceID_Length",
+        "UpnpDiscovery_get_DeviceID_cstr",
+        "UpnpDiscovery_strcpy_DeviceID",
+        "UpnpDiscovery_strncpy_DeviceID",
+        "UpnpDiscovery_clear_DeviceID",
+        "UpnpDiscovery_get_DeviceType",
+        "UpnpDiscovery_set_DeviceType",
+        "UpnpDiscovery_get_DeviceType_Length",
+        "UpnpDiscovery_get_DeviceType_cstr",
+        "UpnpDiscovery_strcpy_DeviceType",
+        "UpnpDiscovery_strncpy_DeviceType",
+        "UpnpDiscovery_clear_DeviceType",
+        "UpnpDiscovery_get_ServiceType",
+        "UpnpDiscovery_set_ServiceType",
+        "UpnpDiscovery_get_ServiceType_Length",
+        "UpnpDiscovery_get_ServiceType_cstr",
+        "UpnpDiscovery_strcpy_ServiceType",
+        "UpnpDiscovery_strncpy_ServiceType",
+        "UpnpDiscovery_clear_ServiceType",
+        "UpnpDiscovery_get_ServiceVer",
+        "UpnpDiscovery_set_ServiceVer",
+        "UpnpDiscovery_get_ServiceVer_Length",
+        "UpnpDiscovery_get_ServiceVer_cstr",
+        "UpnpDiscovery_strcpy_ServiceVer",
+        "UpnpDiscovery_strncpy_ServiceVer",
+        "UpnpDiscovery_clear_ServiceVer",
+        "UpnpDiscovery_get_Location",
+        "UpnpDiscovery_set_Location",
+        "UpnpDiscovery_get_Location_Length",
+        "UpnpDiscovery_get_Location_cstr",
+        "UpnpDiscovery_strcpy_Location",
+        "UpnpDiscovery_strncpy_Location",
+        "UpnpDiscovery_clear_Location",
+        "UpnpDiscovery_get_Os",
+        "UpnpDiscovery_set_Os",
+        "UpnpDiscovery_get_Os_Length",
+        "UpnpDiscovery_get_Os_cstr",
+        "UpnpDiscovery_strcpy_Os",
+        "UpnpDiscovery_strncpy_Os",
+        "UpnpDiscovery_clear_Os",
+        "UpnpDiscovery_get_Date",
+        "UpnpDiscovery_set_Date",
+        "UpnpDiscovery_get_Date_Length",
+        "UpnpDiscovery_get_Date_cstr",
+        "UpnpDiscovery_strcpy_Date",
+        "UpnpDiscovery_strncpy_Date",
+        "UpnpDiscovery_clear_Date",
+        "UpnpDiscovery_get_Ext",
+        "UpnpDiscovery_set_Ext",
+        "UpnpDiscovery_get_Ext_Length",
+        "UpnpDiscovery_get_Ext_cstr",
+        "UpnpDiscovery_strcpy_Ext",
+        "UpnpDiscovery_strncpy_Ext",
+        "UpnpDiscovery_clear_Ext",
+        "UpnpDiscovery_get_DestAddr",
+        "UpnpDiscovery_set_DestAddr",
+        "UpnpDiscovery_clear_DestAddr"
+      ],
+      "predicates": {
+        "discovery_ok": {
+          "meaning": "UpnpDiscovery_new returned an object",
+          "events": [
+            "ok:UpnpDiscovery_new"
+          ]
+        },
+        "discovery_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpDiscovery_delete"
+          ]
+        },
+        "discovery_use": {
+          "meaning": "a routine taking the UpnpDiscovery is about to be called",
+          "events": [
+            "call:UpnpDiscovery_dup",
+            "call:UpnpDiscovery_delete",
+            "call:UpnpDiscovery_assign",
+            "call:UpnpDiscovery_get_ErrCode",
+            "call:UpnpDiscovery_set_ErrCode",
+            "call:UpnpDiscovery_get_Expires",
+            "call:UpnpDiscovery_set_Expires",
+            "call:UpnpDiscovery_get_DeviceID",
+            "call:UpnpDiscovery_set_DeviceID",
+            "call:UpnpDiscovery_get_DeviceID_Length",
+            "call:UpnpDiscovery_get_DeviceID_cstr",
+            "call:UpnpDiscovery_strcpy_DeviceID",
+            "call:UpnpDiscovery_strncpy_DeviceID",
+            "call:UpnpDiscovery_clear_DeviceID",
+            "call:UpnpDiscovery_get_DeviceType",
+            "call:UpnpDiscovery_set_DeviceType",
+            "call:UpnpDiscovery_get_DeviceType_Length",
+            "call:UpnpDiscovery_get_DeviceType_cstr",
+            "call:UpnpDiscovery_strcpy_DeviceType",
+            "call:UpnpDiscovery_strncpy_DeviceType",
+            "call:UpnpDiscovery_clear_DeviceType",
+            "call:UpnpDiscovery_get_ServiceType",
+            "call:UpnpDiscovery_set_ServiceType",
+            "call:UpnpDiscovery_get_ServiceType_Length",
+            "call:UpnpDiscovery_get_ServiceType_cstr",
+            "call:UpnpDiscovery_strcpy_ServiceType",
+            "call:UpnpDiscovery_strncpy_ServiceType",
+            "call:UpnpDiscovery_clear_ServiceType",
+            "call:UpnpDiscovery_get_ServiceVer",
+            "call:UpnpDiscovery_set_ServiceVer",
+            "call:UpnpDiscovery_get_ServiceVer_Length",
+            "call:UpnpDiscovery_get_ServiceVer_cstr",
+            "call:UpnpDiscovery_strcpy_ServiceVer",
+            "call:UpnpDiscovery_strncpy_ServiceVer",
+            "call:UpnpDiscovery_clear_ServiceVer",
+            "call:UpnpDiscovery_get_Location",
+            "call:UpnpDiscovery_set_Location",
+            "call:UpnpDiscovery_get_Location_Length",
+            "call:UpnpDiscovery_get_Location_cstr",
+            "call:UpnpDiscovery_strcpy_Location",
+            "call:UpnpDiscovery_strncpy_Location",
+            "call:UpnpDiscovery_clear_Location",
+            "call:UpnpDiscovery_get_Os",
+            "call:UpnpDiscovery_set_Os",
+            "call:UpnpDiscovery_get_Os_Length",
+            "call:UpnpDiscovery_get_Os_cstr",
+            "call:UpnpDiscovery_strcpy_Os",
+            "call:UpnpDiscovery_strncpy_Os",
+            "call:UpnpDiscovery_clear_Os",
+            "call:UpnpDiscovery_get_Date",
+            "call:UpnpDiscovery_set_Date",
+            "call:UpnpDiscovery_get_Date_Length",
+            "call:UpnpDiscovery_get_Date_cstr",
+            "call:UpnpDiscovery_strcpy_Date",
+            "call:UpnpDiscovery_strncpy_Date",
+            "call:UpnpDiscovery_clear_Date",
+            "call:UpnpDiscovery_get_Ext",
+            "call:UpnpDiscovery_set_Ext",
+            "call:UpnpDiscovery_get_Ext_Length",
+            "call:UpnpDiscovery_get_Ext_cstr",
+            "call:UpnpDiscovery_strcpy_Ext",
+            "call:UpnpDiscovery_strncpy_Ext",
+            "call:UpnpDiscovery_clear_Ext",
+            "call:UpnpDiscovery_get_DestAddr",
+            "call:UpnpDiscovery_set_DestAddr",
+            "call:UpnpDiscovery_clear_DestAddr"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpDiscovery_new",
+            "ok:UpnpDiscovery_new",
+            "call:UpnpDiscovery_get_ErrCode",
+            "ok:UpnpDiscovery_get_ErrCode",
+            "call:UpnpDiscovery_delete",
+            "ok:UpnpDiscovery_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpDiscovery_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpDiscovery_new",
+            "ok:UpnpDiscovery_new",
+            "call:UpnpDiscovery_delete",
+            "ok:UpnpDiscovery_delete",
+            "call:UpnpDiscovery_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "event_lifecycle",
+      "rule": "UpnpEvent.h:31-33: every UpnpEvent_* routine takes an object returned by UpnpEvent_new (or UpnpEvent_dup); UpnpEvent_delete frees it (UpnpEvent.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!event_use W event_ok) & G(event_gone -> X(!event_use W event_ok))",
+      "apis": [
+        "UpnpEvent_new",
+        "UpnpEvent_delete",
+        "UpnpEvent_dup",
+        "UpnpEvent_assign",
+        "UpnpEvent_get_EventKey",
+        "UpnpEvent_set_EventKey",
+        "UpnpEvent_get_ChangedVariables",
+        "UpnpEvent_set_ChangedVariables",
+        "UpnpEvent_get_SID",
+        "UpnpEvent_set_SID",
+        "UpnpEvent_get_SID_Length",
+        "UpnpEvent_get_SID_cstr",
+        "UpnpEvent_strcpy_SID",
+        "UpnpEvent_strncpy_SID",
+        "UpnpEvent_clear_SID"
+      ],
+      "predicates": {
+        "event_ok": {
+          "meaning": "UpnpEvent_new returned an object",
+          "events": [
+            "ok:UpnpEvent_new"
+          ]
+        },
+        "event_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpEvent_delete"
+          ]
+        },
+        "event_use": {
+          "meaning": "a routine taking the UpnpEvent is about to be called",
+          "events": [
+            "call:UpnpEvent_dup",
+            "call:UpnpEvent_delete",
+            "call:UpnpEvent_assign",
+            "call:UpnpEvent_get_EventKey",
+            "call:UpnpEvent_set_EventKey",
+            "call:UpnpEvent_get_ChangedVariables",
+            "call:UpnpEvent_set_ChangedVariables",
+            "call:UpnpEvent_get_SID",
+            "call:UpnpEvent_set_SID",
+            "call:UpnpEvent_get_SID_Length",
+            "call:UpnpEvent_get_SID_cstr",
+            "call:UpnpEvent_strcpy_SID",
+            "call:UpnpEvent_strncpy_SID",
+            "call:UpnpEvent_clear_SID"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpEvent_new",
+            "ok:UpnpEvent_new",
+            "call:UpnpEvent_get_EventKey",
+            "ok:UpnpEvent_get_EventKey",
+            "call:UpnpEvent_delete",
+            "ok:UpnpEvent_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpEvent_get_EventKey"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpEvent_new",
+            "ok:UpnpEvent_new",
+            "call:UpnpEvent_delete",
+            "ok:UpnpEvent_delete",
+            "call:UpnpEvent_get_EventKey"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "event_subscribe_lifecycle",
+      "rule": "UpnpEventSubscribe.h:30-32: every UpnpEventSubscribe_* routine takes an object returned by UpnpEventSubscribe_new (or UpnpEventSubscribe_dup); UpnpEventSubscribe_delete frees it (UpnpEventSubscribe.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!event_subscribe_use W event_subscribe_ok) & G(event_subscribe_gone -> X(!event_subscribe_use W event_subscribe_ok))",
+      "apis": [
+        "UpnpEventSubscribe_new",
+        "UpnpEventSubscribe_delete",
+        "UpnpEventSubscribe_dup",
+        "UpnpEventSubscribe_assign",
+        "UpnpEventSubscribe_get_ErrCode",
+        "UpnpEventSubscribe_set_ErrCode",
+        "UpnpEventSubscribe_get_TimeOut",
+        "UpnpEventSubscribe_set_TimeOut",
+        "UpnpEventSubscribe_get_SID",
+        "UpnpEventSubscribe_set_SID",
+        "UpnpEventSubscribe_get_SID_Length",
+        "UpnpEventSubscribe_get_SID_cstr",
+        "UpnpEventSubscribe_strcpy_SID",
+        "UpnpEventSubscribe_strncpy_SID",
+        "UpnpEventSubscribe_clear_SID",
+        "UpnpEventSubscribe_get_PublisherUrl",
+        "UpnpEventSubscribe_set_PublisherUrl",
+        "UpnpEventSubscribe_get_PublisherUrl_Length",
+        "UpnpEventSubscribe_get_PublisherUrl_cstr",
+        "UpnpEventSubscribe_strcpy_PublisherUrl",
+        "UpnpEventSubscribe_strncpy_PublisherUrl",
+        "UpnpEventSubscribe_clear_PublisherUrl"
+      ],
+      "predicates": {
+        "event_subscribe_ok": {
+          "meaning": "UpnpEventSubscribe_new returned an object",
+          "events": [
+            "ok:UpnpEventSubscribe_new"
+          ]
+        },
+        "event_subscribe_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpEventSubscribe_delete"
+          ]
+        },
+        "event_subscribe_use": {
+          "meaning": "a routine taking the UpnpEventSubscribe is about to be called",
+          "events": [
+            "call:UpnpEventSubscribe_dup",
+            "call:UpnpEventSubscribe_delete",
+            "call:UpnpEventSubscribe_assign",
+            "call:UpnpEventSubscribe_get_ErrCode",
+            "call:UpnpEventSubscribe_set_ErrCode",
+            "call:UpnpEventSubscribe_get_TimeOut",
+            "call:UpnpEventSubscribe_set_TimeOut",
+            "call:UpnpEventSubscribe_get_SID",
+            "call:UpnpEventSubscribe_set_SID",
+            "call:UpnpEventSubscribe_get_SID_Length",
+            "call:UpnpEventSubscribe_get_SID_cstr",
+            "call:UpnpEventSubscribe_strcpy_SID",
+            "call:UpnpEventSubscribe_strncpy_SID",
+            "call:UpnpEventSubscribe_clear_SID",
+            "call:UpnpEventSubscribe_get_PublisherUrl",
+            "call:UpnpEventSubscribe_set_PublisherUrl",
+            "call:UpnpEventSubscribe_get_PublisherUrl_Length",
+            "call:UpnpEventSubscribe_get_PublisherUrl_cstr",
+            "call:UpnpEventSubscribe_strcpy_PublisherUrl",
+            "call:UpnpEventSubscribe_strncpy_PublisherUrl",
+            "call:UpnpEventSubscribe_clear_PublisherUrl"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpEventSubscribe_new",
+            "ok:UpnpEventSubscribe_new",
+            "call:UpnpEventSubscribe_get_ErrCode",
+            "ok:UpnpEventSubscribe_get_ErrCode",
+            "call:UpnpEventSubscribe_delete",
+            "ok:UpnpEventSubscribe_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpEventSubscribe_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpEventSubscribe_new",
+            "ok:UpnpEventSubscribe_new",
+            "call:UpnpEventSubscribe_delete",
+            "ok:UpnpEventSubscribe_delete",
+            "call:UpnpEventSubscribe_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "extra_headers_lifecycle",
+      "rule": "UpnpExtraHeaders.h:32-34: every UpnpExtraHeaders_* routine takes an object returned by UpnpExtraHeaders_new (or UpnpExtraHeaders_dup); UpnpExtraHeaders_delete frees it (UpnpExtraHeaders.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!extra_headers_use W extra_headers_ok) & G(extra_headers_gone -> X(!extra_headers_use W extra_headers_ok))",
+      "apis": [
+        "UpnpExtraHeaders_new",
+        "UpnpExtraHeaders_delete",
+        "UpnpExtraHeaders_dup",
+        "UpnpExtraHeaders_get_name",
+        "UpnpExtraHeaders_set_name",
+        "UpnpExtraHeaders_get_name_Length",
+        "UpnpExtraHeaders_get_name_cstr",
+        "UpnpExtraHeaders_strcpy_name",
+        "UpnpExtraHeaders_strncpy_name",
+        "UpnpExtraHeaders_clear_name",
+        "UpnpExtraHeaders_get_value",
+        "UpnpExtraHeaders_set_value",
+        "UpnpExtraHeaders_get_value_Length",
+        "UpnpExtraHeaders_get_value_cstr",
+        "UpnpExtraHeaders_strcpy_value",
+        "UpnpExtraHeaders_strncpy_value",
+        "UpnpExtraHeaders_clear_value",
+        "UpnpExtraHeaders_get_resp",
+        "UpnpExtraHeaders_set_resp",
+        "UpnpExtraHeaders_get_resp_cstr",
+        "UpnpExtraHeaders_assign",
+        "UpnpExtraHeaders_get_node",
+        "UpnpExtraHeaders_set_node",
+        "UpnpExtraHeaders_add_to_list_node"
+      ],
+      "predicates": {
+        "extra_headers_ok": {
+          "meaning": "UpnpExtraHeaders_new returned an object",
+          "events": [
+            "ok:UpnpExtraHeaders_new"
+          ]
+        },
+        "extra_headers_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpExtraHeaders_delete"
+          ]
+        },
+        "extra_headers_use": {
+          "meaning": "a routine taking the UpnpExtraHeaders is about to be called",
+          "events": [
+            "call:UpnpExtraHeaders_dup",
+            "call:UpnpExtraHeaders_get_name",
+            "call:UpnpExtraHeaders_set_name",
+            "call:UpnpExtraHeaders_get_name_Length",
+            "call:UpnpExtraHeaders_get_name_cstr",
+            "call:UpnpExtraHeaders_strcpy_name",
+            "call:UpnpExtraHeaders_strncpy_name",
+            "call:UpnpExtraHeaders_clear_name",
+            "call:UpnpExtraHeaders_get_value",
+            "call:UpnpExtraHeaders_set_value",
+            "call:UpnpExtraHeaders_get_value_Length",
+            "call:UpnpExtraHeaders_get_value_cstr",
+            "call:UpnpExtraHeaders_strcpy_value",
+            "call:UpnpExtraHeaders_strncpy_value",
+            "call:UpnpExtraHeaders_clear_value",
+            "call:UpnpExtraHeaders_get_resp",
+            "call:UpnpExtraHeaders_set_resp",
+            "call:UpnpExtraHeaders_get_resp_cstr",
+            "call:UpnpExtraHeaders_delete",
+            "call:UpnpExtraHeaders_assign",
+            "call:UpnpExtraHeaders_get_node",
+            "call:UpnpExtraHeaders_set_node",
+            "call:UpnpExtraHeaders_add_to_list_node"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpExtraHeaders_new",
+            "ok:UpnpExtraHeaders_new",
+            "call:UpnpExtraHeaders_get_name",
+            "ok:UpnpExtraHeaders_get_name",
+            "call:UpnpExtraHeaders_delete",
+            "ok:UpnpExtraHeaders_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpExtraHeaders_get_name"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpExtraHeaders_new",
+            "ok:UpnpExtraHeaders_new",
+            "call:UpnpExtraHeaders_delete",
+            "ok:UpnpExtraHeaders_delete",
+            "call:UpnpExtraHeaders_get_name"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "file_info_lifecycle",
+      "rule": "UpnpFileInfo.h:35-37: every UpnpFileInfo_* routine takes an object returned by UpnpFileInfo_new (or UpnpFileInfo_dup); UpnpFileInfo_delete frees it (UpnpFileInfo.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!file_info_use W file_info_ok) & G(file_info_gone -> X(!file_info_use W file_info_ok))",
+      "apis": [
+        "UpnpFileInfo_new",
+        "UpnpFileInfo_delete",
+        "UpnpFileInfo_dup",
+        "UpnpFileInfo_get_FileLength",
+        "UpnpFileInfo_set_FileLength",
+        "UpnpFileInfo_get_LastModified",
+        "UpnpFileInfo_set_LastModified",
+        "UpnpFileInfo_get_IsDirectory",
+        "UpnpFileInfo_set_IsDirectory",
+        "UpnpFileInfo_get_IsReadable",
+        "UpnpFileInfo_set_IsReadable",
+        "UpnpFileInfo_get_ContentType",
+        "UpnpFileInfo_set_ContentType",
+        "UpnpFileInfo_get_ContentType_cstr",
+        "UpnpFileInfo_get_CtrlPtIPAddr",
+        "UpnpFileInfo_set_CtrlPtIPAddr",
+        "UpnpFileInfo_clear_CtrlPtIPAddr",
+        "UpnpFileInfo_get_Os",
+        "UpnpFileInfo_set_Os",
+        "UpnpFileInfo_get_Os_Length",
+        "UpnpFileInfo_get_Os_cstr",
+        "UpnpFileInfo_strcpy_Os",
+        "UpnpFileInfo_strncpy_Os",
+        "UpnpFileInfo_clear_Os",
+        "UpnpFileInfo_assign",
+        "UpnpFileInfo_get_ExtraHeadersList",
+        "UpnpFileInfo_set_ExtraHeadersList",
+        "UpnpFileInfo_add_to_list_ExtraHeadersList"
+      ],
+      "predicates": {
+        "file_info_ok": {
+          "meaning": "UpnpFileInfo_new returned an object",
+          "events": [
+            "ok:UpnpFileInfo_new"
+          ]
+        },
+        "file_info_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpFileInfo_delete"
+          ]
+        },
+        "file_info_use": {
+          "meaning": "a routine taking the UpnpFileInfo is about to be called",
+          "events": [
+            "call:UpnpFileInfo_dup",
+            "call:UpnpFileInfo_get_FileLength",
+            "call:UpnpFileInfo_set_FileLength",
+            "call:UpnpFileInfo_get_LastModified",
+            "call:UpnpFileInfo_set_LastModified",
+            "call:UpnpFileInfo_get_IsDirectory",
+            "call:UpnpFileInfo_set_IsDirectory",
+            "call:UpnpFileInfo_get_IsReadable",
+            "call:UpnpFileInfo_set_IsReadable",
+            "call:UpnpFileInfo_get_ContentType",
+            "call:UpnpFileInfo_set_ContentType",
+            "call:UpnpFileInfo_get_ContentType_cstr",
+            "call:UpnpFileInfo_get_CtrlPtIPAddr",
+            "call:UpnpFileInfo_set_CtrlPtIPAddr",
+            "call:UpnpFileInfo_clear_CtrlPtIPAddr",
+            "call:UpnpFileInfo_get_Os",
+            "call:UpnpFileInfo_set_Os",
+            "call:UpnpFileInfo_get_Os_Length",
+            "call:UpnpFileInfo_get_Os_cstr",
+            "call:UpnpFileInfo_strcpy_Os",
+            "call:UpnpFileInfo_strncpy_Os",
+            "call:UpnpFileInfo_clear_Os",
+            "call:UpnpFileInfo_delete",
+            "call:UpnpFileInfo_assign",
+            "call:UpnpFileInfo_get_ExtraHeadersList",
+            "call:UpnpFileInfo_set_ExtraHeadersList",
+            "call:UpnpFileInfo_add_to_list_ExtraHeadersList"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpFileInfo_new",
+            "ok:UpnpFileInfo_new",
+            "call:UpnpFileInfo_get_FileLength",
+            "ok:UpnpFileInfo_get_FileLength",
+            "call:UpnpFileInfo_delete",
+            "ok:UpnpFileInfo_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpFileInfo_get_FileLength"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpFileInfo_new",
+            "ok:UpnpFileInfo_new",
+            "call:UpnpFileInfo_delete",
+            "ok:UpnpFileInfo_delete",
+            "call:UpnpFileInfo_get_FileLength"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "state_var_complete_lifecycle",
+      "rule": "UpnpStateVarComplete.h:31-33: every UpnpStateVarComplete_* routine takes an object returned by UpnpStateVarComplete_new (or UpnpStateVarComplete_dup); UpnpStateVarComplete_delete frees it (UpnpStateVarComplete.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!state_var_complete_use W state_var_complete_ok) & G(state_var_complete_gone -> X(!state_var_complete_use W state_var_complete_ok))",
+      "apis": [
+        "UpnpStateVarComplete_new",
+        "UpnpStateVarComplete_delete",
+        "UpnpStateVarComplete_dup",
+        "UpnpStateVarComplete_assign",
+        "UpnpStateVarComplete_get_ErrCode",
+        "UpnpStateVarComplete_set_ErrCode",
+        "UpnpStateVarComplete_get_CtrlUrl",
+        "UpnpStateVarComplete_set_CtrlUrl",
+        "UpnpStateVarComplete_get_CtrlUrl_Length",
+        "UpnpStateVarComplete_get_CtrlUrl_cstr",
+        "UpnpStateVarComplete_strcpy_CtrlUrl",
+        "UpnpStateVarComplete_strncpy_CtrlUrl",
+        "UpnpStateVarComplete_clear_CtrlUrl",
+        "UpnpStateVarComplete_get_StateVarName",
+        "UpnpStateVarComplete_set_StateVarName",
+        "UpnpStateVarComplete_get_StateVarName_Length",
+        "UpnpStateVarComplete_get_StateVarName_cstr",
+        "UpnpStateVarComplete_strcpy_StateVarName",
+        "UpnpStateVarComplete_strncpy_StateVarName",
+        "UpnpStateVarComplete_clear_StateVarName",
+        "UpnpStateVarComplete_get_CurrentVal",
+        "UpnpStateVarComplete_set_CurrentVal",
+        "UpnpStateVarComplete_get_CurrentVal_cstr"
+      ],
+      "predicates": {
+        "state_var_complete_ok": {
+          "meaning": "UpnpStateVarComplete_new returned an object",
+          "events": [
+            "ok:UpnpStateVarComplete_new"
+          ]
+        },
+        "state_var_complete_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpStateVarComplete_delete"
+          ]
+        },
+        "state_var_complete_use": {
+          "meaning": "a routine taking the UpnpStateVarComplete is about to be called",
+          "events": [
+            "call:UpnpStateVarComplete_dup",
+            "call:UpnpStateVarComplete_delete",
+            "call:UpnpStateVarComplete_assign",
+            "call:UpnpStateVarComplete_get_ErrCode",
+            "call:UpnpStateVarComplete_set_ErrCode",
+            "call:UpnpStateVarComplete_get_CtrlUrl",
+            "call:UpnpStateVarComplete_set_CtrlUrl",
+            "call:UpnpStateVarComplete_get_CtrlUrl_Length",
+            "call:UpnpStateVarComplete_get_CtrlUrl_cstr",
+            "call:UpnpStateVarComplete_strcpy_CtrlUrl",
+            "call:UpnpStateVarComplete_strncpy_CtrlUrl",
+            "call:UpnpStateVarComplete_clear_CtrlUrl",
+            "call:UpnpStateVarComplete_get_StateVarName",
+            "call:UpnpStateVarComplete_set_StateVarName",
+            "call:UpnpStateVarComplete_get_StateVarName_Length",
+            "call:UpnpStateVarComplete_get_StateVarName_cstr",
+            "call:UpnpStateVarComplete_strcpy_StateVarName",
+            "call:UpnpStateVarComplete_strncpy_StateVarName",
+            "call:UpnpStateVarComplete_clear_StateVarName",
+            "call:UpnpStateVarComplete_get_CurrentVal",
+            "call:UpnpStateVarComplete_set_CurrentVal",
+            "call:UpnpStateVarComplete_get_CurrentVal_cstr"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpStateVarComplete_new",
+            "ok:UpnpStateVarComplete_new",
+            "call:UpnpStateVarComplete_get_ErrCode",
+            "ok:UpnpStateVarComplete_get_ErrCode",
+            "call:UpnpStateVarComplete_delete",
+            "ok:UpnpStateVarComplete_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpStateVarComplete_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpStateVarComplete_new",
+            "ok:UpnpStateVarComplete_new",
+            "call:UpnpStateVarComplete_delete",
+            "ok:UpnpStateVarComplete_delete",
+            "call:UpnpStateVarComplete_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "state_var_request_lifecycle",
+      "rule": "UpnpStateVarRequest.h:32-34: every UpnpStateVarRequest_* routine takes an object returned by UpnpStateVarRequest_new (or UpnpStateVarRequest_dup); UpnpStateVarRequest_delete frees it (UpnpStateVarRequest.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!state_var_request_use W state_var_request_ok) & G(state_var_request_gone -> X(!state_var_request_use W state_var_request_ok))",
+      "apis": [
+        "UpnpStateVarRequest_new",
+        "UpnpStateVarRequest_delete",
+        "UpnpStateVarRequest_dup",
+        "UpnpStateVarRequest_assign",
+        "UpnpStateVarRequest_get_ErrCode",
+        "UpnpStateVarRequest_set_ErrCode",
+        "UpnpStateVarRequest_get_Socket",
+        "UpnpStateVarRequest_set_Socket",
+        "UpnpStateVarRequest_get_ErrStr",
+        "UpnpStateVarRequest_set_ErrStr",
+        "UpnpStateVarRequest_get_ErrStr_Length",
+        "UpnpStateVarRequest_get_ErrStr_cstr",
+        "UpnpStateVarRequest_strcpy_ErrStr",
+        "UpnpStateVarRequest_strncpy_ErrStr",
+        "UpnpStateVarRequest_clear_ErrStr",
+        "UpnpStateVarRequest_get_DevUDN",
+        "UpnpStateVarRequest_set_DevUDN",
+        "UpnpStateVarRequest_get_DevUDN_Length",
+        "UpnpStateVarRequest_get_DevUDN_cstr",
+        "UpnpStateVarRequest_strcpy_DevUDN",
+        "UpnpStateVarRequest_strncpy_DevUDN",
+        "UpnpStateVarRequest_clear_DevUDN",
+        "UpnpStateVarRequest_get_ServiceID",
+        "UpnpStateVarRequest_set_ServiceID",
+        "UpnpStateVarRequest_get_ServiceID_Length",
+        "UpnpStateVarRequest_get_ServiceID_cstr",
+        "UpnpStateVarRequest_strcpy_ServiceID",
+        "UpnpStateVarRequest_strncpy_ServiceID",
+        "UpnpStateVarRequest_clear_ServiceID",
+        "UpnpStateVarRequest_get_StateVarName",
+        "UpnpStateVarRequest_set_StateVarName",
+        "UpnpStateVarRequest_get_StateVarName_Length",
+        "UpnpStateVarRequest_get_StateVarName_cstr",
+        "UpnpStateVarRequest_strcpy_StateVarName",
+        "UpnpStateVarRequest_strncpy_StateVarName",
+        "UpnpStateVarRequest_clear_StateVarName",
+        "UpnpStateVarRequest_get_CtrlPtIPAddr",
+        "UpnpStateVarRequest_set_CtrlPtIPAddr",
+        "UpnpStateVarRequest_clear_CtrlPtIPAddr",
+        "UpnpStateVarRequest_get_CurrentVal",
+        "UpnpStateVarRequest_set_CurrentVal",
+        "UpnpStateVarRequest_get_CurrentVal_cstr"
+      ],
+      "predicates": {
+        "state_var_request_ok": {
+          "meaning": "UpnpStateVarRequest_new returned an object",
+          "events": [
+            "ok:UpnpStateVarRequest_new"
+          ]
+        },
+        "state_var_request_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpStateVarRequest_delete"
+          ]
+        },
+        "state_var_request_use": {
+          "meaning": "a routine taking the UpnpStateVarRequest is about to be called",
+          "events": [
+            "call:UpnpStateVarRequest_dup",
+            "call:UpnpStateVarRequest_delete",
+            "call:UpnpStateVarRequest_assign",
+            "call:UpnpStateVarRequest_get_ErrCode",
+            "call:UpnpStateVarRequest_set_ErrCode",
+            "call:UpnpStateVarRequest_get_Socket",
+            "call:UpnpStateVarRequest_set_Socket",
+            "call:UpnpStateVarRequest_get_ErrStr",
+            "call:UpnpStateVarRequest_set_ErrStr",
+            "call:UpnpStateVarRequest_get_ErrStr_Length",
+            "call:UpnpStateVarRequest_get_ErrStr_cstr",
+            "call:UpnpStateVarRequest_strcpy_ErrStr",
+            "call:UpnpStateVarRequest_strncpy_ErrStr",
+            "call:UpnpStateVarRequest_clear_ErrStr",
+            "call:UpnpStateVarRequest_get_DevUDN",
+            "call:UpnpStateVarRequest_set_DevUDN",
+            "call:UpnpStateVarRequest_get_DevUDN_Length",
+            "call:UpnpStateVarRequest_get_DevUDN_cstr",
+            "call:UpnpStateVarRequest_strcpy_DevUDN",
+            "call:UpnpStateVarRequest_strncpy_DevUDN",
+            "call:UpnpStateVarRequest_clear_DevUDN",
+            "call:UpnpStateVarRequest_get_ServiceID",
+            "call:UpnpStateVarRequest_set_ServiceID",
+            "call:UpnpStateVarRequest_get_ServiceID_Length",
+            "call:UpnpStateVarRequest_get_ServiceID_cstr",
+            "call:UpnpStateVarRequest_strcpy_ServiceID",
+            "call:UpnpStateVarRequest_strncpy_ServiceID",
+            "call:UpnpStateVarRequest_clear_ServiceID",
+            "call:UpnpStateVarRequest_get_StateVarName",
+            "call:UpnpStateVarRequest_set_StateVarName",
+            "call:UpnpStateVarRequest_get_StateVarName_Length",
+            "call:UpnpStateVarRequest_get_StateVarName_cstr",
+            "call:UpnpStateVarRequest_strcpy_StateVarName",
+            "call:UpnpStateVarRequest_strncpy_StateVarName",
+            "call:UpnpStateVarRequest_clear_StateVarName",
+            "call:UpnpStateVarRequest_get_CtrlPtIPAddr",
+            "call:UpnpStateVarRequest_set_CtrlPtIPAddr",
+            "call:UpnpStateVarRequest_clear_CtrlPtIPAddr",
+            "call:UpnpStateVarRequest_get_CurrentVal",
+            "call:UpnpStateVarRequest_set_CurrentVal",
+            "call:UpnpStateVarRequest_get_CurrentVal_cstr"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpStateVarRequest_new",
+            "ok:UpnpStateVarRequest_new",
+            "call:UpnpStateVarRequest_get_ErrCode",
+            "ok:UpnpStateVarRequest_get_ErrCode",
+            "call:UpnpStateVarRequest_delete",
+            "ok:UpnpStateVarRequest_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpStateVarRequest_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpStateVarRequest_new",
+            "ok:UpnpStateVarRequest_new",
+            "call:UpnpStateVarRequest_delete",
+            "ok:UpnpStateVarRequest_delete",
+            "call:UpnpStateVarRequest_get_ErrCode"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "subscription_request_lifecycle",
+      "rule": "UpnpSubscriptionRequest.h:30-32: every UpnpSubscriptionRequest_* routine takes an object returned by UpnpSubscriptionRequest_new (or UpnpSubscriptionRequest_dup); UpnpSubscriptionRequest_delete frees it (UpnpSubscriptionRequest.c), so the object is not used afterwards until a new one is made. The harness keeps one object per class in slot 1; slot 2 is only made by dup and read by assign.",
+      "formula": "(!subscription_request_use W subscription_request_ok) & G(subscription_request_gone -> X(!subscription_request_use W subscription_request_ok))",
+      "apis": [
+        "UpnpSubscriptionRequest_new",
+        "UpnpSubscriptionRequest_delete",
+        "UpnpSubscriptionRequest_dup",
+        "UpnpSubscriptionRequest_assign",
+        "UpnpSubscriptionRequest_get_ServiceId",
+        "UpnpSubscriptionRequest_set_ServiceId",
+        "UpnpSubscriptionRequest_get_ServiceId_Length",
+        "UpnpSubscriptionRequest_get_ServiceId_cstr",
+        "UpnpSubscriptionRequest_strcpy_ServiceId",
+        "UpnpSubscriptionRequest_strncpy_ServiceId",
+        "UpnpSubscriptionRequest_clear_ServiceId",
+        "UpnpSubscriptionRequest_get_UDN",
+        "UpnpSubscriptionRequest_set_UDN",
+        "UpnpSubscriptionRequest_get_UDN_Length",
+        "UpnpSubscriptionRequest_get_UDN_cstr",
+        "UpnpSubscriptionRequest_strcpy_UDN",
+        "UpnpSubscriptionRequest_strncpy_UDN",
+        "UpnpSubscriptionRequest_clear_UDN",
+        "UpnpSubscriptionRequest_get_SID",
+        "UpnpSubscriptionRequest_set_SID",
+        "UpnpSubscriptionRequest_get_SID_Length",
+        "UpnpSubscriptionRequest_get_SID_cstr",
+        "UpnpSubscriptionRequest_strcpy_SID",
+        "UpnpSubscriptionRequest_strncpy_SID",
+        "UpnpSubscriptionRequest_clear_SID"
+      ],
+      "predicates": {
+        "subscription_request_ok": {
+          "meaning": "UpnpSubscriptionRequest_new returned an object",
+          "events": [
+            "ok:UpnpSubscriptionRequest_new"
+          ]
+        },
+        "subscription_request_gone": {
+          "meaning": "the object is about to be freed",
+          "events": [
+            "call:UpnpSubscriptionRequest_delete"
+          ]
+        },
+        "subscription_request_use": {
+          "meaning": "a routine taking the UpnpSubscriptionRequest is about to be called",
+          "events": [
+            "call:UpnpSubscriptionRequest_dup",
+            "call:UpnpSubscriptionRequest_delete",
+            "call:UpnpSubscriptionRequest_assign",
+            "call:UpnpSubscriptionRequest_get_ServiceId",
+            "call:UpnpSubscriptionRequest_set_ServiceId",
+            "call:UpnpSubscriptionRequest_get_ServiceId_Length",
+            "call:UpnpSubscriptionRequest_get_ServiceId_cstr",
+            "call:UpnpSubscriptionRequest_strcpy_ServiceId",
+            "call:UpnpSubscriptionRequest_strncpy_ServiceId",
+            "call:UpnpSubscriptionRequest_clear_ServiceId",
+            "call:UpnpSubscriptionRequest_get_UDN",
+            "call:UpnpSubscriptionRequest_set_UDN",
+            "call:UpnpSubscriptionRequest_get_UDN_Length",
+            "call:UpnpSubscriptionRequest_get_UDN_cstr",
+            "call:UpnpSubscriptionRequest_strcpy_UDN",
+            "call:UpnpSubscriptionRequest_strncpy_UDN",
+            "call:UpnpSubscriptionRequest_clear_UDN",
+            "call:UpnpSubscriptionRequest_get_SID",
+            "call:UpnpSubscriptionRequest_set_SID",
+            "call:UpnpSubscriptionRequest_get_SID_Length",
+            "call:UpnpSubscriptionRequest_get_SID_cstr",
+            "call:UpnpSubscriptionRequest_strcpy_SID",
+            "call:UpnpSubscriptionRequest_strncpy_SID",
+            "call:UpnpSubscriptionRequest_clear_SID"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpSubscriptionRequest_new",
+            "ok:UpnpSubscriptionRequest_new",
+            "call:UpnpSubscriptionRequest_get_ServiceId",
+            "ok:UpnpSubscriptionRequest_get_ServiceId",
+            "call:UpnpSubscriptionRequest_delete",
+            "ok:UpnpSubscriptionRequest_delete"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the new and the delete"
+        },
+        {
+          "events": [
+            "call:UpnpSubscriptionRequest_get_ServiceId"
+          ],
+          "allowed": false,
+          "reason": "no object was created"
+        },
+        {
+          "events": [
+            "call:UpnpSubscriptionRequest_new",
+            "ok:UpnpSubscriptionRequest_new",
+            "call:UpnpSubscriptionRequest_delete",
+            "ok:UpnpSubscriptionRequest_delete",
+            "call:UpnpSubscriptionRequest_get_ServiceId"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "sdk_lifecycle",
+      "rule": "upnp.h:516 UpnpInit2 must be called before any other SDK function; upnp.h:612-631 UpnpFinish terminates the SDK (handles, servers, thread pools) and later calls return UPNP_E_FINISH. The harness starts the SDK again only through a new successful UpnpInit2 (one per input at most, cleanup calls UpnpFinish), so no network API runs before ok:UpnpInit2 or after UpnpFinish until the next init.",
+      "formula": "(!net_use W net_ok) & G(net_gone -> X(!net_use W net_ok))",
+      "apis": [
+        "UpnpInit2",
+        "UpnpFinish",
+        "UpnpGetServerPort",
+        "UpnpGetServerPort6",
+        "UpnpGetServerUlaGuaPort6",
+        "UpnpGetSsdpReqPort4",
+        "UpnpGetSsdpReqPort6",
+        "UpnpGetServerIpAddress",
+        "UpnpGetServerIp6Address",
+        "UpnpGetServerUlaGuaIp6Address",
+        "UpnpSetWebServerRootDir",
+        "UpnpSetWebServerCorsString",
+        "UpnpEnableWebserver",
+        "UpnpIsWebserverEnabled",
+        "UpnpSetHostValidateCallback",
+        "UpnpSetAllowLiteralHostRedirection",
+        "UpnpSetMaxContentLength",
+        "UpnpVirtualDir_set_GetInfoCallback",
+        "UpnpVirtualDir_set_OpenCallback",
+        "UpnpVirtualDir_set_ReadCallback",
+        "UpnpVirtualDir_set_WriteCallback",
+        "UpnpVirtualDir_set_SeekCallback",
+        "UpnpVirtualDir_set_CloseCallback",
+        "UpnpAddVirtualDir",
+        "UpnpRemoveVirtualDir",
+        "UpnpRemoveAllVirtualDirs",
+        "UpnpRegisterRootDevice",
+        "UpnpRegisterRootDevice2",
+        "UpnpRegisterRootDevice3",
+        "UpnpRegisterRootDevice4",
+        "UpnpUnRegisterRootDevice",
+        "UpnpUnRegisterRootDeviceLowPower",
+        "UpnpSendAdvertisement",
+        "UpnpSendAdvertisementLowPower",
+        "UpnpSetMaxSubscriptions",
+        "UpnpSetMaxSubscriptionTimeOut",
+        "UpnpAcceptSubscription",
+        "UpnpAcceptSubscriptionExt",
+        "UpnpNotify",
+        "UpnpNotifyExt",
+        "UpnpRegisterClient",
+        "UpnpUnRegisterClient",
+        "UpnpSearchAsync",
+        "UpnpSendAction",
+        "UpnpSendActionEx",
+        "UpnpSendActionAsync",
+        "UpnpSendActionExAsync",
+        "UpnpGetServiceVarStatus",
+        "UpnpGetServiceVarStatusAsync",
+        "UpnpSubscribe",
+        "UpnpSubscribeAsync",
+        "UpnpRenewSubscription",
+        "UpnpRenewSubscriptionAsync",
+        "UpnpUnSubscribe",
+        "UpnpUnSubscribeAsync",
+        "UpnpDownloadUrlItem",
+        "UpnpDownloadXmlDoc",
+        "UpnpOpenHttpGet",
+        "UpnpOpenHttpGetProxy",
+        "UpnpOpenHttpGetEx",
+        "UpnpReadHttpGet",
+        "UpnpHttpGetProgress",
+        "UpnpCancelHttpGet",
+        "UpnpCloseHttpGet",
+        "UpnpOpenHttpConnection",
+        "UpnpMakeHttpRequest",
+        "UpnpWriteHttpRequest",
+        "UpnpEndHttpRequest",
+        "UpnpGetHttpResponse",
+        "UpnpReadHttpResponse",
+        "UpnpCloseHttpConnection",
+        "UpnpOpenHttpPost"
+      ],
+      "predicates": {
+        "net_ok": {
+          "meaning": "UpnpInit2 started the SDK",
+          "events": [
+            "ok:UpnpInit2"
+          ]
+        },
+        "net_gone": {
+          "meaning": "UpnpFinish is about to stop the SDK",
+          "events": [
+            "call:UpnpFinish"
+          ]
+        },
+        "net_use": {
+          "meaning": "an SDK function that needs the running SDK is about to be called",
+          "events": [
+            "call:UpnpFinish",
+            "call:UpnpGetServerPort",
+            "call:UpnpGetServerPort6",
+            "call:UpnpGetServerUlaGuaPort6",
+            "call:UpnpGetSsdpReqPort4",
+            "call:UpnpGetSsdpReqPort6",
+            "call:UpnpGetServerIpAddress",
+            "call:UpnpGetServerIp6Address",
+            "call:UpnpGetServerUlaGuaIp6Address",
+            "call:UpnpSetWebServerRootDir",
+            "call:UpnpSetWebServerCorsString",
+            "call:UpnpEnableWebserver",
+            "call:UpnpIsWebserverEnabled",
+            "call:UpnpSetHostValidateCallback",
+            "call:UpnpSetAllowLiteralHostRedirection",
+            "call:UpnpSetMaxContentLength",
+            "call:UpnpVirtualDir_set_GetInfoCallback",
+            "call:UpnpVirtualDir_set_OpenCallback",
+            "call:UpnpVirtualDir_set_ReadCallback",
+            "call:UpnpVirtualDir_set_WriteCallback",
+            "call:UpnpVirtualDir_set_SeekCallback",
+            "call:UpnpVirtualDir_set_CloseCallback",
+            "call:UpnpAddVirtualDir",
+            "call:UpnpRemoveVirtualDir",
+            "call:UpnpRemoveAllVirtualDirs",
+            "call:UpnpRegisterRootDevice",
+            "call:UpnpRegisterRootDevice2",
+            "call:UpnpRegisterRootDevice3",
+            "call:UpnpRegisterRootDevice4",
+            "call:UpnpUnRegisterRootDevice",
+            "call:UpnpUnRegisterRootDeviceLowPower",
+            "call:UpnpSendAdvertisement",
+            "call:UpnpSendAdvertisementLowPower",
+            "call:UpnpSetMaxSubscriptions",
+            "call:UpnpSetMaxSubscriptionTimeOut",
+            "call:UpnpAcceptSubscription",
+            "call:UpnpAcceptSubscriptionExt",
+            "call:UpnpNotify",
+            "call:UpnpNotifyExt",
+            "call:UpnpRegisterClient",
+            "call:UpnpUnRegisterClient",
+            "call:UpnpSearchAsync",
+            "call:UpnpSendAction",
+            "call:UpnpSendActionEx",
+            "call:UpnpSendActionAsync",
+            "call:UpnpSendActionExAsync",
+            "call:UpnpGetServiceVarStatus",
+            "call:UpnpGetServiceVarStatusAsync",
+            "call:UpnpSubscribe",
+            "call:UpnpSubscribeAsync",
+            "call:UpnpRenewSubscription",
+            "call:UpnpRenewSubscriptionAsync",
+            "call:UpnpUnSubscribe",
+            "call:UpnpUnSubscribeAsync",
+            "call:UpnpDownloadUrlItem",
+            "call:UpnpDownloadXmlDoc",
+            "call:UpnpOpenHttpGet",
+            "call:UpnpOpenHttpGetProxy",
+            "call:UpnpOpenHttpGetEx",
+            "call:UpnpReadHttpGet",
+            "call:UpnpHttpGetProgress",
+            "call:UpnpCancelHttpGet",
+            "call:UpnpCloseHttpGet",
+            "call:UpnpOpenHttpConnection",
+            "call:UpnpMakeHttpRequest",
+            "call:UpnpWriteHttpRequest",
+            "call:UpnpEndHttpRequest",
+            "call:UpnpGetHttpResponse",
+            "call:UpnpReadHttpResponse",
+            "call:UpnpCloseHttpConnection",
+            "call:UpnpOpenHttpPost"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpInit2",
+            "ok:UpnpInit2",
+            "call:UpnpRegisterClient",
+            "ok:UpnpRegisterClient",
+            "call:UpnpFinish",
+            "ok:UpnpFinish",
+            "call:UpnpInit2",
+            "ok:UpnpInit2",
+            "call:UpnpGetServerPort"
+          ],
+          "allowed": true,
+          "reason": "every use sits between an init and a finish"
+        },
+        {
+          "events": [
+            "call:UpnpInit2",
+            "fail:UpnpInit2",
+            "call:UpnpRegisterClient"
+          ],
+          "allowed": false,
+          "reason": "the init failed"
+        },
+        {
+          "events": [
+            "call:UpnpInit2",
+            "ok:UpnpInit2",
+            "call:UpnpFinish",
+            "ok:UpnpFinish",
+            "call:UpnpSearchAsync"
+          ],
+          "allowed": false,
+          "reason": "use after UpnpFinish"
+        }
+      ]
+    },
+    {
+      "id": "device_handle",
+      "rule": "upnp.h:740-741 a device makes no other device call until UpnpRegisterRootDevice* returned a handle; upnp.h:986 and 1006: after UpnpUnRegisterRootDevice(LowPower) the handle is no longer valid; UpnpFinish unregisters every device (upnpapi.c UpnpFinish). The harness keeps one device handle.",
+      "formula": "(!dev_use W dev_ok) & G(dev_gone -> X(!dev_use W dev_ok))",
+      "apis": [
+        "UpnpRegisterRootDevice",
+        "UpnpRegisterRootDevice2",
+        "UpnpRegisterRootDevice3",
+        "UpnpRegisterRootDevice4",
+        "UpnpUnRegisterRootDevice",
+        "UpnpUnRegisterRootDeviceLowPower",
+        "UpnpFinish",
+        "UpnpSendAdvertisement",
+        "UpnpSendAdvertisementLowPower",
+        "UpnpSetMaxSubscriptions",
+        "UpnpSetMaxSubscriptionTimeOut",
+        "UpnpAcceptSubscription",
+        "UpnpAcceptSubscriptionExt",
+        "UpnpNotify",
+        "UpnpNotifyExt"
+      ],
+      "predicates": {
+        "dev_ok": {
+          "meaning": "a root device was registered",
+          "events": [
+            "ok:UpnpRegisterRootDevice",
+            "ok:UpnpRegisterRootDevice2",
+            "ok:UpnpRegisterRootDevice3",
+            "ok:UpnpRegisterRootDevice4"
+          ]
+        },
+        "dev_gone": {
+          "meaning": "the device handle is about to become invalid",
+          "events": [
+            "call:UpnpUnRegisterRootDevice",
+            "call:UpnpUnRegisterRootDeviceLowPower",
+            "call:UpnpFinish"
+          ]
+        },
+        "dev_use": {
+          "meaning": "a call taking the device handle is about to be made",
+          "events": [
+            "call:UpnpUnRegisterRootDevice",
+            "call:UpnpUnRegisterRootDeviceLowPower",
+            "call:UpnpSendAdvertisement",
+            "call:UpnpSendAdvertisementLowPower",
+            "call:UpnpSetMaxSubscriptions",
+            "call:UpnpSetMaxSubscriptionTimeOut",
+            "call:UpnpAcceptSubscription",
+            "call:UpnpAcceptSubscriptionExt",
+            "call:UpnpNotify",
+            "call:UpnpNotifyExt"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpRegisterRootDevice2",
+            "ok:UpnpRegisterRootDevice2",
+            "call:UpnpNotify",
+            "ok:UpnpNotify",
+            "call:UpnpUnRegisterRootDevice",
+            "ok:UpnpUnRegisterRootDevice",
+            "call:UpnpRegisterRootDevice",
+            "ok:UpnpRegisterRootDevice",
+            "call:UpnpSendAdvertisement"
+          ],
+          "allowed": true,
+          "reason": "every use sits between a registration and the unregistration"
+        },
+        {
+          "events": [
+            "call:UpnpRegisterRootDevice2",
+            "fail:UpnpRegisterRootDevice2",
+            "call:UpnpNotify"
+          ],
+          "allowed": false,
+          "reason": "the registration failed"
+        },
+        {
+          "events": [
+            "call:UpnpRegisterRootDevice3",
+            "ok:UpnpRegisterRootDevice3",
+            "call:UpnpFinish",
+            "ok:UpnpFinish",
+            "call:UpnpSendAdvertisement"
+          ],
+          "allowed": false,
+          "reason": "UpnpFinish unregistered the device"
+        }
+      ]
+    },
+    {
+      "id": "client_handle",
+      "rule": "upnp.h:1033-1034 a control point makes no other control-point call until UpnpRegisterClient returned a handle; upnp.h:1063: after UpnpUnRegisterClient the handle is no longer valid; UpnpFinish unregisters the client too. The harness keeps one client handle.",
+      "formula": "(!cp_use W cp_ok) & G(cp_gone -> X(!cp_use W cp_ok))",
+      "apis": [
+        "UpnpRegisterClient",
+        "UpnpUnRegisterClient",
+        "UpnpFinish",
+        "UpnpSearchAsync",
+        "UpnpSendAction",
+        "UpnpSendActionEx",
+        "UpnpSendActionAsync",
+        "UpnpSendActionExAsync",
+        "UpnpGetServiceVarStatus",
+        "UpnpGetServiceVarStatusAsync",
+        "UpnpSubscribe",
+        "UpnpSubscribeAsync",
+        "UpnpRenewSubscription",
+        "UpnpRenewSubscriptionAsync",
+        "UpnpUnSubscribe",
+        "UpnpUnSubscribeAsync"
+      ],
+      "predicates": {
+        "cp_ok": {
+          "meaning": "a control point was registered",
+          "events": [
+            "ok:UpnpRegisterClient"
+          ]
+        },
+        "cp_gone": {
+          "meaning": "the client handle is about to become invalid",
+          "events": [
+            "call:UpnpUnRegisterClient",
+            "call:UpnpFinish"
+          ]
+        },
+        "cp_use": {
+          "meaning": "a call taking the client handle is about to be made",
+          "events": [
+            "call:UpnpUnRegisterClient",
+            "call:UpnpSearchAsync",
+            "call:UpnpSendAction",
+            "call:UpnpSendActionEx",
+            "call:UpnpSendActionAsync",
+            "call:UpnpSendActionExAsync",
+            "call:UpnpGetServiceVarStatus",
+            "call:UpnpGetServiceVarStatusAsync",
+            "call:UpnpSubscribe",
+            "call:UpnpSubscribeAsync",
+            "call:UpnpRenewSubscription",
+            "call:UpnpRenewSubscriptionAsync",
+            "call:UpnpUnSubscribe",
+            "call:UpnpUnSubscribeAsync"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpRegisterClient",
+            "ok:UpnpRegisterClient",
+            "call:UpnpSendAction",
+            "ok:UpnpSendAction",
+            "call:UpnpUnRegisterClient",
+            "ok:UpnpUnRegisterClient"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the registration and the unregistration"
+        },
+        {
+          "events": [
+            "call:UpnpSubscribe"
+          ],
+          "allowed": false,
+          "reason": "no control point was registered"
+        },
+        {
+          "events": [
+            "call:UpnpRegisterClient",
+            "ok:UpnpRegisterClient",
+            "call:UpnpUnRegisterClient",
+            "ok:UpnpUnRegisterClient",
+            "call:UpnpSearchAsync"
+          ],
+          "allowed": false,
+          "reason": "use after UpnpUnRegisterClient"
+        }
+      ]
+    },
+    {
+      "id": "http_handle",
+      "rule": "upnp.h:2343-2357 (UpnpOpenHttpConnection) and 2093-2123 (UpnpOpenHttpGet*): the SDK allocates the handle that the other HTTP client calls take; UpnpCloseHttpConnection / UpnpCloseHttpGet free it (httpreadwrite.c:1658-1667). The harness keeps one handle and releases it before UpnpFinish.",
+      "formula": "(!conn_use W conn_ok) & G(conn_gone -> X(!conn_use W conn_ok))",
+      "apis": [
+        "UpnpOpenHttpConnection",
+        "UpnpOpenHttpGet",
+        "UpnpOpenHttpGetProxy",
+        "UpnpOpenHttpGetEx",
+        "UpnpOpenHttpPost",
+        "UpnpCloseHttpConnection",
+        "UpnpCloseHttpGet",
+        "UpnpFinish",
+        "UpnpMakeHttpRequest",
+        "UpnpWriteHttpRequest",
+        "UpnpEndHttpRequest",
+        "UpnpGetHttpResponse",
+        "UpnpReadHttpResponse",
+        "UpnpReadHttpGet",
+        "UpnpHttpGetProgress",
+        "UpnpCancelHttpGet"
+      ],
+      "predicates": {
+        "conn_ok": {
+          "meaning": "an open call returned a handle",
+          "events": [
+            "ok:UpnpOpenHttpConnection",
+            "ok:UpnpOpenHttpGet",
+            "ok:UpnpOpenHttpGetProxy",
+            "ok:UpnpOpenHttpGetEx",
+            "ok:UpnpOpenHttpPost"
+          ]
+        },
+        "conn_gone": {
+          "meaning": "the handle is about to be freed",
+          "events": [
+            "call:UpnpCloseHttpConnection",
+            "call:UpnpCloseHttpGet",
+            "call:UpnpFinish"
+          ]
+        },
+        "conn_use": {
+          "meaning": "a call taking the handle is about to be made",
+          "events": [
+            "call:UpnpMakeHttpRequest",
+            "call:UpnpWriteHttpRequest",
+            "call:UpnpEndHttpRequest",
+            "call:UpnpGetHttpResponse",
+            "call:UpnpReadHttpResponse",
+            "call:UpnpReadHttpGet",
+            "call:UpnpHttpGetProgress",
+            "call:UpnpCancelHttpGet",
+            "call:UpnpCloseHttpConnection",
+            "call:UpnpCloseHttpGet"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:UpnpOpenHttpGet",
+            "ok:UpnpOpenHttpGet",
+            "call:UpnpReadHttpGet",
+            "ok:UpnpReadHttpGet",
+            "call:UpnpCloseHttpGet",
+            "ok:UpnpCloseHttpGet"
+          ],
+          "allowed": true,
+          "reason": "every use sits between the open and the close"
+        },
+        {
+          "events": [
+            "call:UpnpOpenHttpConnection",
+            "fail:UpnpOpenHttpConnection",
+            "call:UpnpMakeHttpRequest"
+          ],
+          "allowed": false,
+          "reason": "the open failed"
+        },
+        {
+          "events": [
+            "call:UpnpOpenHttpConnection",
+            "ok:UpnpOpenHttpConnection",
+            "call:UpnpCloseHttpConnection",
+            "ok:UpnpCloseHttpConnection",
+            "call:UpnpReadHttpResponse"
+          ],
+          "allowed": false,
+          "reason": "use after close"
+        }
+      ]
+    },
+    {
+      "id": "http_request_order",
+      "rule": "upnp.h:2381-2383: a new UpnpMakeHttpRequest while a request is being processed is undefined, end it with UpnpEndHttpRequest first; upnp.h:2425-2427: UpnpWriteHttpRequest writes the content of the request started by UpnpMakeHttpRequest; UpnpReadHttpResponse reads the entity of the response UpnpGetHttpResponse parsed for the current request (httpreadwrite.c:1419-1420 resets the parser per request).",
+      "formula": "G(req_start -> X(!req_call W req_end)) & (!req_body W req_start) & G(req_end -> X(!req_body W req_start)) & (!resp_read W resp_ok) & G(req_start -> X(!resp_read W resp_ok))",
+      "apis": [
+        "UpnpMakeHttpRequest",
+        "UpnpEndHttpRequest",
+        "UpnpCloseHttpConnection",
+        "UpnpFinish",
+        "UpnpWriteHttpRequest",
+        "UpnpGetHttpResponse",
+        "UpnpReadHttpResponse"
+      ],
+      "predicates": {
+        "req_start": {
+          "meaning": "a request was started",
+          "events": [
+            "ok:UpnpMakeHttpRequest"
+          ]
+        },
+        "req_end": {
+          "meaning": "the current request is about to end",
+          "events": [
+            "call:UpnpEndHttpRequest",
+            "call:UpnpCloseHttpConnection",
+            "call:UpnpFinish"
+          ]
+        },
+        "req_body": {
+          "meaning": "request content or its end is about to be sent",
+          "events": [
+            "call:UpnpWriteHttpRequest",
+            "call:UpnpEndHttpRequest"
+          ]
+        },
+        "resp_ok": {
+          "meaning": "the response line and headers were read",
+          "events": [
+            "ok:UpnpGetHttpResponse"
+          ]
+        },
+        "resp_read": {
+          "meaning": "response content is about to be read",
+          "events": [
+            "call:UpnpReadHttpResponse"
+          ]
+        },
+        "req_call": {
+          "meaning": "a request is about to be made",
+          "events": [
+            "call:UpnpMakeHttpRequest"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "ok:UpnpMakeHttpRequest",
+            "call:UpnpWriteHttpRequest",
+            "ok:UpnpWriteHttpRequest",
+            "call:UpnpEndHttpRequest",
+            "ok:UpnpEndHttpRequest",
+            "call:UpnpGetHttpResponse",
+            "ok:UpnpGetHttpResponse",
+            "call:UpnpReadHttpResponse",
+            "ok:UpnpReadHttpResponse",
+            "call:UpnpMakeHttpRequest",
+            "ok:UpnpMakeHttpRequest"
+          ],
+          "allowed": true,
+          "reason": "write, end, response, read, then the next request"
+        },
+        {
+          "events": [
+            "call:UpnpMakeHttpRequest",
+            "ok:UpnpMakeHttpRequest",
+            "call:UpnpMakeHttpRequest"
+          ],
+          "allowed": false,
+          "reason": "a second request before the first ended"
+        },
+        {
+          "events": [
+            "call:UpnpMakeHttpRequest",
+            "ok:UpnpMakeHttpRequest",
+            "call:UpnpEndHttpRequest",
+            "ok:UpnpEndHttpRequest",
+            "call:UpnpWriteHttpRequest"
+          ],
+          "allowed": false,
+          "reason": "content written after the request ended"
+        },
+        {
+          "events": [
+            "call:UpnpMakeHttpRequest",
+            "ok:UpnpMakeHttpRequest",
+            "call:UpnpEndHttpRequest",
+            "ok:UpnpEndHttpRequest",
+            "call:UpnpReadHttpResponse"
+          ],
+          "allowed": false,
+          "reason": "content read before the response was parsed"
+        }
+      ]
+    },
+    {
+      "id": "virtual_dir_callbacks",
+      "rule": "upnp.h:2870-2873: requests under a virtual directory are served through the registered virtual-dir callbacks; webserver.c:1347, 1664, 1754 and httpreadwrite.c:594-633, 745 call them without a NULL check, and web_server_init (webserver.c:536-542, run by UpnpInit2 and UpnpEnableWebserver) clears them. So all six are set after the last (re)initialisation before UpnpAddVirtualDir.",
+      "formula": "(!vdir_add W cb_getinfo) & G(web_reset -> X(!vdir_add W cb_getinfo)) & (!vdir_add W cb_open) & G(web_reset -> X(!vdir_add W cb_open)) & (!vdir_add W cb_read) & G(web_reset -> X(!vdir_add W cb_read)) & (!vdir_add W cb_write) & G(web_reset -> X(!vdir_add W cb_write)) & (!vdir_add W cb_seek) & G(web_reset -> X(!vdir_add W cb_seek)) & (!vdir_add W cb_close) & G(web_reset -> X(!vdir_add W cb_close))",
+      "apis": [
+        "UpnpVirtualDir_set_GetInfoCallback",
+        "UpnpVirtualDir_set_OpenCallback",
+        "UpnpVirtualDir_set_ReadCallback",
+        "UpnpVirtualDir_set_WriteCallback",
+        "UpnpVirtualDir_set_SeekCallback",
+        "UpnpVirtualDir_set_CloseCallback",
+        "UpnpInit2",
+        "UpnpEnableWebserver",
+        "UpnpAddVirtualDir"
+      ],
+      "predicates": {
+        "cb_getinfo": {
+          "meaning": "the GetInfo callback was set",
+          "events": [
+            "ok:UpnpVirtualDir_set_GetInfoCallback"
+          ]
+        },
+        "cb_open": {
+          "meaning": "the Open callback was set",
+          "events": [
+            "ok:UpnpVirtualDir_set_OpenCallback"
+          ]
+        },
+        "cb_read": {
+          "meaning": "the Read callback was set",
+          "events": [
+            "ok:UpnpVirtualDir_set_ReadCallback"
+          ]
+        },
+        "cb_write": {
+          "meaning": "the Write callback was set",
+          "events": [
+            "ok:UpnpVirtualDir_set_WriteCallback"
+          ]
+        },
+        "cb_seek": {
+          "meaning": "the Seek callback was set",
+          "events": [
+            "ok:UpnpVirtualDir_set_SeekCallback"
+          ]
+        },
+        "cb_close": {
+          "meaning": "the Close callback was set",
+          "events": [
+            "ok:UpnpVirtualDir_set_CloseCallback"
+          ]
+        },
+        "web_reset": {
+          "meaning": "the web server was (re)initialised, which clears the callbacks",
+          "events": [
+            "ok:UpnpInit2",
+            "call:UpnpEnableWebserver"
+          ]
+        },
+        "vdir_add": {
+          "meaning": "a virtual directory is about to be added",
+          "events": [
+            "call:UpnpAddVirtualDir"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "ok:UpnpInit2",
+            "call:UpnpVirtualDir_set_GetInfoCallback",
+            "ok:UpnpVirtualDir_set_GetInfoCallback",
+            "call:UpnpVirtualDir_set_OpenCallback",
+            "ok:UpnpVirtualDir_set_OpenCallback",
+            "call:UpnpVirtualDir_set_ReadCallback",
+            "ok:UpnpVirtualDir_set_ReadCallback",
+            "call:UpnpVirtualDir_set_WriteCallback",
+            "ok:UpnpVirtualDir_set_WriteCallback",
+            "call:UpnpVirtualDir_set_SeekCallback",
+            "ok:UpnpVirtualDir_set_SeekCallback",
+            "call:UpnpVirtualDir_set_CloseCallback",
+            "ok:UpnpVirtualDir_set_CloseCallback",
+            "call:UpnpAddVirtualDir",
+            "ok:UpnpAddVirtualDir"
+          ],
+          "allowed": true,
+          "reason": "all callbacks set after the init"
+        },
+        {
+          "events": [
+            "ok:UpnpInit2",
+            "call:UpnpVirtualDir_set_GetInfoCallback",
+            "ok:UpnpVirtualDir_set_GetInfoCallback",
+            "call:UpnpVirtualDir_set_OpenCallback",
+            "ok:UpnpVirtualDir_set_OpenCallback",
+            "call:UpnpVirtualDir_set_ReadCallback",
+            "ok:UpnpVirtualDir_set_ReadCallback",
+            "call:UpnpVirtualDir_set_WriteCallback",
+            "ok:UpnpVirtualDir_set_WriteCallback",
+            "call:UpnpVirtualDir_set_SeekCallback",
+            "ok:UpnpVirtualDir_set_SeekCallback",
+            "call:UpnpAddVirtualDir"
+          ],
+          "allowed": false,
+          "reason": "the close callback is missing"
+        },
+        {
+          "events": [
+            "ok:UpnpInit2",
+            "call:UpnpVirtualDir_set_GetInfoCallback",
+            "ok:UpnpVirtualDir_set_GetInfoCallback",
+            "call:UpnpVirtualDir_set_OpenCallback",
+            "ok:UpnpVirtualDir_set_OpenCallback",
+            "call:UpnpVirtualDir_set_ReadCallback",
+            "ok:UpnpVirtualDir_set_ReadCallback",
+            "call:UpnpVirtualDir_set_WriteCallback",
+            "ok:UpnpVirtualDir_set_WriteCallback",
+            "call:UpnpVirtualDir_set_SeekCallback",
+            "ok:UpnpVirtualDir_set_SeekCallback",
+            "call:UpnpVirtualDir_set_CloseCallback",
+            "ok:UpnpVirtualDir_set_CloseCallback",
+            "call:UpnpEnableWebserver",
+            "ok:UpnpEnableWebserver",
+            "call:UpnpAddVirtualDir"
+          ],
+          "allowed": false,
+          "reason": "UpnpEnableWebserver cleared the callbacks"
+        }
+      ]
+    }
+  ]
+}

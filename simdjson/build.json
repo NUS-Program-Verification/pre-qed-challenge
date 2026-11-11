@@ -1,0 +1,5 @@
+{
+  "languageStandard": "c++17",
+  "includeRoots": ["singleheader"],
+  "implementationSources": ["singleheader/simdjson.cpp"]
+}

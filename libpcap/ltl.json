@@ -1,0 +1,426 @@
+{
+  "properties": [
+    {
+      "id": "pcap_handle_lifecycle",
+      "rule": "pcap_close(3PCAP): 'closes the files associated with p and deallocates resources'. Every routine taking a pcap_t needs one from pcap_open_*/pcap_fopen_offline*/pcap_create that returned non-NULL. The harness keeps one pcap_t.",
+      "formula": "(!h_use W h_new) & G(h_close -> X(!h_use W h_new))",
+      "apis": [
+        "pcap_activate",
+        "pcap_breakloop",
+        "pcap_bufsize",
+        "pcap_can_set_rfmon",
+        "pcap_close",
+        "pcap_compile",
+        "pcap_create",
+        "pcap_datalink",
+        "pcap_datalink_ext",
+        "pcap_dispatch",
+        "pcap_dump_fopen",
+        "pcap_dump_open",
+        "pcap_dump_open_append",
+        "pcap_file",
+        "pcap_fileno",
+        "pcap_fopen_offline",
+        "pcap_fopen_offline_with_tstamp_precision",
+        "pcap_get_required_select_timeout",
+        "pcap_get_selectable_fd",
+        "pcap_get_tstamp_precision",
+        "pcap_geterr",
+        "pcap_getnonblock",
+        "pcap_inject",
+        "pcap_is_swapped",
+        "pcap_list_datalinks",
+        "pcap_list_tstamp_types",
+        "pcap_loop",
+        "pcap_major_version",
+        "pcap_minor_version",
+        "pcap_next",
+        "pcap_next_ex",
+        "pcap_open_dead",
+        "pcap_open_dead_with_tstamp_precision",
+        "pcap_open_live",
+        "pcap_open_offline",
+        "pcap_open_offline_with_tstamp_precision",
+        "pcap_perror",
+        "pcap_sendpacket",
+        "pcap_set_buffer_size",
+        "pcap_set_datalink",
+        "pcap_set_immediate_mode",
+        "pcap_set_promisc",
+        "pcap_set_protocol_linux",
+        "pcap_set_rfmon",
+        "pcap_set_snaplen",
+        "pcap_set_timeout",
+        "pcap_set_tstamp_precision",
+        "pcap_set_tstamp_type",
+        "pcap_setdirection",
+        "pcap_setfilter",
+        "pcap_setnonblock",
+        "pcap_snapshot",
+        "pcap_stats"
+      ],
+      "predicates": {
+        "h_new": {
+          "meaning": "a pcap_t was opened",
+          "events": [
+            "ok:pcap_open_dead",
+            "ok:pcap_open_dead_with_tstamp_precision",
+            "ok:pcap_fopen_offline",
+            "ok:pcap_fopen_offline_with_tstamp_precision",
+            "ok:pcap_open_offline",
+            "ok:pcap_open_offline_with_tstamp_precision",
+            "ok:pcap_create",
+            "ok:pcap_open_live"
+          ]
+        },
+        "h_close": {
+          "meaning": "pcap_close is about to be called",
+          "events": [
+            "call:pcap_close"
+          ]
+        },
+        "h_use": {
+          "meaning": "a routine taking the pcap_t is about to be called",
+          "events": [
+            "call:pcap_activate",
+            "call:pcap_close",
+            "call:pcap_set_snaplen",
+            "call:pcap_set_promisc",
+            "call:pcap_set_timeout",
+            "call:pcap_set_buffer_size",
+            "call:pcap_set_immediate_mode",
+            "call:pcap_set_tstamp_precision",
+            "call:pcap_set_tstamp_type",
+            "call:pcap_set_rfmon",
+            "call:pcap_set_protocol_linux",
+            "call:pcap_setdirection",
+            "call:pcap_can_set_rfmon",
+            "call:pcap_setnonblock",
+            "call:pcap_set_datalink",
+            "call:pcap_datalink",
+            "call:pcap_datalink_ext",
+            "call:pcap_snapshot",
+            "call:pcap_get_tstamp_precision",
+            "call:pcap_is_swapped",
+            "call:pcap_major_version",
+            "call:pcap_minor_version",
+            "call:pcap_bufsize",
+            "call:pcap_fileno",
+            "call:pcap_get_selectable_fd",
+            "call:pcap_getnonblock",
+            "call:pcap_stats",
+            "call:pcap_file",
+            "call:pcap_geterr",
+            "call:pcap_perror",
+            "call:pcap_get_required_select_timeout",
+            "call:pcap_list_datalinks",
+            "call:pcap_list_tstamp_types",
+            "call:pcap_next_ex",
+            "call:pcap_next",
+            "call:pcap_dispatch",
+            "call:pcap_loop",
+            "call:pcap_breakloop",
+            "call:pcap_inject",
+            "call:pcap_sendpacket",
+            "call:pcap_compile",
+            "call:pcap_setfilter",
+            "call:pcap_dump_open",
+            "call:pcap_dump_open_append",
+            "call:pcap_dump_fopen"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:pcap_create",
+            "ok:pcap_create",
+            "call:pcap_set_snaplen",
+            "ok:pcap_set_snaplen",
+            "call:pcap_activate",
+            "fail:pcap_activate",
+            "call:pcap_close",
+            "ok:pcap_close"
+          ],
+          "allowed": true,
+          "reason": "failed activation is a return; the handle is still closed once"
+        },
+        {
+          "events": [
+            "call:pcap_next_ex"
+          ],
+          "allowed": false,
+          "reason": "no handle"
+        },
+        {
+          "events": [
+            "call:pcap_open_offline",
+            "fail:pcap_open_offline",
+            "call:pcap_close"
+          ],
+          "allowed": false,
+          "reason": "open returned NULL"
+        },
+        {
+          "events": [
+            "call:pcap_open_dead",
+            "ok:pcap_open_dead",
+            "call:pcap_close",
+            "ok:pcap_close",
+            "call:pcap_datalink"
+          ],
+          "allowed": false,
+          "reason": "use after close"
+        }
+      ]
+    },
+    {
+      "id": "bpf_program_lifecycle",
+      "rule": "pcap_compile(3PCAP)/pcap_freecode(3PCAP): a struct bpf_program filled by pcap_compile or pcap_compile_nopcap holds allocated instructions that pcap_freecode releases; using or freeing it again after pcap_freecode is invalid. The harness keeps one program.",
+      "formula": "(!b_use W b_new) & G(b_free -> X(!b_use W b_new))",
+      "apis": [
+        "bpf_dump",
+        "bpf_filter",
+        "bpf_image",
+        "bpf_validate",
+        "pcap_compile",
+        "pcap_compile_nopcap",
+        "pcap_freecode",
+        "pcap_offline_filter",
+        "pcap_setfilter"
+      ],
+      "predicates": {
+        "b_new": {
+          "meaning": "a filter program was compiled",
+          "events": [
+            "ok:pcap_compile",
+            "ok:pcap_compile_nopcap"
+          ]
+        },
+        "b_free": {
+          "meaning": "pcap_freecode is about to be called",
+          "events": [
+            "call:pcap_freecode"
+          ]
+        },
+        "b_use": {
+          "meaning": "a routine taking the program is about to be called",
+          "events": [
+            "call:pcap_setfilter",
+            "call:pcap_offline_filter",
+            "call:bpf_validate",
+            "call:bpf_filter",
+            "call:bpf_image",
+            "call:bpf_dump",
+            "call:pcap_freecode"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:pcap_compile_nopcap",
+            "ok:pcap_compile_nopcap",
+            "call:bpf_validate",
+            "ok:bpf_validate",
+            "call:pcap_offline_filter",
+            "ok:pcap_offline_filter",
+            "call:pcap_freecode",
+            "ok:pcap_freecode"
+          ],
+          "allowed": true,
+          "reason": "compile, use, free"
+        },
+        {
+          "events": [
+            "call:pcap_setfilter"
+          ],
+          "allowed": false,
+          "reason": "no program"
+        },
+        {
+          "events": [
+            "call:pcap_compile",
+            "fail:pcap_compile",
+            "call:bpf_image"
+          ],
+          "allowed": false,
+          "reason": "compile failed"
+        },
+        {
+          "events": [
+            "call:pcap_compile",
+            "ok:pcap_compile",
+            "call:pcap_freecode",
+            "ok:pcap_freecode",
+            "call:pcap_freecode"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        }
+      ]
+    },
+    {
+      "id": "dumper_lifecycle",
+      "rule": "pcap_dump_open(3PCAP)/pcap_dump_close(3PCAP): pcap_dump and the pcap_dump_* routines take the pcap_dumper_t from pcap_dump_open/_append/pcap_dump_fopen; pcap_dump_close closes and frees it. The harness keeps one dumper.",
+      "formula": "(!d_use W d_new) & G(d_close -> X(!d_use W d_new))",
+      "apis": [
+        "pcap_dump",
+        "pcap_dump_close",
+        "pcap_dump_file",
+        "pcap_dump_flush",
+        "pcap_dump_fopen",
+        "pcap_dump_ftell",
+        "pcap_dump_ftell64",
+        "pcap_dump_open",
+        "pcap_dump_open_append"
+      ],
+      "predicates": {
+        "d_new": {
+          "meaning": "a dumper was opened",
+          "events": [
+            "ok:pcap_dump_open",
+            "ok:pcap_dump_open_append",
+            "ok:pcap_dump_fopen"
+          ]
+        },
+        "d_close": {
+          "meaning": "pcap_dump_close is about to be called",
+          "events": [
+            "call:pcap_dump_close"
+          ]
+        },
+        "d_use": {
+          "meaning": "a routine taking the dumper is about to be called",
+          "events": [
+            "call:pcap_dump",
+            "call:pcap_dump_flush",
+            "call:pcap_dump_ftell",
+            "call:pcap_dump_ftell64",
+            "call:pcap_dump_file",
+            "call:pcap_dump_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:pcap_dump_open",
+            "ok:pcap_dump_open",
+            "call:pcap_dump",
+            "ok:pcap_dump",
+            "call:pcap_dump_flush",
+            "ok:pcap_dump_flush",
+            "call:pcap_dump_close",
+            "ok:pcap_dump_close"
+          ],
+          "allowed": true,
+          "reason": "normal session"
+        },
+        {
+          "events": [
+            "call:pcap_dump"
+          ],
+          "allowed": false,
+          "reason": "no dumper"
+        },
+        {
+          "events": [
+            "call:pcap_dump_fopen",
+            "ok:pcap_dump_fopen",
+            "call:pcap_dump_close",
+            "ok:pcap_dump_close",
+            "call:pcap_dump_ftell"
+          ],
+          "allowed": false,
+          "reason": "use after close"
+        }
+      ]
+    },
+    {
+      "id": "owned_lists_freed_once",
+      "rule": "pcap_list_datalinks(3PCAP), pcap_list_tstamp_types(3PCAP), pcap_findalldevs(3PCAP), pcap_findalldevs_ex(3PCAP): the returned list must be freed with pcap_free_datalinks / pcap_free_tstamp_types / pcap_freealldevs exactly once, and only after a successful call.",
+      "formula": "(!dl_free W dl_new) & G(dl_free -> X(!dl_free W dl_new)) & (!ts_free W ts_new) & G(ts_free -> X(!ts_free W ts_new)) & (!dev_free W dev_new) & G(dev_free -> X(!dev_free W dev_new))",
+      "apis": [
+        "pcap_list_datalinks",
+        "pcap_free_datalinks",
+        "pcap_list_tstamp_types",
+        "pcap_free_tstamp_types",
+        "pcap_findalldevs",
+        "pcap_freealldevs"
+      ],
+      "predicates": {
+        "dl_new": {
+          "meaning": "datalink list returned",
+          "events": [
+            "ok:pcap_list_datalinks"
+          ]
+        },
+        "dl_free": {
+          "meaning": "pcap_free_datalinks about to run",
+          "events": [
+            "call:pcap_free_datalinks"
+          ]
+        },
+        "ts_new": {
+          "meaning": "timestamp type list returned",
+          "events": [
+            "ok:pcap_list_tstamp_types"
+          ]
+        },
+        "ts_free": {
+          "meaning": "pcap_free_tstamp_types about to run",
+          "events": [
+            "call:pcap_free_tstamp_types"
+          ]
+        },
+        "dev_new": {
+          "meaning": "device list returned",
+          "events": [
+            "ok:pcap_findalldevs"
+          ]
+        },
+        "dev_free": {
+          "meaning": "pcap_freealldevs about to run",
+          "events": [
+            "call:pcap_freealldevs"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:pcap_list_datalinks",
+            "ok:pcap_list_datalinks",
+            "call:pcap_free_datalinks",
+            "ok:pcap_free_datalinks",
+            "call:pcap_findalldevs",
+            "ok:pcap_findalldevs",
+            "call:pcap_freealldevs",
+            "ok:pcap_freealldevs"
+          ],
+          "allowed": true,
+          "reason": "each list freed once"
+        },
+        {
+          "events": [
+            "call:pcap_free_tstamp_types"
+          ],
+          "allowed": false,
+          "reason": "nothing to free"
+        },
+        {
+          "events": [
+            "call:pcap_findalldevs",
+            "ok:pcap_findalldevs",
+            "call:pcap_freealldevs",
+            "ok:pcap_freealldevs",
+            "call:pcap_freealldevs"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        }
+      ]
+    }
+  ]
+}

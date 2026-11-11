@@ -1,0 +1,26 @@
+{
+  "preprocessorDefinitions": ["BUILDING_PCAP"],
+  "implementationSources": [
+    "bpf_dump.c",
+    "bpf_filter.c",
+    "bpf_image.c",
+    "etherent.c",
+    "fmtutils.c",
+    "gencode.c",
+    "nametoaddr.c",
+    "optimize.c",
+    "pcap-common.c",
+    "pcap-util.c",
+    "pcap.c",
+    "pcap-new.c",
+    "savefile.c",
+    "sf-pcapng.c",
+    "sf-pcap.c",
+    "grammar.c",
+    "scanner.c",
+    "pcap-linux.c",
+    "fad-getad.c",
+    "pcap-netfilter-linux.c"
+  ],
+  "linkLibraries": []
+}

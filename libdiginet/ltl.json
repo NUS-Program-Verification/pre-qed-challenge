@@ -1,0 +1,346 @@
+{
+  "properties": [
+    {
+      "id": "frame_parsed_before_use",
+      "rule": "diginet.h: diginet_frame_is_keepalive, diginet_announce_parse, and the body given to diginet_cursor_init / diginet_decoder_init come from a struct diginet_frame that diginet_frame_parse filled ('body points into the parsed buffer'). After a failed parse the struct is unspecified until a parse succeeds. Rebuilding or replacing the frame bytes invalidates the earlier parse.",
+      "formula": "(!f_use W f_ok) & G((f_fail | f_rebuilt) -> X(!f_use W f_ok))",
+      "apis": [
+        "diginet_frame_parse",
+        "diginet_frame_build",
+        "diginet_frame_is_keepalive",
+        "diginet_announce_parse",
+        "diginet_cursor_init",
+        "diginet_decoder_init"
+      ],
+      "predicates": {
+        "f_ok": {
+          "meaning": "diginet_frame_parse returned DIGINET_OK",
+          "events": [
+            "ok:diginet_frame_parse"
+          ]
+        },
+        "f_fail": {
+          "meaning": "diginet_frame_parse failed",
+          "events": [
+            "fail:diginet_frame_parse"
+          ]
+        },
+        "f_rebuilt": {
+          "meaning": "the frame buffer was rewritten",
+          "events": [
+            "call:diginet_frame_build"
+          ]
+        },
+        "f_use": {
+          "meaning": "a routine reading the parsed frame is about to be called",
+          "events": [
+            "call:diginet_frame_is_keepalive",
+            "call:diginet_announce_parse",
+            "call:diginet_cursor_init",
+            "call:diginet_decoder_init"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:diginet_frame_parse",
+            "ok:diginet_frame_parse",
+            "call:diginet_announce_parse",
+            "fail:diginet_announce_parse",
+            "call:diginet_cursor_init",
+            "ok:diginet_cursor_init"
+          ],
+          "allowed": true,
+          "reason": "uses follow a successful parse"
+        },
+        {
+          "events": [
+            "call:diginet_frame_is_keepalive"
+          ],
+          "allowed": false,
+          "reason": "nothing parsed"
+        },
+        {
+          "events": [
+            "call:diginet_frame_parse",
+            "fail:diginet_frame_parse",
+            "call:diginet_decoder_init"
+          ],
+          "allowed": false,
+          "reason": "parse failed"
+        },
+        {
+          "events": [
+            "call:diginet_frame_parse",
+            "ok:diginet_frame_parse",
+            "call:diginet_frame_build",
+            "ok:diginet_frame_build",
+            "call:diginet_announce_parse"
+          ],
+          "allowed": false,
+          "reason": "frame buffer rewritten since the parse"
+        }
+      ]
+    },
+    {
+      "id": "cursor_initialised_before_next",
+      "rule": "diginet.h: diginet_msg_next walks a struct diginet_cursor set up by diginet_cursor_init over a body; the body pointer must stay valid, so a reparse or rebuild of the frame requires re-initialising the cursor.",
+      "formula": "(!c_next W c_init) & G(f_changed -> X(!c_next W c_init))",
+      "apis": [
+        "diginet_cursor_init",
+        "diginet_msg_next",
+        "diginet_frame_parse",
+        "diginet_frame_build"
+      ],
+      "predicates": {
+        "c_init": {
+          "meaning": "diginet_cursor_init completed",
+          "events": [
+            "ok:diginet_cursor_init"
+          ]
+        },
+        "c_next": {
+          "meaning": "diginet_msg_next is about to be called",
+          "events": [
+            "call:diginet_msg_next"
+          ]
+        },
+        "f_changed": {
+          "meaning": "the frame the cursor points into is being replaced",
+          "events": [
+            "call:diginet_frame_parse",
+            "call:diginet_frame_build"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:diginet_cursor_init",
+            "ok:diginet_cursor_init",
+            "call:diginet_msg_next",
+            "ok:diginet_msg_next",
+            "call:diginet_msg_next",
+            "fail:diginet_msg_next"
+          ],
+          "allowed": true,
+          "reason": "cursor errors are returns, iteration may continue"
+        },
+        {
+          "events": [
+            "call:diginet_msg_next"
+          ],
+          "allowed": false,
+          "reason": "no cursor"
+        },
+        {
+          "events": [
+            "call:diginet_cursor_init",
+            "ok:diginet_cursor_init",
+            "call:diginet_frame_parse",
+            "ok:diginet_frame_parse",
+            "call:diginet_msg_next"
+          ],
+          "allowed": false,
+          "reason": "frame reparsed under the cursor"
+        }
+      ]
+    },
+    {
+      "id": "decoder_initialised_before_next",
+      "rule": "diginet_codec.h: diginet_decoder_next reads a struct diginet_decoder set up by diginet_decoder_init over a body; same lifetime rule as the cursor.",
+      "formula": "(!d_next W d_init) & G(f_changed -> X(!d_next W d_init))",
+      "apis": [
+        "diginet_decoder_init",
+        "diginet_decoder_next",
+        "diginet_frame_parse",
+        "diginet_frame_build"
+      ],
+      "predicates": {
+        "d_init": {
+          "meaning": "diginet_decoder_init completed",
+          "events": [
+            "ok:diginet_decoder_init"
+          ]
+        },
+        "d_next": {
+          "meaning": "diginet_decoder_next is about to be called",
+          "events": [
+            "call:diginet_decoder_next"
+          ]
+        },
+        "f_changed": {
+          "meaning": "the frame the decoder points into is being replaced",
+          "events": [
+            "call:diginet_frame_parse",
+            "call:diginet_frame_build"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:diginet_decoder_init",
+            "ok:diginet_decoder_init",
+            "call:diginet_decoder_next",
+            "ok:diginet_decoder_next"
+          ],
+          "allowed": true,
+          "reason": "init then next"
+        },
+        {
+          "events": [
+            "call:diginet_decoder_next"
+          ],
+          "allowed": false,
+          "reason": "no decoder"
+        },
+        {
+          "events": [
+            "call:diginet_decoder_init",
+            "ok:diginet_decoder_init",
+            "call:diginet_frame_build",
+            "ok:diginet_frame_build",
+            "call:diginet_decoder_next"
+          ],
+          "allowed": false,
+          "reason": "frame rebuilt under the decoder"
+        }
+      ]
+    },
+    {
+      "id": "session_init_before_use",
+      "rule": "diginet_session.h:150 and transport/src/diginet_session.c:64-75: diginet_session_init sets up the caller's struct diginet_session (state, copied cfg and io, notify); every other session function reads that state and calls through s->io and s->notify (diginet_session.c:85, :90). A failed init (DIGINET_E_ARG, diginet_session.c:59-63) sets nothing up.",
+      "formula": "!s_use W s_init_ok",
+      "apis": [
+        "diginet_session_init",
+        "diginet_session_rx",
+        "diginet_session_tick",
+        "diginet_session_deadline",
+        "diginet_session_poll",
+        "diginet_session_submit",
+        "diginet_session_wake",
+        "diginet_session_close"
+      ],
+      "predicates": {
+        "s_init_ok": {
+          "meaning": "diginet_session_init returned DIGINET_OK",
+          "events": [
+            "ok:diginet_session_init"
+          ]
+        },
+        "s_use": {
+          "meaning": "a function taking the session is about to be called",
+          "events": [
+            "call:diginet_session_rx",
+            "call:diginet_session_tick",
+            "call:diginet_session_deadline",
+            "call:diginet_session_poll",
+            "call:diginet_session_submit",
+            "call:diginet_session_wake",
+            "call:diginet_session_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:diginet_session_init",
+            "ok:diginet_session_init",
+            "call:diginet_session_rx",
+            "fail:diginet_session_rx",
+            "call:diginet_session_poll",
+            "ok:diginet_session_poll"
+          ],
+          "allowed": true,
+          "reason": "uses follow a successful init"
+        },
+        {
+          "events": [
+            "call:diginet_session_tick"
+          ],
+          "allowed": false,
+          "reason": "no session set up"
+        },
+        {
+          "events": [
+            "call:diginet_session_init",
+            "fail:diginet_session_init",
+            "call:diginet_session_submit"
+          ],
+          "allowed": false,
+          "reason": "init failed"
+        }
+      ]
+    },
+    {
+      "id": "session_no_wake_after_close",
+      "rule": "diginet_session.h:10: diginet_session_close takes any state to CLOSED, and the diagram (diginet_session.h:7-10) has no edge out of CLOSED; close goes CLOSED even when its e3 fails to send (diginet_session.c:153-157). rx and tick leave a CLOSED session alone (diginet_session.c:293, :418), but diginet_session_wake does not check the state and would move it to WAKING (diginet_session.c:119-143). Waking needs a new diginet_session_init.",
+      "formula": "G(s_close -> X(!s_wake W s_init_ok))",
+      "apis": [
+        "diginet_session_close",
+        "diginet_session_wake",
+        "diginet_session_init"
+      ],
+      "predicates": {
+        "s_close": {
+          "meaning": "diginet_session_close is about to be called",
+          "events": [
+            "call:diginet_session_close"
+          ]
+        },
+        "s_wake": {
+          "meaning": "diginet_session_wake is about to be called",
+          "events": [
+            "call:diginet_session_wake"
+          ]
+        },
+        "s_init_ok": {
+          "meaning": "diginet_session_init returned DIGINET_OK",
+          "events": [
+            "ok:diginet_session_init"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:diginet_session_wake",
+            "ok:diginet_session_wake",
+            "call:diginet_session_close",
+            "ok:diginet_session_close",
+            "call:diginet_session_tick",
+            "ok:diginet_session_tick",
+            "call:diginet_session_init",
+            "ok:diginet_session_init",
+            "call:diginet_session_wake",
+            "fail:diginet_session_wake"
+          ],
+          "allowed": true,
+          "reason": "wake again only after a new init"
+        },
+        {
+          "events": [
+            "call:diginet_session_close",
+            "fail:diginet_session_close",
+            "call:diginet_session_wake"
+          ],
+          "allowed": false,
+          "reason": "the session is CLOSED even when the e3 failed"
+        },
+        {
+          "events": [
+            "call:diginet_session_close",
+            "ok:diginet_session_close",
+            "call:diginet_session_init",
+            "fail:diginet_session_init",
+            "call:diginet_session_wake"
+          ],
+          "allowed": false,
+          "reason": "a failed init does not reopen the session"
+        }
+      ]
+    }
+  ]
+}

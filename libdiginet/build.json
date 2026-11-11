@@ -1,0 +1,6 @@
+{
+  "languageStandard": "c11",
+  "includeRoots": ["include"],
+  "preprocessorDefinitions": ["_GNU_SOURCE"],
+  "implementationSources": ["src/diginet_codec.c", "src/diginet_decode.c", "src/diginet_frame.c", "src/diginet_msg.c", "transport/src/diginet_io.c", "transport/src/diginet_session.c"]
+}

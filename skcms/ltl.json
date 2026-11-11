@@ -1,0 +1,170 @@
+{
+  "properties": [
+    {
+      "id": "profile_initialised_before_use",
+      "rule": "skcms.h: an skcms_ICCProfile is valid only after skcms_Parse / skcms_ParseWithA2BPriority returned true, after copying skcms_sRGB_profile() / skcms_XYZD50_profile(), or after skcms_Init. A failed parse leaves the struct partially written ('the parse will fail...'); using it is undefined until a later initialisation succeeds. The harness keeps two profile slots but every parse failure is reported, so this rule is checked per call stream.",
+      "formula": "(!p_use W p_ok) & G(p_fail -> X(!p_use W p_ok))",
+      "apis": [
+        "skcms_ApproximateCurve",
+        "skcms_ApproximatelyEqualProfiles",
+        "skcms_AreApproximateInverses",
+        "skcms_GetCHAD",
+        "skcms_GetInputChannelCount",
+        "skcms_GetWTPT",
+        "skcms_Init",
+        "skcms_MakeUsableAsDestination",
+        "skcms_MakeUsableAsDestinationWithSingleCurve",
+        "skcms_Parse",
+        "skcms_ParseWithA2BPriority",
+        "skcms_SetTransferFunction",
+        "skcms_SetXYZD50",
+        "skcms_TRCs_AreApproximateInverse",
+        "skcms_Transform",
+        "skcms_XYZD50_profile",
+        "skcms_sRGB_profile"
+      ],
+      "predicates": {
+        "p_ok": {
+          "meaning": "a profile was initialised",
+          "events": [
+            "ok:skcms_Parse",
+            "ok:skcms_ParseWithA2BPriority",
+            "ok:skcms_sRGB_profile",
+            "ok:skcms_XYZD50_profile",
+            "ok:skcms_Init"
+          ]
+        },
+        "p_fail": {
+          "meaning": "a parse failed and left the slot invalid",
+          "events": [
+            "fail:skcms_Parse",
+            "fail:skcms_ParseWithA2BPriority"
+          ]
+        },
+        "p_use": {
+          "meaning": "a routine taking a profile is about to be called",
+          "events": [
+            "call:skcms_SetTransferFunction",
+            "call:skcms_SetXYZD50",
+            "call:skcms_ApproximatelyEqualProfiles",
+            "call:skcms_TRCs_AreApproximateInverse",
+            "call:skcms_GetCHAD",
+            "call:skcms_GetWTPT",
+            "call:skcms_GetInputChannelCount",
+            "call:skcms_MakeUsableAsDestination",
+            "call:skcms_MakeUsableAsDestinationWithSingleCurve",
+            "call:skcms_ApproximateCurve",
+            "call:skcms_AreApproximateInverses",
+            "call:skcms_Transform"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:skcms_Parse",
+            "ok:skcms_Parse",
+            "call:skcms_GetWTPT",
+            "ok:skcms_GetWTPT",
+            "call:skcms_Parse",
+            "fail:skcms_Parse",
+            "call:skcms_sRGB_profile",
+            "ok:skcms_sRGB_profile",
+            "call:skcms_Transform"
+          ],
+          "allowed": true,
+          "reason": "a successful init follows the failed parse before the next use"
+        },
+        {
+          "events": [
+            "call:skcms_GetCHAD"
+          ],
+          "allowed": false,
+          "reason": "no profile"
+        },
+        {
+          "events": [
+            "call:skcms_Parse",
+            "fail:skcms_Parse",
+            "call:skcms_MakeUsableAsDestination"
+          ],
+          "allowed": false,
+          "reason": "use after a failed parse"
+        }
+      ]
+    },
+    {
+      "id": "transfer_function_initialised_before_use",
+      "rule": "skcms.h: skcms_TransferFunction_eval/invert/getType/is* and the Set/compare helpers read a transfer function. The harness holds one; it is defined after one of the constructors / inverters / approximators produced it. Calls that take a raw struct from the payload are reported too, so only the stored-TF path is constrained by the harness; the rule states the library requirement.",
+      "formula": "(!tf_set W tf_ok)",
+      "apis": [
+        "skcms_ApproximateCurve",
+        "skcms_AreApproximateInverses",
+        "skcms_Identity_TransferFunction",
+        "skcms_SetTransferFunction",
+        "skcms_TRCs_AreApproximateInverse",
+        "skcms_TransferFunction_invert",
+        "skcms_TransferFunction_makeHLG",
+        "skcms_TransferFunction_makeHLGish",
+        "skcms_TransferFunction_makePQ",
+        "skcms_TransferFunction_makePQish",
+        "skcms_TransferFunction_makeScaledHLGish",
+        "skcms_sRGB_Inverse_TransferFunction",
+        "skcms_sRGB_TransferFunction"
+      ],
+      "predicates": {
+        "tf_ok": {
+          "meaning": "a transfer function was produced",
+          "events": [
+            "ok:skcms_sRGB_TransferFunction",
+            "ok:skcms_sRGB_Inverse_TransferFunction",
+            "ok:skcms_Identity_TransferFunction",
+            "ok:skcms_ApproximateCurve",
+            "ok:skcms_TransferFunction_invert",
+            "ok:skcms_TransferFunction_makePQish",
+            "ok:skcms_TransferFunction_makeScaledHLGish",
+            "ok:skcms_TransferFunction_makeHLGish",
+            "ok:skcms_TransferFunction_makePQ",
+            "ok:skcms_TransferFunction_makeHLG"
+          ]
+        },
+        "tf_set": {
+          "meaning": "the stored transfer function is written into a profile or compared with a curve",
+          "events": [
+            "call:skcms_SetTransferFunction",
+            "call:skcms_TRCs_AreApproximateInverse",
+            "call:skcms_AreApproximateInverses"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:skcms_sRGB_TransferFunction",
+            "ok:skcms_sRGB_TransferFunction",
+            "call:skcms_SetTransferFunction",
+            "ok:skcms_SetTransferFunction"
+          ],
+          "allowed": true,
+          "reason": "TF defined before use"
+        },
+        {
+          "events": [
+            "call:skcms_SetTransferFunction"
+          ],
+          "allowed": false,
+          "reason": "no transfer function yet"
+        },
+        {
+          "events": [
+            "call:skcms_TransferFunction_makePQish",
+            "fail:skcms_TransferFunction_makePQish",
+            "call:skcms_AreApproximateInverses"
+          ],
+          "allowed": false,
+          "reason": "constructor failed"
+        }
+      ]
+    }
+  ]
+}

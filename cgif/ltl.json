@@ -1,0 +1,144 @@
+{
+  "properties": [
+    {
+      "id": "gif_lifecycle",
+      "rule": "cgif.h: cgif_addframe takes the CGIF* returned by cgif_newgif; cgif_close writes the trailer and frees it. After cgif_close the handle is gone until a new cgif_newgif succeeds. The harness keeps one CGIF.",
+      "formula": "(!g_use W g_new) & G(g_close -> X(!g_use W g_new))",
+      "apis": [
+        "cgif_newgif",
+        "cgif_addframe",
+        "cgif_close"
+      ],
+      "predicates": {
+        "g_new": {
+          "meaning": "cgif_newgif returned a handle",
+          "events": [
+            "ok:cgif_newgif"
+          ]
+        },
+        "g_close": {
+          "meaning": "cgif_close is about to be called",
+          "events": [
+            "call:cgif_close"
+          ]
+        },
+        "g_use": {
+          "meaning": "cgif_addframe or cgif_close is about to be called",
+          "events": [
+            "call:cgif_addframe",
+            "call:cgif_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:cgif_newgif",
+            "ok:cgif_newgif",
+            "call:cgif_addframe",
+            "ok:cgif_addframe",
+            "call:cgif_addframe",
+            "fail:cgif_addframe",
+            "call:cgif_close",
+            "fail:cgif_close",
+            "call:cgif_newgif",
+            "ok:cgif_newgif",
+            "call:cgif_close"
+          ],
+          "allowed": true,
+          "reason": "errors from addframe/close are returns; the handle still must be closed exactly once"
+        },
+        {
+          "events": [
+            "call:cgif_addframe"
+          ],
+          "allowed": false,
+          "reason": "no GIF"
+        },
+        {
+          "events": [
+            "call:cgif_newgif",
+            "fail:cgif_newgif",
+            "call:cgif_close"
+          ],
+          "allowed": false,
+          "reason": "newgif returned NULL"
+        },
+        {
+          "events": [
+            "call:cgif_newgif",
+            "ok:cgif_newgif",
+            "call:cgif_close",
+            "ok:cgif_close",
+            "call:cgif_addframe"
+          ],
+          "allowed": false,
+          "reason": "frame after close"
+        }
+      ]
+    },
+    {
+      "id": "rgb_gif_lifecycle",
+      "rule": "cgif.h: cgif_rgb_addframe takes the CGIFrgb* from cgif_rgb_newgif; cgif_rgb_close frees it. The harness keeps one CGIFrgb.",
+      "formula": "(!r_use W r_new) & G(r_close -> X(!r_use W r_new))",
+      "apis": [
+        "cgif_rgb_newgif",
+        "cgif_rgb_addframe",
+        "cgif_rgb_close"
+      ],
+      "predicates": {
+        "r_new": {
+          "meaning": "cgif_rgb_newgif returned a handle",
+          "events": [
+            "ok:cgif_rgb_newgif"
+          ]
+        },
+        "r_close": {
+          "meaning": "cgif_rgb_close is about to be called",
+          "events": [
+            "call:cgif_rgb_close"
+          ]
+        },
+        "r_use": {
+          "meaning": "cgif_rgb_addframe or cgif_rgb_close is about to be called",
+          "events": [
+            "call:cgif_rgb_addframe",
+            "call:cgif_rgb_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:cgif_rgb_newgif",
+            "ok:cgif_rgb_newgif",
+            "call:cgif_rgb_addframe",
+            "ok:cgif_rgb_addframe",
+            "call:cgif_rgb_close",
+            "ok:cgif_rgb_close"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:cgif_rgb_close"
+          ],
+          "allowed": false,
+          "reason": "no GIF"
+        },
+        {
+          "events": [
+            "call:cgif_rgb_newgif",
+            "ok:cgif_rgb_newgif",
+            "call:cgif_rgb_close",
+            "ok:cgif_rgb_close",
+            "call:cgif_rgb_close"
+          ],
+          "allowed": false,
+          "reason": "double close"
+        }
+      ]
+    }
+  ]
+}

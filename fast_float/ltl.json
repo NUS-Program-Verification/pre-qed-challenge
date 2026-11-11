@@ -1,0 +1,4 @@
+{
+  "properties": [],
+  "unconstrainedReason": "fast_float exposes only pure functions (from_chars / from_chars_advanced overloads, integer_times_pow10, the chars_format bit operators and from_chars_result_t::operator bool). Every call is independent of every other; there are no objects, handles or ordering requirements, so there is no caller-legality rule to state. The harness still decodes the record stream so sequences of parses with different formats run in one input."
+}

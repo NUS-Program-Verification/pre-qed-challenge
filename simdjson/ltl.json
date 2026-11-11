@@ -1,0 +1,2402 @@
+{
+  "properties": [
+    {
+      "id": "dom_one_document_per_parser",
+      "rule": "doc/dom.md: 'The parsed document resulting from parser.parse depends on the parser instance... you must have at most one parsed document in play per parser instance.' Every parse, parse_many or allocate on the parser invalidates elements from the previous document; parse_many documents are replaced when the stream advances.",
+      "formula": "(!e_use W e_root) & G(e_gone -> X(!e_use W e_root))",
+      "apis": [
+        "dom::document::operator=",
+        "dom::document_stream::iterator::operator*",
+        "dom::document_stream::iterator::operator++",
+        "dom::element::at",
+        "dom::element::at_key",
+        "dom::element::at_key_case_insensitive",
+        "dom::element::at_path",
+        "dom::element::at_path_with_wildcard",
+        "dom::element::at_pointer",
+        "dom::element::begin",
+        "dom::element::dump_raw_tape",
+        "dom::element::end",
+        "dom::element::get_array",
+        "dom::element::get_bigint",
+        "dom::element::get_bool",
+        "dom::element::get_c_str",
+        "dom::element::get_double",
+        "dom::element::get_int64",
+        "dom::element::get_object",
+        "dom::element::get_string",
+        "dom::element::get_string_length",
+        "dom::element::get_uint64",
+        "dom::element::is_array",
+        "dom::element::is_bigint",
+        "dom::element::is_bool",
+        "dom::element::is_null",
+        "dom::element::is_number",
+        "dom::element::is_object",
+        "dom::element::is_string",
+        "dom::element::operator(array)",
+        "dom::element::operator(bool)",
+        "dom::element::operator(const_char_*)",
+        "dom::element::operator(double)",
+        "dom::element::operator(int64_t)",
+        "dom::element::operator(object)",
+        "dom::element::operator(string_view)",
+        "dom::element::operator(uint64_t)",
+        "dom::element::operator<",
+        "dom::element::operator==",
+        "dom::element::operator[]",
+        "dom::element::tie",
+        "dom::element::type",
+        "dom::operator<<",
+        "dom::parser::allocate",
+        "dom::parser::load",
+        "dom::parser::load_into_document",
+        "dom::parser::load_many",
+        "dom::parser::operator=",
+        "dom::parser::parse",
+        "dom::parser::parse(padded_string)",
+        "dom::parser::parse_into_document",
+        "dom::parser::parse_many",
+        "dom::parser::parse_unpadded",
+        "fractured_json",
+        "prettify",
+        "simdjson_result<dom::element>::at_path",
+        "simdjson_result<dom::element>::at_path_with_wildcard",
+        "simdjson_result<dom::element>::begin",
+        "simdjson_result<dom::element>::end",
+        "simdjson_result<dom::element>::get_array",
+        "simdjson_result<dom::element>::get_bigint",
+        "simdjson_result<dom::element>::get_bool",
+        "simdjson_result<dom::element>::get_c_str",
+        "simdjson_result<dom::element>::get_double",
+        "simdjson_result<dom::element>::get_int64",
+        "simdjson_result<dom::element>::get_object",
+        "simdjson_result<dom::element>::get_string",
+        "simdjson_result<dom::element>::get_string_length",
+        "simdjson_result<dom::element>::get_uint64",
+        "simdjson_result<dom::element>::is",
+        "simdjson_result<dom::element>::is_array",
+        "simdjson_result<dom::element>::is_bigint",
+        "simdjson_result<dom::element>::is_bool",
+        "simdjson_result<dom::element>::is_double",
+        "simdjson_result<dom::element>::is_int64",
+        "simdjson_result<dom::element>::is_null",
+        "simdjson_result<dom::element>::is_number",
+        "simdjson_result<dom::element>::is_object",
+        "simdjson_result<dom::element>::is_string",
+        "simdjson_result<dom::element>::is_uint64",
+        "simdjson_result<dom::element>::operator(array)",
+        "simdjson_result<dom::element>::operator(bool)",
+        "simdjson_result<dom::element>::operator(const_char_*)",
+        "simdjson_result<dom::element>::operator(double)",
+        "simdjson_result<dom::element>::operator(int64_t)",
+        "simdjson_result<dom::element>::operator(object)",
+        "simdjson_result<dom::element>::operator(string_view)",
+        "simdjson_result<dom::element>::operator(uint64_t)",
+        "simdjson_result<dom::element>::operator[]",
+        "simdjson_result<dom::element>::type",
+        "simdjson_result<int64_t>::operator(int64_t&&)",
+        "simdjson_result<int64_t>::take_value",
+        "simdjson_result<int64_t>::tie",
+        "simdjson_result<int64_t>::value",
+        "to_string"
+      ],
+      "predicates": {
+        "e_root": {
+          "meaning": "a parse (or a stream step) produced a root element",
+          "events": [
+            "ok:dom::parser::parse",
+            "ok:dom::parser::parse(padded_string)",
+            "ok:dom::parser::parse_unpadded",
+            "ok:dom::parser::parse_into_document",
+            "ok:dom::document_stream::iterator::operator*",
+            "ok:dom::parser::load",
+            "ok:dom::parser::load_into_document"
+          ]
+        },
+        "e_gone": {
+          "meaning": "the parser is reused or the stream moves to the next document",
+          "events": [
+            "call:dom::parser::parse",
+            "call:dom::parser::parse(padded_string)",
+            "call:dom::parser::parse_unpadded",
+            "call:dom::parser::parse_into_document",
+            "call:dom::parser::parse_many",
+            "call:dom::parser::allocate",
+            "call:dom::document_stream::iterator::operator++",
+            "call:dom::parser::load",
+            "call:dom::parser::load_into_document",
+            "call:dom::parser::load_many",
+            "call:dom::parser::operator=",
+            "call:dom::document::operator="
+          ]
+        },
+        "e_use": {
+          "meaning": "an element routine is about to be called",
+          "events": [
+            "call:dom::element::at_pointer",
+            "call:dom::element::at_key",
+            "call:dom::element::at_key_case_insensitive",
+            "call:dom::element::at",
+            "call:dom::element::get_string",
+            "call:dom::element::get_c_str",
+            "call:dom::element::get_string_length",
+            "call:dom::element::get_int64",
+            "call:dom::element::get_uint64",
+            "call:dom::element::get_double",
+            "call:dom::element::get_bool",
+            "call:dom::element::get_bigint",
+            "call:dom::element::type",
+            "call:dom::element::is_number",
+            "call:dom::element::dump_raw_tape",
+            "call:dom::operator<<",
+            "call:dom::element::get_array",
+            "call:dom::element::get_object",
+            "call:dom::element::is_array",
+            "call:dom::element::is_object",
+            "call:dom::element::is_string",
+            "call:dom::element::is_bool",
+            "call:dom::element::is_null",
+            "call:dom::element::is_bigint",
+            "call:dom::element::at_path",
+            "call:dom::element::at_path_with_wildcard",
+            "call:dom::element::operator[]",
+            "call:dom::element::operator(bool)",
+            "call:dom::element::operator(const_char_*)",
+            "call:dom::element::operator(string_view)",
+            "call:dom::element::operator(uint64_t)",
+            "call:dom::element::operator(int64_t)",
+            "call:dom::element::operator(double)",
+            "call:dom::element::operator(array)",
+            "call:dom::element::operator(object)",
+            "call:dom::element::begin",
+            "call:dom::element::end",
+            "call:dom::element::operator<",
+            "call:dom::element::operator==",
+            "call:dom::element::tie",
+            "call:simdjson_result<dom::element>::type",
+            "call:simdjson_result<dom::element>::get_array",
+            "call:simdjson_result<dom::element>::get_object",
+            "call:simdjson_result<dom::element>::get_c_str",
+            "call:simdjson_result<dom::element>::get_string_length",
+            "call:simdjson_result<dom::element>::get_string",
+            "call:simdjson_result<dom::element>::get_int64",
+            "call:simdjson_result<dom::element>::get_uint64",
+            "call:simdjson_result<dom::element>::get_double",
+            "call:simdjson_result<dom::element>::get_bool",
+            "call:simdjson_result<dom::element>::get_bigint",
+            "call:simdjson_result<dom::element>::is_array",
+            "call:simdjson_result<dom::element>::is_object",
+            "call:simdjson_result<dom::element>::is_string",
+            "call:simdjson_result<dom::element>::is_int64",
+            "call:simdjson_result<dom::element>::is_uint64",
+            "call:simdjson_result<dom::element>::is_double",
+            "call:simdjson_result<dom::element>::is_number",
+            "call:simdjson_result<dom::element>::is_bool",
+            "call:simdjson_result<dom::element>::is_null",
+            "call:simdjson_result<dom::element>::is_bigint",
+            "call:simdjson_result<dom::element>::is",
+            "call:simdjson_result<dom::element>::operator[]",
+            "call:simdjson_result<dom::element>::at_path",
+            "call:simdjson_result<dom::element>::at_path_with_wildcard",
+            "call:simdjson_result<dom::element>::operator(bool)",
+            "call:simdjson_result<dom::element>::operator(const_char_*)",
+            "call:simdjson_result<dom::element>::operator(string_view)",
+            "call:simdjson_result<dom::element>::operator(uint64_t)",
+            "call:simdjson_result<dom::element>::operator(int64_t)",
+            "call:simdjson_result<dom::element>::operator(double)",
+            "call:simdjson_result<dom::element>::operator(array)",
+            "call:simdjson_result<dom::element>::operator(object)",
+            "call:simdjson_result<dom::element>::begin",
+            "call:simdjson_result<dom::element>::end",
+            "call:simdjson_result<int64_t>::value",
+            "call:simdjson_result<int64_t>::take_value",
+            "call:simdjson_result<int64_t>::operator(int64_t&&)",
+            "call:simdjson_result<int64_t>::tie",
+            "call:to_string",
+            "call:prettify",
+            "call:fractured_json"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:dom::parser::parse",
+            "ok:dom::parser::parse",
+            "call:dom::element::at_key",
+            "fail:dom::element::at_key",
+            "call:dom::element::get_int64",
+            "ok:dom::element::get_int64"
+          ],
+          "allowed": true,
+          "reason": "a failed lookup leaves the current element usable"
+        },
+        {
+          "events": [
+            "call:dom::element::type"
+          ],
+          "allowed": false,
+          "reason": "nothing parsed"
+        },
+        {
+          "events": [
+            "call:dom::parser::parse",
+            "ok:dom::parser::parse",
+            "call:dom::parser::allocate",
+            "ok:dom::parser::allocate",
+            "call:dom::operator<<"
+          ],
+          "allowed": false,
+          "reason": "allocate reused the parser"
+        },
+        {
+          "events": [
+            "call:dom::parser::parse_unpadded",
+            "ok:dom::parser::parse_unpadded",
+            "call:dom::parser::parse",
+            "fail:dom::parser::parse",
+            "call:dom::element::at"
+          ],
+          "allowed": false,
+          "reason": "a failed reparse still destroyed the previous document"
+        }
+      ]
+    },
+    {
+      "id": "dom_array_view",
+      "rule": "dom::array and its iterators are views into the parser's document (doc/dom.md); they exist after element::get_array succeeds and die with the document.",
+      "formula": "(!a_use W a_new) & G(e_gone -> X(!a_use W a_new))",
+      "apis": [
+        "dom::array::at",
+        "dom::array::at_path",
+        "dom::array::at_path_with_wildcard",
+        "dom::array::at_pointer",
+        "dom::array::get_values",
+        "dom::array::iterator::operator*",
+        "dom::array::iterator::operator++",
+        "dom::array::iterator::operator<",
+        "dom::array::iterator::operator<=",
+        "dom::array::iterator::operator==",
+        "dom::array::iterator::operator>",
+        "dom::array::iterator::operator>=",
+        "dom::array::number_of_slots",
+        "dom::array::operator(element)",
+        "dom::array::size",
+        "dom::document::operator=",
+        "dom::document_stream::iterator::operator++",
+        "dom::element::get_array",
+        "dom::parser::allocate",
+        "dom::parser::load",
+        "dom::parser::load_into_document",
+        "dom::parser::load_many",
+        "dom::parser::operator=",
+        "dom::parser::parse",
+        "dom::parser::parse(padded_string)",
+        "dom::parser::parse_into_document",
+        "dom::parser::parse_many",
+        "dom::parser::parse_unpadded",
+        "simdjson_result<dom::array>::get_values",
+        "simdjson_result<dom::array>::size"
+      ],
+      "predicates": {
+        "a_new": {
+          "meaning": "get_array succeeded",
+          "events": [
+            "ok:dom::element::get_array"
+          ]
+        },
+        "e_gone": {
+          "meaning": "the document is replaced",
+          "events": [
+            "call:dom::parser::parse",
+            "call:dom::parser::parse(padded_string)",
+            "call:dom::parser::parse_unpadded",
+            "call:dom::parser::parse_into_document",
+            "call:dom::parser::parse_many",
+            "call:dom::parser::allocate",
+            "call:dom::document_stream::iterator::operator++",
+            "call:dom::parser::load",
+            "call:dom::parser::load_into_document",
+            "call:dom::parser::load_many",
+            "call:dom::parser::operator=",
+            "call:dom::document::operator="
+          ]
+        },
+        "a_use": {
+          "meaning": "an array view routine is about to be called",
+          "events": [
+            "call:dom::array::size",
+            "call:dom::array::at",
+            "call:dom::array::at_pointer",
+            "call:dom::array::iterator::operator*",
+            "call:dom::array::iterator::operator++",
+            "call:dom::array::at_path",
+            "call:dom::array::at_path_with_wildcard",
+            "call:dom::array::get_values",
+            "call:dom::array::number_of_slots",
+            "call:dom::array::operator(element)",
+            "call:dom::array::iterator::operator==",
+            "call:dom::array::iterator::operator<",
+            "call:dom::array::iterator::operator<=",
+            "call:dom::array::iterator::operator>",
+            "call:dom::array::iterator::operator>=",
+            "call:simdjson_result<dom::array>::size",
+            "call:simdjson_result<dom::array>::get_values"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:dom::element::get_array",
+            "ok:dom::element::get_array",
+            "call:dom::array::iterator::operator*",
+            "ok:dom::array::iterator::operator*",
+            "call:dom::array::iterator::operator++",
+            "ok:dom::array::iterator::operator++"
+          ],
+          "allowed": true,
+          "reason": "iteration over a live array"
+        },
+        {
+          "events": [
+            "call:dom::array::size"
+          ],
+          "allowed": false,
+          "reason": "no array"
+        },
+        {
+          "events": [
+            "call:dom::element::get_array",
+            "ok:dom::element::get_array",
+            "call:dom::parser::parse",
+            "ok:dom::parser::parse",
+            "call:dom::array::at"
+          ],
+          "allowed": false,
+          "reason": "document replaced"
+        }
+      ]
+    },
+    {
+      "id": "dom_object_view",
+      "rule": "dom::object and its iterators are views into the parser's document; they exist after element::get_object succeeds and die with the document.",
+      "formula": "(!o_use W o_new) & G(e_gone -> X(!o_use W o_new))",
+      "apis": [
+        "dom::document::operator=",
+        "dom::document_stream::iterator::operator++",
+        "dom::element::get_object",
+        "dom::object::at_key",
+        "dom::object::at_key_case_insensitive",
+        "dom::object::at_path",
+        "dom::object::at_path_with_wildcard",
+        "dom::object::get_values",
+        "dom::object::iterator::operator*",
+        "dom::object::iterator::operator++",
+        "dom::object::iterator::operator<",
+        "dom::object::iterator::operator<=",
+        "dom::object::iterator::operator==",
+        "dom::object::iterator::operator>",
+        "dom::object::iterator::operator>=",
+        "dom::object::operator(element)",
+        "dom::object::operator[]",
+        "dom::object::size",
+        "dom::parser::allocate",
+        "dom::parser::load",
+        "dom::parser::load_into_document",
+        "dom::parser::load_many",
+        "dom::parser::operator=",
+        "dom::parser::parse",
+        "dom::parser::parse(padded_string)",
+        "dom::parser::parse_into_document",
+        "dom::parser::parse_many",
+        "dom::parser::parse_unpadded"
+      ],
+      "predicates": {
+        "o_new": {
+          "meaning": "get_object succeeded",
+          "events": [
+            "ok:dom::element::get_object"
+          ]
+        },
+        "e_gone": {
+          "meaning": "the document is replaced",
+          "events": [
+            "call:dom::parser::parse",
+            "call:dom::parser::parse(padded_string)",
+            "call:dom::parser::parse_unpadded",
+            "call:dom::parser::parse_into_document",
+            "call:dom::parser::parse_many",
+            "call:dom::parser::allocate",
+            "call:dom::document_stream::iterator::operator++",
+            "call:dom::parser::load",
+            "call:dom::parser::load_into_document",
+            "call:dom::parser::load_many",
+            "call:dom::parser::operator=",
+            "call:dom::document::operator="
+          ]
+        },
+        "o_use": {
+          "meaning": "an object view routine is about to be called",
+          "events": [
+            "call:dom::object::size",
+            "call:dom::object::at_key",
+            "call:dom::object::at_key_case_insensitive",
+            "call:dom::object::iterator::operator*",
+            "call:dom::object::iterator::operator++",
+            "call:dom::object::at_path",
+            "call:dom::object::at_path_with_wildcard",
+            "call:dom::object::get_values",
+            "call:dom::object::operator[]",
+            "call:dom::object::operator(element)",
+            "call:dom::object::iterator::operator==",
+            "call:dom::object::iterator::operator<",
+            "call:dom::object::iterator::operator<=",
+            "call:dom::object::iterator::operator>",
+            "call:dom::object::iterator::operator>="
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:dom::element::get_object",
+            "ok:dom::element::get_object",
+            "call:dom::object::at_key",
+            "fail:dom::object::at_key",
+            "call:dom::object::size",
+            "ok:dom::object::size"
+          ],
+          "allowed": true,
+          "reason": "object views stay valid"
+        },
+        {
+          "events": [
+            "call:dom::object::size"
+          ],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:dom::element::get_object",
+            "ok:dom::element::get_object",
+            "call:dom::parser::parse_many",
+            "ok:dom::parser::parse_many",
+            "call:dom::object::iterator::operator*"
+          ],
+          "allowed": false,
+          "reason": "document replaced"
+        }
+      ]
+    },
+    {
+      "id": "dom_stream_from_parse_many",
+      "rule": "doc/parse_many.md: the document_stream iterates documents inside the parser; it exists after parse_many succeeds and is invalidated by any other use of the parser.",
+      "formula": "(!s_use W s_new) & G(s_gone -> X(!s_use W s_new))",
+      "apis": [
+        "dom::document_stream::iterator::current_index",
+        "dom::document_stream::iterator::operator*",
+        "dom::document_stream::iterator::operator++",
+        "dom::document_stream::iterator::source",
+        "dom::document_stream::operator=",
+        "dom::document_stream::size_in_bytes",
+        "dom::document_stream::truncated_bytes",
+        "dom::parser::allocate",
+        "dom::parser::load",
+        "dom::parser::load_into_document",
+        "dom::parser::load_many",
+        "dom::parser::operator=",
+        "dom::parser::parse",
+        "dom::parser::parse(padded_string)",
+        "dom::parser::parse_into_document",
+        "dom::parser::parse_many",
+        "dom::parser::parse_unpadded"
+      ],
+      "predicates": {
+        "s_new": {
+          "meaning": "parse_many succeeded",
+          "events": [
+            "ok:dom::parser::parse_many",
+            "ok:dom::parser::load_many"
+          ]
+        },
+        "s_gone": {
+          "meaning": "the parser is reused",
+          "events": [
+            "call:dom::parser::parse",
+            "call:dom::parser::parse(padded_string)",
+            "call:dom::parser::parse_unpadded",
+            "call:dom::parser::parse_into_document",
+            "call:dom::parser::parse_many",
+            "call:dom::parser::allocate",
+            "call:dom::parser::load",
+            "call:dom::parser::load_into_document",
+            "call:dom::parser::load_many",
+            "call:dom::parser::operator=",
+            "call:dom::document_stream::operator="
+          ]
+        },
+        "s_use": {
+          "meaning": "a stream iterator routine is about to be called",
+          "events": [
+            "call:dom::document_stream::iterator::operator*",
+            "call:dom::document_stream::iterator::operator++",
+            "call:dom::document_stream::size_in_bytes",
+            "call:dom::document_stream::truncated_bytes",
+            "call:dom::document_stream::iterator::current_index",
+            "call:dom::document_stream::iterator::source"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:dom::parser::parse_many",
+            "ok:dom::parser::parse_many",
+            "call:dom::document_stream::iterator::operator*",
+            "ok:dom::document_stream::iterator::operator*",
+            "call:dom::document_stream::iterator::operator++",
+            "ok:dom::document_stream::iterator::operator++"
+          ],
+          "allowed": true,
+          "reason": "normal streaming"
+        },
+        {
+          "events": [
+            "call:dom::document_stream::iterator::operator*"
+          ],
+          "allowed": false,
+          "reason": "no stream"
+        },
+        {
+          "events": [
+            "call:dom::parser::parse_many",
+            "ok:dom::parser::parse_many",
+            "call:dom::parser::parse",
+            "ok:dom::parser::parse",
+            "call:dom::document_stream::iterator::operator++"
+          ],
+          "allowed": false,
+          "reason": "parser reused under the stream"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_one_document_per_parser",
+      "rule": "doc/basics.md: 'A parser instance can only be used for one document at a time'; a new iterate/iterate_many invalidates the previous document. After a fatal error (INCOMPLETE_ARRAY_OR_OBJECT, TAPE_ERROR) 'the document instance cannot be used' and is_alive() is false.",
+      "formula": "(!d_use W d_new) & G(d_gone -> X(!d_use W d_new))",
+      "apis": [
+        "ondemand::document::at_end",
+        "ondemand::document::at_path",
+        "ondemand::document::at_pointer",
+        "ondemand::document::begin",
+        "ondemand::document::count_elements",
+        "ondemand::document::count_fields",
+        "ondemand::document::current_depth",
+        "ondemand::document::current_location",
+        "ondemand::document::end",
+        "ondemand::document::find_field",
+        "ondemand::document::find_field_unordered",
+        "ondemand::document::for_each_at_path_with_wildcard",
+        "ondemand::document::get",
+        "ondemand::document::get_array",
+        "ondemand::document::get_bool",
+        "ondemand::document::get_double",
+        "ondemand::document::get_double_in_string",
+        "ondemand::document::get_int32",
+        "ondemand::document::get_int64",
+        "ondemand::document::get_int64_in_string",
+        "ondemand::document::get_number",
+        "ondemand::document::get_number_type",
+        "ondemand::document::get_object",
+        "ondemand::document::get_raw_json_string",
+        "ondemand::document::get_string",
+        "ondemand::document::get_uint32",
+        "ondemand::document::get_uint64",
+        "ondemand::document::get_uint64_in_string",
+        "ondemand::document::get_value",
+        "ondemand::document::get_wobbly_string",
+        "ondemand::document::is_alive",
+        "ondemand::document::is_integer",
+        "ondemand::document::is_negative",
+        "ondemand::document::is_null",
+        "ondemand::document::is_string",
+        "ondemand::document::operator(T)",
+        "ondemand::document::operator(array)",
+        "ondemand::document::operator(bool)",
+        "ondemand::document::operator(double)",
+        "ondemand::document::operator(int64_t)",
+        "ondemand::document::operator(object)",
+        "ondemand::document::operator(raw_json_string)",
+        "ondemand::document::operator(string_view)",
+        "ondemand::document::operator(uint64_t)",
+        "ondemand::document::operator(value)",
+        "ondemand::document::operator[]",
+        "ondemand::document::raw_json",
+        "ondemand::document::raw_json_token",
+        "ondemand::document::rewind",
+        "ondemand::document::type",
+        "ondemand::parser::iterate",
+        "ondemand::parser::iterate_many",
+        "ondemand::parser::operator="
+      ],
+      "predicates": {
+        "d_new": {
+          "meaning": "iterate produced a document",
+          "events": [
+            "ok:ondemand::parser::iterate"
+          ]
+        },
+        "d_gone": {
+          "meaning": "the parser is reused or the document died",
+          "events": [
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "fail:ondemand::document::is_alive",
+            "call:ondemand::parser::operator="
+          ]
+        },
+        "d_use": {
+          "meaning": "a document routine is about to be called",
+          "events": [
+            "call:ondemand::document::get_int64",
+            "call:ondemand::document::get_uint64",
+            "call:ondemand::document::get_double",
+            "call:ondemand::document::get_bool",
+            "call:ondemand::document::get_string",
+            "call:ondemand::document::get_raw_json_string",
+            "call:ondemand::document::get_number",
+            "call:ondemand::document::is_null",
+            "call:ondemand::document::raw_json",
+            "call:ondemand::document::get_value",
+            "call:ondemand::document::find_field",
+            "call:ondemand::document::get_array",
+            "call:ondemand::document::get_object",
+            "call:ondemand::document::type",
+            "call:ondemand::document::at_pointer",
+            "call:ondemand::document::rewind",
+            "call:ondemand::document::get_int32",
+            "call:ondemand::document::get_uint32",
+            "call:ondemand::document::get_int64_in_string",
+            "call:ondemand::document::get_uint64_in_string",
+            "call:ondemand::document::get_double_in_string",
+            "call:ondemand::document::get_wobbly_string",
+            "call:ondemand::document::get",
+            "call:ondemand::document::operator(array)",
+            "call:ondemand::document::operator(object)",
+            "call:ondemand::document::operator(uint64_t)",
+            "call:ondemand::document::operator(int64_t)",
+            "call:ondemand::document::operator(double)",
+            "call:ondemand::document::operator(string_view)",
+            "call:ondemand::document::operator(raw_json_string)",
+            "call:ondemand::document::operator(bool)",
+            "call:ondemand::document::operator(value)",
+            "call:ondemand::document::operator(T)",
+            "call:ondemand::document::find_field_unordered",
+            "call:ondemand::document::operator[]",
+            "call:ondemand::document::begin",
+            "call:ondemand::document::count_elements",
+            "call:ondemand::document::count_fields",
+            "call:ondemand::document::at_path",
+            "call:ondemand::document::for_each_at_path_with_wildcard",
+            "call:ondemand::document::is_integer",
+            "call:ondemand::document::is_string",
+            "call:ondemand::document::get_number_type",
+            "call:ondemand::document::raw_json_token",
+            "call:ondemand::document::is_negative",
+            "call:ondemand::document::current_location",
+            "call:ondemand::document::current_depth",
+            "call:ondemand::document::at_end",
+            "call:ondemand::document::end"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::parser::iterate",
+            "ok:ondemand::parser::iterate",
+            "call:ondemand::document::get_int64",
+            "fail:ondemand::document::get_int64",
+            "call:ondemand::document::is_alive",
+            "ok:ondemand::document::is_alive",
+            "call:ondemand::document::rewind",
+            "ok:ondemand::document::rewind"
+          ],
+          "allowed": true,
+          "reason": "recoverable error, document alive"
+        },
+        {
+          "events": [
+            "call:ondemand::document::get_value"
+          ],
+          "allowed": false,
+          "reason": "no document"
+        },
+        {
+          "events": [
+            "call:ondemand::parser::iterate",
+            "ok:ondemand::parser::iterate",
+            "call:ondemand::document::raw_json",
+            "fail:ondemand::document::raw_json",
+            "call:ondemand::document::is_alive",
+            "fail:ondemand::document::is_alive",
+            "call:ondemand::document::at_pointer"
+          ],
+          "allowed": false,
+          "reason": "use after a fatal error"
+        },
+        {
+          "events": [
+            "call:ondemand::parser::iterate",
+            "ok:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "ok:ondemand::parser::iterate_many",
+            "call:ondemand::document::type"
+          ],
+          "allowed": false,
+          "reason": "parser reused"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_document_read_once",
+      "rule": "doc/basics.md rules 2-3: the document is an iterator; its value is consumed once, and reading it again requires rewind() ('It allows you to restart processing from the beginning'). at_pointer rewinds itself first, so it is exempt, but it leaves the document positioned after the pointed value.",
+      "formula": "G(consume -> X(!consume_again W restart))",
+      "apis": [
+        "ondemand::document::at_path",
+        "ondemand::document::at_pointer",
+        "ondemand::document::begin",
+        "ondemand::document::count_elements",
+        "ondemand::document::count_fields",
+        "ondemand::document::find_field",
+        "ondemand::document::find_field_unordered",
+        "ondemand::document::for_each_at_path_with_wildcard",
+        "ondemand::document::get",
+        "ondemand::document::get_array",
+        "ondemand::document::get_bool",
+        "ondemand::document::get_double",
+        "ondemand::document::get_double_in_string",
+        "ondemand::document::get_int32",
+        "ondemand::document::get_int64",
+        "ondemand::document::get_int64_in_string",
+        "ondemand::document::get_number",
+        "ondemand::document::get_object",
+        "ondemand::document::get_raw_json_string",
+        "ondemand::document::get_string",
+        "ondemand::document::get_uint32",
+        "ondemand::document::get_uint64",
+        "ondemand::document::get_uint64_in_string",
+        "ondemand::document::get_value",
+        "ondemand::document::get_wobbly_string",
+        "ondemand::document::is_null",
+        "ondemand::document::operator(T)",
+        "ondemand::document::operator(array)",
+        "ondemand::document::operator(bool)",
+        "ondemand::document::operator(double)",
+        "ondemand::document::operator(int64_t)",
+        "ondemand::document::operator(object)",
+        "ondemand::document::operator(raw_json_string)",
+        "ondemand::document::operator(string_view)",
+        "ondemand::document::operator(uint64_t)",
+        "ondemand::document::operator(value)",
+        "ondemand::document::operator[]",
+        "ondemand::document::raw_json",
+        "ondemand::document::rewind",
+        "ondemand::parser::iterate"
+      ],
+      "predicates": {
+        "consume": {
+          "meaning": "the document is read (including at_pointer)",
+          "events": [
+            "call:ondemand::document::get_int64",
+            "call:ondemand::document::get_uint64",
+            "call:ondemand::document::get_double",
+            "call:ondemand::document::get_bool",
+            "call:ondemand::document::get_string",
+            "call:ondemand::document::get_raw_json_string",
+            "call:ondemand::document::get_number",
+            "call:ondemand::document::is_null",
+            "call:ondemand::document::raw_json",
+            "call:ondemand::document::get_value",
+            "call:ondemand::document::find_field",
+            "call:ondemand::document::get_array",
+            "call:ondemand::document::get_object",
+            "call:ondemand::document::at_pointer",
+            "call:ondemand::document::get_int32",
+            "call:ondemand::document::get_uint32",
+            "call:ondemand::document::get_int64_in_string",
+            "call:ondemand::document::get_uint64_in_string",
+            "call:ondemand::document::get_double_in_string",
+            "call:ondemand::document::get_wobbly_string",
+            "call:ondemand::document::get",
+            "call:ondemand::document::operator(array)",
+            "call:ondemand::document::operator(object)",
+            "call:ondemand::document::operator(uint64_t)",
+            "call:ondemand::document::operator(int64_t)",
+            "call:ondemand::document::operator(double)",
+            "call:ondemand::document::operator(string_view)",
+            "call:ondemand::document::operator(raw_json_string)",
+            "call:ondemand::document::operator(bool)",
+            "call:ondemand::document::operator(value)",
+            "call:ondemand::document::operator(T)",
+            "call:ondemand::document::find_field_unordered",
+            "call:ondemand::document::operator[]",
+            "call:ondemand::document::begin",
+            "call:ondemand::document::count_elements",
+            "call:ondemand::document::count_fields",
+            "call:ondemand::document::at_path",
+            "call:ondemand::document::for_each_at_path_with_wildcard"
+          ]
+        },
+        "consume_again": {
+          "meaning": "a non-rewinding read of the document",
+          "events": [
+            "call:ondemand::document::get_int64",
+            "call:ondemand::document::get_uint64",
+            "call:ondemand::document::get_double",
+            "call:ondemand::document::get_bool",
+            "call:ondemand::document::get_string",
+            "call:ondemand::document::get_raw_json_string",
+            "call:ondemand::document::get_number",
+            "call:ondemand::document::is_null",
+            "call:ondemand::document::raw_json",
+            "call:ondemand::document::get_value",
+            "call:ondemand::document::find_field",
+            "call:ondemand::document::get_array",
+            "call:ondemand::document::get_object",
+            "call:ondemand::document::get_int32",
+            "call:ondemand::document::get_uint32",
+            "call:ondemand::document::get_int64_in_string",
+            "call:ondemand::document::get_uint64_in_string",
+            "call:ondemand::document::get_double_in_string",
+            "call:ondemand::document::get_wobbly_string",
+            "call:ondemand::document::get",
+            "call:ondemand::document::operator(array)",
+            "call:ondemand::document::operator(object)",
+            "call:ondemand::document::operator(uint64_t)",
+            "call:ondemand::document::operator(int64_t)",
+            "call:ondemand::document::operator(double)",
+            "call:ondemand::document::operator(string_view)",
+            "call:ondemand::document::operator(raw_json_string)",
+            "call:ondemand::document::operator(bool)",
+            "call:ondemand::document::operator(value)",
+            "call:ondemand::document::operator(T)",
+            "call:ondemand::document::find_field_unordered",
+            "call:ondemand::document::operator[]",
+            "call:ondemand::document::begin",
+            "call:ondemand::document::count_elements",
+            "call:ondemand::document::count_fields"
+          ]
+        },
+        "restart": {
+          "meaning": "rewind or a new document",
+          "events": [
+            "call:ondemand::document::rewind",
+            "ok:ondemand::parser::iterate",
+            "ok:ondemand::document::count_elements",
+            "ok:ondemand::document::count_fields"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::document::get_array",
+            "ok:ondemand::document::get_array",
+            "call:ondemand::document::rewind",
+            "ok:ondemand::document::rewind",
+            "call:ondemand::document::get_value",
+            "ok:ondemand::document::get_value",
+            "call:ondemand::document::at_pointer",
+            "ok:ondemand::document::at_pointer"
+          ],
+          "allowed": true,
+          "reason": "rewind between reads; at_pointer rewinds itself"
+        },
+        {
+          "events": [
+            "call:ondemand::document::get_object",
+            "ok:ondemand::document::get_object",
+            "call:ondemand::document::get_int64"
+          ],
+          "allowed": false,
+          "reason": "document read twice without rewind"
+        },
+        {
+          "events": [
+            "call:ondemand::document::at_pointer",
+            "ok:ondemand::document::at_pointer",
+            "call:ondemand::document::find_field"
+          ],
+          "allowed": false,
+          "reason": "at_pointer does not reset afterwards"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_value_consumed_once",
+      "rule": "doc/basics.md rule 3: 'Values can only be consumed once'. rewind() and at_pointer 'invalidate all values, objects and arrays', as does a new document, a fatal error, or advancing the iterator that produced the value. type() only peeks.",
+      "formula": "(!v_use W v_new) & G(v_gone -> X(!v_use W v_new))",
+      "apis": [
+        "ondemand::array_iterator::operator*",
+        "ondemand::array_iterator::operator++",
+        "ondemand::document::at_path",
+        "ondemand::document::at_pointer",
+        "ondemand::document::find_field",
+        "ondemand::document::for_each_at_path_with_wildcard",
+        "ondemand::document::get_value",
+        "ondemand::document::is_alive",
+        "ondemand::document::rewind",
+        "ondemand::document_reference::at_path",
+        "ondemand::document_reference::for_each_at_path_with_wildcard",
+        "ondemand::document_reference::get_value",
+        "ondemand::document_reference::rewind",
+        "ondemand::document_stream::iterator::operator++",
+        "ondemand::document_stream::operator=",
+        "ondemand::field::value",
+        "ondemand::object::find_field",
+        "ondemand::object_iterator::operator++",
+        "ondemand::parser::iterate",
+        "ondemand::parser::iterate_many",
+        "ondemand::parser::operator=",
+        "ondemand::value::at_path",
+        "ondemand::value::begin",
+        "ondemand::value::count_elements",
+        "ondemand::value::count_fields",
+        "ondemand::value::current_depth",
+        "ondemand::value::current_location",
+        "ondemand::value::end",
+        "ondemand::value::find_field_unordered",
+        "ondemand::value::for_each_at_path_with_wildcard",
+        "ondemand::value::get",
+        "ondemand::value::get_array",
+        "ondemand::value::get_bool",
+        "ondemand::value::get_double",
+        "ondemand::value::get_double_in_string",
+        "ondemand::value::get_int32",
+        "ondemand::value::get_int64",
+        "ondemand::value::get_int64_in_string",
+        "ondemand::value::get_number",
+        "ondemand::value::get_number_type",
+        "ondemand::value::get_object",
+        "ondemand::value::get_raw_json_string",
+        "ondemand::value::get_string",
+        "ondemand::value::get_uint32",
+        "ondemand::value::get_uint64",
+        "ondemand::value::get_uint64_in_string",
+        "ondemand::value::get_wobbly_string",
+        "ondemand::value::is_integer",
+        "ondemand::value::is_negative",
+        "ondemand::value::is_null",
+        "ondemand::value::is_scalar",
+        "ondemand::value::is_string",
+        "ondemand::value::operator(T)",
+        "ondemand::value::operator(array)",
+        "ondemand::value::operator(bool)",
+        "ondemand::value::operator(double)",
+        "ondemand::value::operator(int64_t)",
+        "ondemand::value::operator(object)",
+        "ondemand::value::operator(raw_json_string)",
+        "ondemand::value::operator(string_view)",
+        "ondemand::value::operator(uint64_t)",
+        "ondemand::value::operator[]",
+        "ondemand::value::raw_json",
+        "ondemand::value::raw_json_token",
+        "ondemand::value::type",
+        "simdjson_result<ondemand::document_reference>::rewind",
+        "simdjson_result<ondemand::value>::operator(value&&)",
+        "simdjson_result<ondemand::value>::operator*",
+        "simdjson_result<ondemand::value>::take_value",
+        "simdjson_result<ondemand::value>::value",
+        "simdjson_result<ondemand::value>::value_unsafe",
+        "to_json_string"
+      ],
+      "predicates": {
+        "v_new": {
+          "meaning": "a value was produced",
+          "events": [
+            "ok:ondemand::document::get_value",
+            "ok:ondemand::document::find_field",
+            "ok:ondemand::document::at_pointer",
+            "ok:ondemand::array_iterator::operator*",
+            "ok:ondemand::field::value",
+            "ok:ondemand::object::find_field",
+            "ok:ondemand::document_reference::get_value",
+            "ok:simdjson_result<ondemand::value>::operator*",
+            "ok:simdjson_result<ondemand::value>::value",
+            "ok:simdjson_result<ondemand::value>::take_value",
+            "ok:simdjson_result<ondemand::value>::value_unsafe",
+            "ok:simdjson_result<ondemand::value>::operator(value&&)"
+          ]
+        },
+        "v_gone": {
+          "meaning": "the value was consumed or invalidated",
+          "events": [
+            "call:ondemand::value::get_int64",
+            "call:ondemand::value::get_uint64",
+            "call:ondemand::value::get_double",
+            "call:ondemand::value::get_bool",
+            "call:ondemand::value::get_string",
+            "call:ondemand::value::get_number",
+            "call:ondemand::value::is_null",
+            "call:ondemand::value::raw_json",
+            "call:ondemand::value::get_array",
+            "call:ondemand::value::get_object",
+            "call:ondemand::document::rewind",
+            "call:ondemand::document::at_pointer",
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "call:ondemand::array_iterator::operator++",
+            "call:ondemand::object_iterator::operator++",
+            "fail:ondemand::document::is_alive",
+            "call:ondemand::value::get_int32",
+            "call:ondemand::value::get_uint32",
+            "call:ondemand::value::get_int64_in_string",
+            "call:ondemand::value::get_uint64_in_string",
+            "call:ondemand::value::get_double_in_string",
+            "call:ondemand::value::get_wobbly_string",
+            "call:ondemand::value::get",
+            "call:ondemand::value::get_raw_json_string",
+            "call:ondemand::value::find_field_unordered",
+            "call:ondemand::value::operator[]",
+            "call:ondemand::value::at_path",
+            "call:ondemand::value::for_each_at_path_with_wildcard",
+            "call:ondemand::value::begin",
+            "call:ondemand::value::operator(array)",
+            "call:ondemand::value::operator(object)",
+            "call:ondemand::value::operator(uint64_t)",
+            "call:ondemand::value::operator(int64_t)",
+            "call:ondemand::value::operator(double)",
+            "call:ondemand::value::operator(string_view)",
+            "call:ondemand::value::operator(raw_json_string)",
+            "call:ondemand::value::operator(bool)",
+            "call:ondemand::value::operator(T)",
+            "call:to_json_string",
+            "call:ondemand::document::at_path",
+            "call:ondemand::document::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::at_path",
+            "call:ondemand::document_reference::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::rewind",
+            "call:simdjson_result<ondemand::document_reference>::rewind",
+            "call:ondemand::document_stream::iterator::operator++",
+            "call:ondemand::document_stream::operator=",
+            "call:ondemand::parser::operator="
+          ]
+        },
+        "v_use": {
+          "meaning": "a value routine is about to be called",
+          "events": [
+            "call:ondemand::value::get_int64",
+            "call:ondemand::value::get_uint64",
+            "call:ondemand::value::get_double",
+            "call:ondemand::value::get_bool",
+            "call:ondemand::value::get_string",
+            "call:ondemand::value::get_number",
+            "call:ondemand::value::is_null",
+            "call:ondemand::value::raw_json",
+            "call:ondemand::value::get_array",
+            "call:ondemand::value::get_object",
+            "call:ondemand::value::type",
+            "call:ondemand::value::get_int32",
+            "call:ondemand::value::get_uint32",
+            "call:ondemand::value::get_int64_in_string",
+            "call:ondemand::value::get_uint64_in_string",
+            "call:ondemand::value::get_double_in_string",
+            "call:ondemand::value::get_wobbly_string",
+            "call:ondemand::value::get",
+            "call:ondemand::value::get_raw_json_string",
+            "call:ondemand::value::find_field_unordered",
+            "call:ondemand::value::operator[]",
+            "call:ondemand::value::at_path",
+            "call:ondemand::value::for_each_at_path_with_wildcard",
+            "call:ondemand::value::begin",
+            "call:ondemand::value::operator(array)",
+            "call:ondemand::value::operator(object)",
+            "call:ondemand::value::operator(uint64_t)",
+            "call:ondemand::value::operator(int64_t)",
+            "call:ondemand::value::operator(double)",
+            "call:ondemand::value::operator(string_view)",
+            "call:ondemand::value::operator(raw_json_string)",
+            "call:ondemand::value::operator(bool)",
+            "call:ondemand::value::operator(T)",
+            "call:to_json_string",
+            "call:ondemand::value::is_scalar",
+            "call:ondemand::value::is_string",
+            "call:ondemand::value::is_integer",
+            "call:ondemand::value::get_number_type",
+            "call:ondemand::value::current_location",
+            "call:ondemand::value::count_elements",
+            "call:ondemand::value::count_fields",
+            "call:ondemand::value::is_negative",
+            "call:ondemand::value::raw_json_token",
+            "call:ondemand::value::current_depth",
+            "call:ondemand::value::end"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::document::get_value",
+            "ok:ondemand::document::get_value",
+            "call:ondemand::value::type",
+            "ok:ondemand::value::type",
+            "call:ondemand::value::get_double",
+            "ok:ondemand::value::get_double"
+          ],
+          "allowed": true,
+          "reason": "peek then consume"
+        },
+        {
+          "events": [
+            "call:ondemand::value::get_bool"
+          ],
+          "allowed": false,
+          "reason": "no value"
+        },
+        {
+          "events": [
+            "call:ondemand::document::find_field",
+            "ok:ondemand::document::find_field",
+            "call:ondemand::value::get_string",
+            "ok:ondemand::value::get_string",
+            "call:ondemand::value::get_string"
+          ],
+          "allowed": false,
+          "reason": "consumed twice"
+        },
+        {
+          "events": [
+            "call:ondemand::array_iterator::operator*",
+            "ok:ondemand::array_iterator::operator*",
+            "call:ondemand::document::rewind",
+            "ok:ondemand::document::rewind",
+            "call:ondemand::value::type"
+          ],
+          "allowed": false,
+          "reason": "rewind invalidated the value"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_array_view",
+      "rule": "ondemand::array iterators exist after get_array succeeds (document or value) and are invalidated by rewind/at_pointer, a new document, or a fatal error. operator* 'MUST ONLY BE CALLED ONCE PER ITERATION' (singleheader/simdjson.h:87207, 90950).",
+      "formula": "(!a_use W a_new) & G(a_gone -> X(!a_use W a_new)) & G(deref -> X(!deref W step))",
+      "apis": [
+        "ondemand::array::at_path",
+        "ondemand::array::count_elements",
+        "ondemand::array::for_each_at_path_with_wildcard",
+        "ondemand::array::is_empty",
+        "ondemand::array::reset",
+        "ondemand::array_iterator::operator*",
+        "ondemand::array_iterator::operator++",
+        "ondemand::array_iterator::operator==",
+        "ondemand::document::at_path",
+        "ondemand::document::at_pointer",
+        "ondemand::document::for_each_at_path_with_wildcard",
+        "ondemand::document::get_array",
+        "ondemand::document::is_alive",
+        "ondemand::document::rewind",
+        "ondemand::document_reference::at_path",
+        "ondemand::document_reference::for_each_at_path_with_wildcard",
+        "ondemand::document_reference::get_array",
+        "ondemand::document_reference::rewind",
+        "ondemand::document_stream::iterator::operator++",
+        "ondemand::document_stream::operator=",
+        "ondemand::parser::iterate",
+        "ondemand::parser::iterate_many",
+        "ondemand::parser::operator=",
+        "ondemand::value::get_array",
+        "simdjson_result<ondemand::array>::count_elements",
+        "simdjson_result<ondemand::array>::for_each_at_path_with_wildcard",
+        "simdjson_result<ondemand::array>::is_empty",
+        "simdjson_result<ondemand::array>::raw_json",
+        "simdjson_result<ondemand::document_reference>::rewind",
+        "simdjson_result<ondemand::value>::get_array"
+      ],
+      "predicates": {
+        "a_new": {
+          "meaning": "get_array succeeded",
+          "events": [
+            "ok:ondemand::document::get_array",
+            "ok:ondemand::value::get_array",
+            "ok:ondemand::document_reference::get_array",
+            "ok:simdjson_result<ondemand::value>::get_array"
+          ]
+        },
+        "a_gone": {
+          "meaning": "views invalidated",
+          "events": [
+            "call:ondemand::document::rewind",
+            "call:ondemand::document::at_pointer",
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "fail:ondemand::document::is_alive",
+            "call:ondemand::document::at_path",
+            "call:ondemand::document::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::at_path",
+            "call:ondemand::document_reference::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::rewind",
+            "call:simdjson_result<ondemand::document_reference>::rewind",
+            "call:ondemand::document_stream::iterator::operator++",
+            "call:ondemand::document_stream::operator=",
+            "call:ondemand::parser::operator=",
+            "call:ondemand::array::at_path",
+            "call:ondemand::array::for_each_at_path_with_wildcard",
+            "call:simdjson_result<ondemand::array>::for_each_at_path_with_wildcard",
+            "call:simdjson_result<ondemand::array>::raw_json"
+          ]
+        },
+        "a_use": {
+          "meaning": "an array iterator routine is about to be called",
+          "events": [
+            "call:ondemand::array_iterator::operator*",
+            "call:ondemand::array_iterator::operator++",
+            "call:ondemand::array::count_elements",
+            "call:ondemand::array::is_empty",
+            "call:ondemand::array::reset",
+            "call:ondemand::array::at_path",
+            "call:ondemand::array::for_each_at_path_with_wildcard",
+            "call:ondemand::array_iterator::operator==",
+            "call:simdjson_result<ondemand::array>::count_elements",
+            "call:simdjson_result<ondemand::array>::is_empty",
+            "call:simdjson_result<ondemand::array>::for_each_at_path_with_wildcard",
+            "call:simdjson_result<ondemand::array>::raw_json"
+          ]
+        },
+        "deref": {
+          "meaning": "the current element is read ('MUST ONLY BE CALLED ONCE PER ITERATION')",
+          "events": [
+            "call:ondemand::array_iterator::operator*"
+          ]
+        },
+        "step": {
+          "meaning": "the iterator moves on, or a new container starts",
+          "events": [
+            "call:ondemand::array_iterator::operator++",
+            "ok:ondemand::document::get_array",
+            "ok:ondemand::value::get_array",
+            "ok:ondemand::document_reference::get_array",
+            "ok:simdjson_result<ondemand::value>::get_array"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::document::get_array",
+            "ok:ondemand::document::get_array",
+            "call:ondemand::array_iterator::operator*",
+            "ok:ondemand::array_iterator::operator*",
+            "call:ondemand::array_iterator::operator++",
+            "ok:ondemand::array_iterator::operator++"
+          ],
+          "allowed": true,
+          "reason": "iteration"
+        },
+        {
+          "events": [
+            "call:ondemand::array_iterator::operator++"
+          ],
+          "allowed": false,
+          "reason": "no array"
+        },
+        {
+          "events": [
+            "call:ondemand::value::get_array",
+            "ok:ondemand::value::get_array",
+            "call:ondemand::document::at_pointer",
+            "ok:ondemand::document::at_pointer",
+            "call:ondemand::array_iterator::operator*"
+          ],
+          "allowed": false,
+          "reason": "at_pointer rewound the document"
+        },
+        {
+          "events": [
+            "ok:ondemand::document::get_array",
+            "call:ondemand::array_iterator::operator*",
+            "ok:ondemand::array_iterator::operator*",
+            "call:ondemand::array_iterator::operator*"
+          ],
+          "allowed": false,
+          "reason": "dereferenced twice in one iteration"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_object_view",
+      "rule": "ondemand::object iterators and find_field exist after get_object succeeds and are invalidated by rewind/at_pointer, a new document, or a fatal error. operator* 'MUST ONLY BE CALLED ONCE PER ITERATION' (singleheader/simdjson.h:87207, 90950).",
+      "formula": "(!o_use W o_new) & G(o_gone -> X(!o_use W o_new)) & G(deref -> X(!deref W step))",
+      "apis": [
+        "ondemand::document::at_path",
+        "ondemand::document::at_pointer",
+        "ondemand::document::for_each_at_path_with_wildcard",
+        "ondemand::document::get_object",
+        "ondemand::document::is_alive",
+        "ondemand::document::rewind",
+        "ondemand::document_reference::at_path",
+        "ondemand::document_reference::for_each_at_path_with_wildcard",
+        "ondemand::document_reference::get_object",
+        "ondemand::document_reference::rewind",
+        "ondemand::document_stream::iterator::operator++",
+        "ondemand::document_stream::operator=",
+        "ondemand::object::at_path",
+        "ondemand::object::count_fields",
+        "ondemand::object::find_field",
+        "ondemand::object::find_field_unordered",
+        "ondemand::object::for_each_at_path_with_wildcard",
+        "ondemand::object::is_empty",
+        "ondemand::object::operator[]",
+        "ondemand::object::reset",
+        "ondemand::object_iterator::operator*",
+        "ondemand::object_iterator::operator++",
+        "ondemand::object_iterator::operator==",
+        "ondemand::parser::iterate",
+        "ondemand::parser::iterate_many",
+        "ondemand::parser::operator=",
+        "ondemand::value::get_object",
+        "simdjson_result<ondemand::document_reference>::rewind",
+        "simdjson_result<ondemand::object>::count_fields",
+        "simdjson_result<ondemand::object>::reset",
+        "simdjson_result<ondemand::value>::get_object"
+      ],
+      "predicates": {
+        "o_new": {
+          "meaning": "get_object succeeded",
+          "events": [
+            "ok:ondemand::document::get_object",
+            "ok:ondemand::value::get_object",
+            "ok:ondemand::document_reference::get_object",
+            "ok:simdjson_result<ondemand::value>::get_object"
+          ]
+        },
+        "o_gone": {
+          "meaning": "views invalidated",
+          "events": [
+            "call:ondemand::document::rewind",
+            "call:ondemand::document::at_pointer",
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "fail:ondemand::document::is_alive",
+            "call:ondemand::document::at_path",
+            "call:ondemand::document::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::at_path",
+            "call:ondemand::document_reference::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::rewind",
+            "call:simdjson_result<ondemand::document_reference>::rewind",
+            "call:ondemand::document_stream::iterator::operator++",
+            "call:ondemand::document_stream::operator=",
+            "call:ondemand::parser::operator="
+          ]
+        },
+        "o_use": {
+          "meaning": "an object routine is about to be called",
+          "events": [
+            "call:ondemand::object_iterator::operator*",
+            "call:ondemand::object_iterator::operator++",
+            "call:ondemand::object::find_field",
+            "call:ondemand::object::at_path",
+            "call:ondemand::object::count_fields",
+            "call:ondemand::object::find_field_unordered",
+            "call:ondemand::object::operator[]",
+            "call:ondemand::object::for_each_at_path_with_wildcard",
+            "call:ondemand::object::is_empty",
+            "call:ondemand::object::reset",
+            "call:ondemand::object_iterator::operator==",
+            "call:simdjson_result<ondemand::object>::count_fields",
+            "call:simdjson_result<ondemand::object>::reset"
+          ]
+        },
+        "deref": {
+          "meaning": "the current element is read ('MUST ONLY BE CALLED ONCE PER ITERATION')",
+          "events": [
+            "call:ondemand::object_iterator::operator*"
+          ]
+        },
+        "step": {
+          "meaning": "the iterator moves on, or a new container starts",
+          "events": [
+            "call:ondemand::object_iterator::operator++",
+            "ok:ondemand::document::get_object",
+            "ok:ondemand::value::get_object",
+            "ok:ondemand::document_reference::get_object",
+            "ok:simdjson_result<ondemand::value>::get_object"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::document::get_object",
+            "ok:ondemand::document::get_object",
+            "call:ondemand::object::find_field",
+            "fail:ondemand::object::find_field",
+            "call:ondemand::document::is_alive",
+            "ok:ondemand::document::is_alive",
+            "call:ondemand::object_iterator::operator++",
+            "ok:ondemand::object_iterator::operator++"
+          ],
+          "allowed": true,
+          "reason": "recoverable miss"
+        },
+        {
+          "events": [
+            "call:ondemand::object::find_field"
+          ],
+          "allowed": false,
+          "reason": "no object"
+        },
+        {
+          "events": [
+            "call:ondemand::document::get_object",
+            "ok:ondemand::document::get_object",
+            "call:ondemand::parser::iterate",
+            "ok:ondemand::parser::iterate",
+            "call:ondemand::object_iterator::operator*"
+          ],
+          "allowed": false,
+          "reason": "new document"
+        },
+        {
+          "events": [
+            "ok:ondemand::document::get_object",
+            "call:ondemand::object_iterator::operator*",
+            "ok:ondemand::object_iterator::operator*",
+            "call:ondemand::object_iterator::operator*"
+          ],
+          "allowed": false,
+          "reason": "dereferenced twice in one iteration"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_stream_from_iterate_many",
+      "rule": "doc/iterate_many.md: the document_stream belongs to the parser; documents from it are valid until the iterator advances; any other use of the parser invalidates it.",
+      "formula": "(!s_use W s_new) & G(s_gone -> X(!s_use W s_new)) & (!r_use W r_new) & G(r_gone -> X(!r_use W r_new))",
+      "apis": [
+        "ondemand::document::is_alive",
+        "ondemand::document_reference::at_path",
+        "ondemand::document_reference::begin",
+        "ondemand::document_reference::count_elements",
+        "ondemand::document_reference::count_fields",
+        "ondemand::document_reference::current_depth",
+        "ondemand::document_reference::current_location",
+        "ondemand::document_reference::end",
+        "ondemand::document_reference::find_field_unordered",
+        "ondemand::document_reference::for_each_at_path_with_wildcard",
+        "ondemand::document_reference::get",
+        "ondemand::document_reference::get_array",
+        "ondemand::document_reference::get_bool",
+        "ondemand::document_reference::get_double",
+        "ondemand::document_reference::get_double_in_string",
+        "ondemand::document_reference::get_int32",
+        "ondemand::document_reference::get_int64",
+        "ondemand::document_reference::get_int64_in_string",
+        "ondemand::document_reference::get_number",
+        "ondemand::document_reference::get_number_type",
+        "ondemand::document_reference::get_object",
+        "ondemand::document_reference::get_raw_json_string",
+        "ondemand::document_reference::get_string",
+        "ondemand::document_reference::get_uint32",
+        "ondemand::document_reference::get_uint64",
+        "ondemand::document_reference::get_uint64_in_string",
+        "ondemand::document_reference::get_value",
+        "ondemand::document_reference::get_wobbly_string",
+        "ondemand::document_reference::is_integer",
+        "ondemand::document_reference::is_negative",
+        "ondemand::document_reference::is_null",
+        "ondemand::document_reference::is_scalar",
+        "ondemand::document_reference::is_string",
+        "ondemand::document_reference::operator(T)",
+        "ondemand::document_reference::operator(array)",
+        "ondemand::document_reference::operator(bool)",
+        "ondemand::document_reference::operator(document&)",
+        "ondemand::document_reference::operator(double)",
+        "ondemand::document_reference::operator(int64_t)",
+        "ondemand::document_reference::operator(object)",
+        "ondemand::document_reference::operator(raw_json_string)",
+        "ondemand::document_reference::operator(string_view)",
+        "ondemand::document_reference::operator(uint64_t)",
+        "ondemand::document_reference::operator(value)",
+        "ondemand::document_reference::operator[]",
+        "ondemand::document_reference::raw_json",
+        "ondemand::document_reference::raw_json_token",
+        "ondemand::document_reference::rewind",
+        "ondemand::document_reference::type",
+        "ondemand::document_stream::iterator::current_index",
+        "ondemand::document_stream::iterator::error",
+        "ondemand::document_stream::iterator::operator*",
+        "ondemand::document_stream::iterator::operator++",
+        "ondemand::document_stream::iterator::operator==",
+        "ondemand::document_stream::iterator::source",
+        "ondemand::document_stream::operator=",
+        "ondemand::document_stream::size_in_bytes",
+        "ondemand::document_stream::truncated_bytes",
+        "ondemand::parser::iterate",
+        "ondemand::parser::iterate_many",
+        "ondemand::parser::operator=",
+        "simdjson_result<ondemand::document_reference>::get_value",
+        "simdjson_result<ondemand::document_reference>::operator(value)",
+        "simdjson_result<ondemand::document_reference>::rewind"
+      ],
+      "predicates": {
+        "s_new": {
+          "meaning": "iterate_many succeeded",
+          "events": [
+            "ok:ondemand::parser::iterate_many"
+          ]
+        },
+        "s_gone": {
+          "meaning": "the parser is reused",
+          "events": [
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "call:ondemand::parser::operator=",
+            "call:ondemand::document_stream::operator="
+          ]
+        },
+        "s_use": {
+          "meaning": "a stream iterator routine is about to be called",
+          "events": [
+            "call:ondemand::document_stream::iterator::operator*",
+            "call:ondemand::document_stream::iterator::operator++",
+            "call:ondemand::document_stream::size_in_bytes",
+            "call:ondemand::document_stream::truncated_bytes",
+            "call:ondemand::document_stream::iterator::current_index",
+            "call:ondemand::document_stream::iterator::source",
+            "call:ondemand::document_stream::iterator::error",
+            "call:ondemand::document_stream::iterator::operator=="
+          ]
+        },
+        "r_new": {
+          "meaning": "the stream yielded a document",
+          "events": [
+            "ok:ondemand::document_stream::iterator::operator*"
+          ]
+        },
+        "r_gone": {
+          "meaning": "the stream advanced or the parser was reused",
+          "events": [
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "call:ondemand::document_stream::iterator::operator++",
+            "call:ondemand::parser::operator=",
+            "call:ondemand::document_stream::operator=",
+            "fail:ondemand::document::is_alive"
+          ]
+        },
+        "r_use": {
+          "meaning": "a document_reference routine is about to be called",
+          "events": [
+            "call:ondemand::document_reference::type",
+            "call:ondemand::document_reference::get_bool",
+            "call:ondemand::document_reference::get_double",
+            "call:ondemand::document_reference::get_double_in_string",
+            "call:ondemand::document_reference::get_int32",
+            "call:ondemand::document_reference::get_int64",
+            "call:ondemand::document_reference::get_int64_in_string",
+            "call:ondemand::document_reference::get_number",
+            "call:ondemand::document_reference::get_raw_json_string",
+            "call:ondemand::document_reference::get_string",
+            "call:ondemand::document_reference::get_uint32",
+            "call:ondemand::document_reference::get_uint64",
+            "call:ondemand::document_reference::get_uint64_in_string",
+            "call:ondemand::document_reference::get_wobbly_string",
+            "call:ondemand::document_reference::is_null",
+            "call:ondemand::document_reference::raw_json",
+            "call:ondemand::document_reference::get",
+            "call:ondemand::document_reference::get_value",
+            "call:ondemand::document_reference::get_array",
+            "call:ondemand::document_reference::get_object",
+            "call:ondemand::document_reference::count_elements",
+            "call:ondemand::document_reference::count_fields",
+            "call:ondemand::document_reference::find_field_unordered",
+            "call:ondemand::document_reference::operator[]",
+            "call:ondemand::document_reference::begin",
+            "call:ondemand::document_reference::operator(array)",
+            "call:ondemand::document_reference::operator(object)",
+            "call:ondemand::document_reference::operator(uint64_t)",
+            "call:ondemand::document_reference::operator(int64_t)",
+            "call:ondemand::document_reference::operator(double)",
+            "call:ondemand::document_reference::operator(string_view)",
+            "call:ondemand::document_reference::operator(raw_json_string)",
+            "call:ondemand::document_reference::operator(bool)",
+            "call:ondemand::document_reference::operator(value)",
+            "call:ondemand::document_reference::operator(T)",
+            "call:simdjson_result<ondemand::document_reference>::get_value",
+            "call:simdjson_result<ondemand::document_reference>::operator(value)",
+            "call:ondemand::document_reference::is_integer",
+            "call:ondemand::document_reference::is_scalar",
+            "call:ondemand::document_reference::is_string",
+            "call:ondemand::document_reference::get_number_type",
+            "call:ondemand::document_reference::raw_json_token",
+            "call:ondemand::document_reference::is_negative",
+            "call:ondemand::document_reference::current_location",
+            "call:ondemand::document_reference::current_depth",
+            "call:ondemand::document_reference::operator(document&)",
+            "call:ondemand::document_reference::end",
+            "call:ondemand::document_reference::at_path",
+            "call:ondemand::document_reference::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::rewind",
+            "call:simdjson_result<ondemand::document_reference>::rewind"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::parser::iterate_many",
+            "ok:ondemand::parser::iterate_many",
+            "call:ondemand::document_stream::iterator::operator*",
+            "ok:ondemand::document_stream::iterator::operator*",
+            "call:ondemand::document_reference::type",
+            "ok:ondemand::document_reference::type",
+            "call:ondemand::document_stream::iterator::operator++",
+            "ok:ondemand::document_stream::iterator::operator++"
+          ],
+          "allowed": true,
+          "reason": "normal streaming"
+        },
+        {
+          "events": [
+            "call:ondemand::document_stream::iterator::operator*"
+          ],
+          "allowed": false,
+          "reason": "no stream"
+        },
+        {
+          "events": [
+            "call:ondemand::parser::iterate_many",
+            "ok:ondemand::parser::iterate_many",
+            "call:ondemand::document_stream::iterator::operator*",
+            "ok:ondemand::document_stream::iterator::operator*",
+            "call:ondemand::document_stream::iterator::operator++",
+            "ok:ondemand::document_stream::iterator::operator++",
+            "call:ondemand::document_reference::type"
+          ],
+          "allowed": false,
+          "reason": "document reference outlived the step"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_value_result_consumed_once",
+      "rule": "doc/basics.md rule 3 ('Values can only be consumed once') applied to the simdjson_result<value> of a lookup (find_field_unordered / operator[] / at_path, singleheader/simdjson.h:84990-85218, chained as in doc/basics.md 'doc[\"a\"][\"b\"]'): reading it, chaining a further lookup, or taking its value out consumes it; rewind(), at_pointer/at_path on the document, a new document, a fatal error and advancing the stream invalidate it. type() and the is_* / count_* / location checks only peek.",
+      "formula": "(!r_use W r_new) & G(r_gone -> X(!r_use W r_new))",
+      "apis": [
+        "ondemand::array::at_path",
+        "ondemand::document::at_path",
+        "ondemand::document::at_pointer",
+        "ondemand::document::find_field_unordered",
+        "ondemand::document::for_each_at_path_with_wildcard",
+        "ondemand::document::is_alive",
+        "ondemand::document::operator[]",
+        "ondemand::document::rewind",
+        "ondemand::document_reference::at_path",
+        "ondemand::document_reference::find_field_unordered",
+        "ondemand::document_reference::for_each_at_path_with_wildcard",
+        "ondemand::document_reference::operator[]",
+        "ondemand::document_reference::rewind",
+        "ondemand::document_stream::iterator::operator++",
+        "ondemand::document_stream::operator=",
+        "ondemand::object::at_path",
+        "ondemand::object::find_field_unordered",
+        "ondemand::object::operator[]",
+        "ondemand::parser::iterate",
+        "ondemand::parser::iterate_many",
+        "ondemand::parser::operator=",
+        "ondemand::value::at_path",
+        "ondemand::value::find_field_unordered",
+        "ondemand::value::operator[]",
+        "simdjson_result<ondemand::array_iterator>::operator*",
+        "simdjson_result<ondemand::document_reference>::get_value",
+        "simdjson_result<ondemand::document_reference>::rewind",
+        "simdjson_result<ondemand::field>::value",
+        "simdjson_result<ondemand::value>::at_path",
+        "simdjson_result<ondemand::value>::begin",
+        "simdjson_result<ondemand::value>::count_elements",
+        "simdjson_result<ondemand::value>::count_fields",
+        "simdjson_result<ondemand::value>::current_depth",
+        "simdjson_result<ondemand::value>::current_location",
+        "simdjson_result<ondemand::value>::end",
+        "simdjson_result<ondemand::value>::find_field_unordered",
+        "simdjson_result<ondemand::value>::for_each_at_path_with_wildcard",
+        "simdjson_result<ondemand::value>::get_array",
+        "simdjson_result<ondemand::value>::get_bool",
+        "simdjson_result<ondemand::value>::get_double",
+        "simdjson_result<ondemand::value>::get_double_in_string",
+        "simdjson_result<ondemand::value>::get_int32",
+        "simdjson_result<ondemand::value>::get_int64",
+        "simdjson_result<ondemand::value>::get_int64_in_string",
+        "simdjson_result<ondemand::value>::get_number",
+        "simdjson_result<ondemand::value>::get_number_type",
+        "simdjson_result<ondemand::value>::get_object",
+        "simdjson_result<ondemand::value>::get_raw_json_string",
+        "simdjson_result<ondemand::value>::get_string",
+        "simdjson_result<ondemand::value>::get_uint32",
+        "simdjson_result<ondemand::value>::get_uint64",
+        "simdjson_result<ondemand::value>::get_uint64_in_string",
+        "simdjson_result<ondemand::value>::get_wobbly_string",
+        "simdjson_result<ondemand::value>::has_value",
+        "simdjson_result<ondemand::value>::is_integer",
+        "simdjson_result<ondemand::value>::is_negative",
+        "simdjson_result<ondemand::value>::is_null",
+        "simdjson_result<ondemand::value>::is_scalar",
+        "simdjson_result<ondemand::value>::is_string",
+        "simdjson_result<ondemand::value>::operator(T)",
+        "simdjson_result<ondemand::value>::operator(array)",
+        "simdjson_result<ondemand::value>::operator(bool)",
+        "simdjson_result<ondemand::value>::operator(double)",
+        "simdjson_result<ondemand::value>::operator(int64_t)",
+        "simdjson_result<ondemand::value>::operator(object)",
+        "simdjson_result<ondemand::value>::operator(raw_json_string)",
+        "simdjson_result<ondemand::value>::operator(string_view)",
+        "simdjson_result<ondemand::value>::operator(uint64_t)",
+        "simdjson_result<ondemand::value>::operator(value&&)",
+        "simdjson_result<ondemand::value>::operator*",
+        "simdjson_result<ondemand::value>::operator->",
+        "simdjson_result<ondemand::value>::operator[]",
+        "simdjson_result<ondemand::value>::raw_json",
+        "simdjson_result<ondemand::value>::raw_json_token",
+        "simdjson_result<ondemand::value>::take_value",
+        "simdjson_result<ondemand::value>::type",
+        "simdjson_result<ondemand::value>::value",
+        "simdjson_result<ondemand::value>::value_unsafe"
+      ],
+      "predicates": {
+        "r_new": {
+          "meaning": "a lookup produced a successful simdjson_result<value>",
+          "events": [
+            "ok:ondemand::document::find_field_unordered",
+            "ok:ondemand::document::operator[]",
+            "ok:ondemand::document::at_path",
+            "ok:ondemand::document_reference::find_field_unordered",
+            "ok:ondemand::document_reference::operator[]",
+            "ok:ondemand::document_reference::at_path",
+            "ok:simdjson_result<ondemand::document_reference>::get_value",
+            "ok:ondemand::value::find_field_unordered",
+            "ok:ondemand::value::operator[]",
+            "ok:ondemand::value::at_path",
+            "ok:simdjson_result<ondemand::value>::find_field_unordered",
+            "ok:simdjson_result<ondemand::value>::operator[]",
+            "ok:simdjson_result<ondemand::value>::at_path",
+            "ok:simdjson_result<ondemand::array_iterator>::operator*",
+            "ok:simdjson_result<ondemand::field>::value",
+            "ok:ondemand::array::at_path",
+            "ok:ondemand::object::find_field_unordered",
+            "ok:ondemand::object::operator[]",
+            "ok:ondemand::object::at_path"
+          ]
+        },
+        "r_gone": {
+          "meaning": "the result is consumed or its document position is gone",
+          "events": [
+            "call:simdjson_result<ondemand::value>::get_int32",
+            "call:simdjson_result<ondemand::value>::get_uint32",
+            "call:simdjson_result<ondemand::value>::get_int64_in_string",
+            "call:simdjson_result<ondemand::value>::get_uint64_in_string",
+            "call:simdjson_result<ondemand::value>::get_double_in_string",
+            "call:simdjson_result<ondemand::value>::get_wobbly_string",
+            "call:simdjson_result<ondemand::value>::get_uint64",
+            "call:simdjson_result<ondemand::value>::get_int64",
+            "call:simdjson_result<ondemand::value>::get_double",
+            "call:simdjson_result<ondemand::value>::get_string",
+            "call:simdjson_result<ondemand::value>::get_bool",
+            "call:simdjson_result<ondemand::value>::is_null",
+            "call:simdjson_result<ondemand::value>::raw_json",
+            "call:simdjson_result<ondemand::value>::get_raw_json_string",
+            "call:simdjson_result<ondemand::value>::get_number",
+            "call:simdjson_result<ondemand::value>::get_array",
+            "call:simdjson_result<ondemand::value>::get_object",
+            "call:simdjson_result<ondemand::value>::find_field_unordered",
+            "call:simdjson_result<ondemand::value>::operator[]",
+            "call:simdjson_result<ondemand::value>::at_path",
+            "call:simdjson_result<ondemand::value>::for_each_at_path_with_wildcard",
+            "call:simdjson_result<ondemand::value>::begin",
+            "call:simdjson_result<ondemand::value>::operator(array)",
+            "call:simdjson_result<ondemand::value>::operator(object)",
+            "call:simdjson_result<ondemand::value>::operator(uint64_t)",
+            "call:simdjson_result<ondemand::value>::operator(int64_t)",
+            "call:simdjson_result<ondemand::value>::operator(double)",
+            "call:simdjson_result<ondemand::value>::operator(string_view)",
+            "call:simdjson_result<ondemand::value>::operator(raw_json_string)",
+            "call:simdjson_result<ondemand::value>::operator(bool)",
+            "call:simdjson_result<ondemand::value>::operator(T)",
+            "call:simdjson_result<ondemand::value>::operator*",
+            "call:simdjson_result<ondemand::value>::value",
+            "call:simdjson_result<ondemand::value>::take_value",
+            "call:simdjson_result<ondemand::value>::value_unsafe",
+            "call:simdjson_result<ondemand::value>::operator(value&&)",
+            "call:ondemand::document::rewind",
+            "call:ondemand::document::at_pointer",
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "call:ondemand::document::at_path",
+            "call:ondemand::document::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::at_path",
+            "call:ondemand::document_reference::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::rewind",
+            "call:simdjson_result<ondemand::document_reference>::rewind",
+            "call:ondemand::document_stream::iterator::operator++",
+            "call:ondemand::document_stream::operator=",
+            "call:ondemand::parser::operator=",
+            "fail:ondemand::document::is_alive"
+          ]
+        },
+        "r_use": {
+          "meaning": "a simdjson_result<value> routine is about to be called",
+          "events": [
+            "call:simdjson_result<ondemand::value>::get_int32",
+            "call:simdjson_result<ondemand::value>::get_uint32",
+            "call:simdjson_result<ondemand::value>::get_int64_in_string",
+            "call:simdjson_result<ondemand::value>::get_uint64_in_string",
+            "call:simdjson_result<ondemand::value>::get_double_in_string",
+            "call:simdjson_result<ondemand::value>::get_wobbly_string",
+            "call:simdjson_result<ondemand::value>::get_uint64",
+            "call:simdjson_result<ondemand::value>::get_int64",
+            "call:simdjson_result<ondemand::value>::get_double",
+            "call:simdjson_result<ondemand::value>::get_string",
+            "call:simdjson_result<ondemand::value>::get_bool",
+            "call:simdjson_result<ondemand::value>::is_null",
+            "call:simdjson_result<ondemand::value>::raw_json",
+            "call:simdjson_result<ondemand::value>::get_raw_json_string",
+            "call:simdjson_result<ondemand::value>::get_number",
+            "call:simdjson_result<ondemand::value>::get_array",
+            "call:simdjson_result<ondemand::value>::get_object",
+            "call:simdjson_result<ondemand::value>::type",
+            "call:simdjson_result<ondemand::value>::is_scalar",
+            "call:simdjson_result<ondemand::value>::is_string",
+            "call:simdjson_result<ondemand::value>::is_negative",
+            "call:simdjson_result<ondemand::value>::is_integer",
+            "call:simdjson_result<ondemand::value>::get_number_type",
+            "call:simdjson_result<ondemand::value>::current_location",
+            "call:simdjson_result<ondemand::value>::current_depth",
+            "call:simdjson_result<ondemand::value>::raw_json_token",
+            "call:simdjson_result<ondemand::value>::count_elements",
+            "call:simdjson_result<ondemand::value>::count_fields",
+            "call:simdjson_result<ondemand::value>::has_value",
+            "call:simdjson_result<ondemand::value>::operator->",
+            "call:simdjson_result<ondemand::value>::find_field_unordered",
+            "call:simdjson_result<ondemand::value>::operator[]",
+            "call:simdjson_result<ondemand::value>::at_path",
+            "call:simdjson_result<ondemand::value>::for_each_at_path_with_wildcard",
+            "call:simdjson_result<ondemand::value>::begin",
+            "call:simdjson_result<ondemand::value>::end",
+            "call:simdjson_result<ondemand::value>::operator(array)",
+            "call:simdjson_result<ondemand::value>::operator(object)",
+            "call:simdjson_result<ondemand::value>::operator(uint64_t)",
+            "call:simdjson_result<ondemand::value>::operator(int64_t)",
+            "call:simdjson_result<ondemand::value>::operator(double)",
+            "call:simdjson_result<ondemand::value>::operator(string_view)",
+            "call:simdjson_result<ondemand::value>::operator(raw_json_string)",
+            "call:simdjson_result<ondemand::value>::operator(bool)",
+            "call:simdjson_result<ondemand::value>::operator(T)",
+            "call:simdjson_result<ondemand::value>::operator*",
+            "call:simdjson_result<ondemand::value>::value",
+            "call:simdjson_result<ondemand::value>::take_value",
+            "call:simdjson_result<ondemand::value>::value_unsafe",
+            "call:simdjson_result<ondemand::value>::operator(value&&)"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::parser::iterate",
+            "ok:ondemand::parser::iterate",
+            "call:ondemand::document::operator[]",
+            "ok:ondemand::document::operator[]",
+            "call:simdjson_result<ondemand::value>::type",
+            "ok:simdjson_result<ondemand::value>::type",
+            "call:simdjson_result<ondemand::value>::get_int64",
+            "ok:simdjson_result<ondemand::value>::get_int64"
+          ],
+          "allowed": true,
+          "reason": "peek, then read once"
+        },
+        {
+          "events": [
+            "call:simdjson_result<ondemand::value>::get_int64"
+          ],
+          "allowed": false,
+          "reason": "no lookup result"
+        },
+        {
+          "events": [
+            "call:ondemand::parser::iterate",
+            "ok:ondemand::parser::iterate",
+            "call:ondemand::document::operator[]",
+            "ok:ondemand::document::operator[]",
+            "call:simdjson_result<ondemand::value>::get_string",
+            "ok:simdjson_result<ondemand::value>::get_string",
+            "call:simdjson_result<ondemand::value>::get_bool"
+          ],
+          "allowed": false,
+          "reason": "the result was already consumed"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_document_reference_read_once",
+      "rule": "doc/iterate_many.md + doc/basics.md rules 2-3: a stream document reached through document_reference (singleheader/simdjson.h:88132-88275, every routine forwards to the stream's document) is read once like a document; reading it again needs rewind() (singleheader/simdjson.h:88132) or the next document (iterator ++). at_path / for_each_at_path_with_wildcard rewind first; count_elements / count_fields rewind on success (singleheader/simdjson.h:93314).",
+      "formula": "G(consume -> X(!consume_again W restart))",
+      "apis": [
+        "ondemand::document_reference::at_path",
+        "ondemand::document_reference::begin",
+        "ondemand::document_reference::count_elements",
+        "ondemand::document_reference::count_fields",
+        "ondemand::document_reference::find_field_unordered",
+        "ondemand::document_reference::for_each_at_path_with_wildcard",
+        "ondemand::document_reference::get",
+        "ondemand::document_reference::get_array",
+        "ondemand::document_reference::get_bool",
+        "ondemand::document_reference::get_double",
+        "ondemand::document_reference::get_double_in_string",
+        "ondemand::document_reference::get_int32",
+        "ondemand::document_reference::get_int64",
+        "ondemand::document_reference::get_int64_in_string",
+        "ondemand::document_reference::get_number",
+        "ondemand::document_reference::get_object",
+        "ondemand::document_reference::get_raw_json_string",
+        "ondemand::document_reference::get_string",
+        "ondemand::document_reference::get_uint32",
+        "ondemand::document_reference::get_uint64",
+        "ondemand::document_reference::get_uint64_in_string",
+        "ondemand::document_reference::get_value",
+        "ondemand::document_reference::get_wobbly_string",
+        "ondemand::document_reference::is_null",
+        "ondemand::document_reference::operator(T)",
+        "ondemand::document_reference::operator(array)",
+        "ondemand::document_reference::operator(bool)",
+        "ondemand::document_reference::operator(double)",
+        "ondemand::document_reference::operator(int64_t)",
+        "ondemand::document_reference::operator(object)",
+        "ondemand::document_reference::operator(raw_json_string)",
+        "ondemand::document_reference::operator(string_view)",
+        "ondemand::document_reference::operator(uint64_t)",
+        "ondemand::document_reference::operator(value)",
+        "ondemand::document_reference::operator[]",
+        "ondemand::document_reference::raw_json",
+        "ondemand::document_reference::rewind",
+        "ondemand::document_stream::iterator::operator++",
+        "ondemand::parser::iterate_many",
+        "simdjson_result<ondemand::document_reference>::get_value",
+        "simdjson_result<ondemand::document_reference>::operator(value)",
+        "simdjson_result<ondemand::document_reference>::rewind"
+      ],
+      "predicates": {
+        "consume": {
+          "meaning": "the stream document is read",
+          "events": [
+            "call:ondemand::document_reference::get_bool",
+            "call:ondemand::document_reference::get_double",
+            "call:ondemand::document_reference::get_double_in_string",
+            "call:ondemand::document_reference::get_int32",
+            "call:ondemand::document_reference::get_int64",
+            "call:ondemand::document_reference::get_int64_in_string",
+            "call:ondemand::document_reference::get_number",
+            "call:ondemand::document_reference::get_raw_json_string",
+            "call:ondemand::document_reference::get_string",
+            "call:ondemand::document_reference::get_uint32",
+            "call:ondemand::document_reference::get_uint64",
+            "call:ondemand::document_reference::get_uint64_in_string",
+            "call:ondemand::document_reference::get_wobbly_string",
+            "call:ondemand::document_reference::is_null",
+            "call:ondemand::document_reference::raw_json",
+            "call:ondemand::document_reference::get",
+            "call:ondemand::document_reference::get_value",
+            "call:ondemand::document_reference::get_array",
+            "call:ondemand::document_reference::get_object",
+            "call:ondemand::document_reference::count_elements",
+            "call:ondemand::document_reference::count_fields",
+            "call:ondemand::document_reference::find_field_unordered",
+            "call:ondemand::document_reference::operator[]",
+            "call:ondemand::document_reference::begin",
+            "call:ondemand::document_reference::operator(array)",
+            "call:ondemand::document_reference::operator(object)",
+            "call:ondemand::document_reference::operator(uint64_t)",
+            "call:ondemand::document_reference::operator(int64_t)",
+            "call:ondemand::document_reference::operator(double)",
+            "call:ondemand::document_reference::operator(string_view)",
+            "call:ondemand::document_reference::operator(raw_json_string)",
+            "call:ondemand::document_reference::operator(bool)",
+            "call:ondemand::document_reference::operator(value)",
+            "call:ondemand::document_reference::operator(T)",
+            "call:simdjson_result<ondemand::document_reference>::get_value",
+            "call:simdjson_result<ondemand::document_reference>::operator(value)",
+            "call:ondemand::document_reference::at_path",
+            "call:ondemand::document_reference::for_each_at_path_with_wildcard"
+          ]
+        },
+        "consume_again": {
+          "meaning": "a read that needs an unread document",
+          "events": [
+            "call:ondemand::document_reference::get_bool",
+            "call:ondemand::document_reference::get_double",
+            "call:ondemand::document_reference::get_double_in_string",
+            "call:ondemand::document_reference::get_int32",
+            "call:ondemand::document_reference::get_int64",
+            "call:ondemand::document_reference::get_int64_in_string",
+            "call:ondemand::document_reference::get_number",
+            "call:ondemand::document_reference::get_raw_json_string",
+            "call:ondemand::document_reference::get_string",
+            "call:ondemand::document_reference::get_uint32",
+            "call:ondemand::document_reference::get_uint64",
+            "call:ondemand::document_reference::get_uint64_in_string",
+            "call:ondemand::document_reference::get_wobbly_string",
+            "call:ondemand::document_reference::is_null",
+            "call:ondemand::document_reference::raw_json",
+            "call:ondemand::document_reference::get",
+            "call:ondemand::document_reference::get_value",
+            "call:ondemand::document_reference::get_array",
+            "call:ondemand::document_reference::get_object",
+            "call:ondemand::document_reference::count_elements",
+            "call:ondemand::document_reference::count_fields",
+            "call:ondemand::document_reference::find_field_unordered",
+            "call:ondemand::document_reference::operator[]",
+            "call:ondemand::document_reference::begin",
+            "call:ondemand::document_reference::operator(array)",
+            "call:ondemand::document_reference::operator(object)",
+            "call:ondemand::document_reference::operator(uint64_t)",
+            "call:ondemand::document_reference::operator(int64_t)",
+            "call:ondemand::document_reference::operator(double)",
+            "call:ondemand::document_reference::operator(string_view)",
+            "call:ondemand::document_reference::operator(raw_json_string)",
+            "call:ondemand::document_reference::operator(bool)",
+            "call:ondemand::document_reference::operator(value)",
+            "call:ondemand::document_reference::operator(T)",
+            "call:simdjson_result<ondemand::document_reference>::get_value",
+            "call:simdjson_result<ondemand::document_reference>::operator(value)"
+          ]
+        },
+        "restart": {
+          "meaning": "the document is unread again",
+          "events": [
+            "call:ondemand::document_reference::rewind",
+            "call:simdjson_result<ondemand::document_reference>::rewind",
+            "call:ondemand::document_stream::iterator::operator++",
+            "ok:ondemand::parser::iterate_many",
+            "ok:ondemand::document_reference::count_elements",
+            "ok:ondemand::document_reference::count_fields"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::parser::iterate_many",
+            "ok:ondemand::parser::iterate_many",
+            "call:ondemand::document_stream::iterator::operator*",
+            "ok:ondemand::document_stream::iterator::operator*",
+            "call:ondemand::document_reference::get_int64",
+            "ok:ondemand::document_reference::get_int64",
+            "call:ondemand::document_reference::rewind",
+            "ok:ondemand::document_reference::rewind",
+            "call:ondemand::document_reference::get_double",
+            "ok:ondemand::document_reference::get_double"
+          ],
+          "allowed": true,
+          "reason": "rewind between reads"
+        },
+        {
+          "events": [
+            "call:ondemand::document_reference::get_int64",
+            "ok:ondemand::document_reference::get_int64",
+            "call:ondemand::document_reference::get_bool"
+          ],
+          "allowed": false,
+          "reason": "read twice"
+        },
+        {
+          "events": [
+            "call:ondemand::document_reference::get_array",
+            "ok:ondemand::document_reference::get_array",
+            "call:ondemand::document_stream::iterator::operator*",
+            "ok:ondemand::document_stream::iterator::operator*",
+            "call:ondemand::document_reference::get_object"
+          ],
+          "allowed": false,
+          "reason": "dereferencing again yields the same, already read document"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_array_iterator_result",
+      "rule": "singleheader/simdjson.h:87262-87276: simdjson_result<array_iterator> from begin() of a document, value or result is iterated like the range-for of doc/basics.md; operator* 'MUST ONLY BE CALLED ONCE PER ITERATION' (singleheader/simdjson.h:87271). The iterator dies with its document position: rewind / at_pointer / at_path, a new document, a fatal error, the stream advancing, or advancing the iterator of an enclosing array or object.",
+      "formula": "(!i_use W i_new) & G(i_gone -> X(!i_use W i_new)) & G(deref -> X(!deref W step))",
+      "apis": [
+        "ondemand::array_iterator::operator++",
+        "ondemand::document::at_path",
+        "ondemand::document::at_pointer",
+        "ondemand::document::begin",
+        "ondemand::document::for_each_at_path_with_wildcard",
+        "ondemand::document::is_alive",
+        "ondemand::document::rewind",
+        "ondemand::document_reference::at_path",
+        "ondemand::document_reference::begin",
+        "ondemand::document_reference::for_each_at_path_with_wildcard",
+        "ondemand::document_reference::rewind",
+        "ondemand::document_stream::iterator::operator++",
+        "ondemand::document_stream::operator=",
+        "ondemand::object_iterator::operator++",
+        "ondemand::parser::iterate",
+        "ondemand::parser::iterate_many",
+        "ondemand::parser::operator=",
+        "ondemand::value::begin",
+        "simdjson_result<ondemand::array_iterator>::at_end",
+        "simdjson_result<ondemand::array_iterator>::operator!=",
+        "simdjson_result<ondemand::array_iterator>::operator*",
+        "simdjson_result<ondemand::array_iterator>::operator++",
+        "simdjson_result<ondemand::array_iterator>::operator==",
+        "simdjson_result<ondemand::document_reference>::rewind",
+        "simdjson_result<ondemand::value>::begin"
+      ],
+      "predicates": {
+        "i_new": {
+          "meaning": "begin() produced an iterator",
+          "events": [
+            "ok:ondemand::document::begin",
+            "ok:ondemand::document_reference::begin",
+            "ok:ondemand::value::begin",
+            "ok:simdjson_result<ondemand::value>::begin"
+          ]
+        },
+        "i_gone": {
+          "meaning": "the iterated position is gone",
+          "events": [
+            "call:ondemand::document::rewind",
+            "call:ondemand::document::at_pointer",
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "call:ondemand::array_iterator::operator++",
+            "call:ondemand::object_iterator::operator++",
+            "call:ondemand::document::at_path",
+            "call:ondemand::document::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::at_path",
+            "call:ondemand::document_reference::for_each_at_path_with_wildcard",
+            "call:ondemand::document_reference::rewind",
+            "call:simdjson_result<ondemand::document_reference>::rewind",
+            "call:ondemand::document_stream::iterator::operator++",
+            "call:ondemand::document_stream::operator=",
+            "call:ondemand::parser::operator=",
+            "fail:ondemand::document::is_alive"
+          ]
+        },
+        "i_use": {
+          "meaning": "an iterator result routine is about to be called",
+          "events": [
+            "call:simdjson_result<ondemand::array_iterator>::operator!=",
+            "call:simdjson_result<ondemand::array_iterator>::operator==",
+            "call:simdjson_result<ondemand::array_iterator>::at_end",
+            "call:simdjson_result<ondemand::array_iterator>::operator*",
+            "call:simdjson_result<ondemand::array_iterator>::operator++"
+          ]
+        },
+        "deref": {
+          "meaning": "the current element is read",
+          "events": [
+            "call:simdjson_result<ondemand::array_iterator>::operator*"
+          ]
+        },
+        "step": {
+          "meaning": "the iterator moves to a new element",
+          "events": [
+            "call:simdjson_result<ondemand::array_iterator>::operator++",
+            "ok:ondemand::document::begin",
+            "ok:ondemand::document_reference::begin",
+            "ok:ondemand::value::begin",
+            "ok:simdjson_result<ondemand::value>::begin"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::parser::iterate",
+            "ok:ondemand::parser::iterate",
+            "call:ondemand::document::begin",
+            "ok:ondemand::document::begin",
+            "call:simdjson_result<ondemand::array_iterator>::operator!=",
+            "ok:simdjson_result<ondemand::array_iterator>::operator!=",
+            "call:simdjson_result<ondemand::array_iterator>::operator*",
+            "ok:simdjson_result<ondemand::array_iterator>::operator*",
+            "call:simdjson_result<ondemand::array_iterator>::operator++",
+            "ok:simdjson_result<ondemand::array_iterator>::operator++",
+            "call:simdjson_result<ondemand::array_iterator>::operator*",
+            "ok:simdjson_result<ondemand::array_iterator>::operator*"
+          ],
+          "allowed": true,
+          "reason": "one dereference per element"
+        },
+        {
+          "events": [
+            "call:ondemand::document::begin",
+            "ok:ondemand::document::begin",
+            "call:simdjson_result<ondemand::array_iterator>::operator*",
+            "ok:simdjson_result<ondemand::array_iterator>::operator*",
+            "call:simdjson_result<ondemand::array_iterator>::operator*"
+          ],
+          "allowed": false,
+          "reason": "dereferenced twice in one iteration"
+        },
+        {
+          "events": [
+            "call:ondemand::value::begin",
+            "ok:ondemand::value::begin",
+            "call:ondemand::document::rewind",
+            "ok:ondemand::document::rewind",
+            "call:simdjson_result<ondemand::array_iterator>::operator++"
+          ],
+          "allowed": false,
+          "reason": "rewind invalidated the iterator"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_field_key_once",
+      "rule": "singleheader/simdjson.h:88860: unescaped_key() 'consumes the key: once you have called unescaped_key(), you cannot call it again nor can you call key()'. key_raw_json_token() and escaped_key() may be called repeatedly. A new field comes from the object iterator's operator*.",
+      "formula": "(!k_use W k_new) & G(k_gone -> X(!k_use W k_new))",
+      "apis": [
+        "ondemand::field::key",
+        "ondemand::field::unescaped_key",
+        "ondemand::object_iterator::operator*",
+        "simdjson_result<ondemand::field>::key",
+        "simdjson_result<ondemand::field>::unescaped_key"
+      ],
+      "predicates": {
+        "k_new": {
+          "meaning": "a new field was read",
+          "events": [
+            "ok:ondemand::object_iterator::operator*"
+          ]
+        },
+        "k_gone": {
+          "meaning": "the key was consumed",
+          "events": [
+            "call:ondemand::field::unescaped_key",
+            "call:simdjson_result<ondemand::field>::unescaped_key"
+          ]
+        },
+        "k_use": {
+          "meaning": "a key routine that needs an unconsumed key",
+          "events": [
+            "call:ondemand::field::key",
+            "call:ondemand::field::unescaped_key",
+            "call:simdjson_result<ondemand::field>::key",
+            "call:simdjson_result<ondemand::field>::unescaped_key"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::object_iterator::operator*",
+            "ok:ondemand::object_iterator::operator*",
+            "call:ondemand::field::key",
+            "ok:ondemand::field::key",
+            "call:ondemand::field::unescaped_key",
+            "ok:ondemand::field::unescaped_key"
+          ],
+          "allowed": true,
+          "reason": "key() before unescaped_key()"
+        },
+        {
+          "events": [
+            "call:ondemand::object_iterator::operator*",
+            "ok:ondemand::object_iterator::operator*",
+            "call:ondemand::field::unescaped_key",
+            "ok:ondemand::field::unescaped_key",
+            "call:ondemand::field::key"
+          ],
+          "allowed": false,
+          "reason": "key() after unescaped_key()"
+        },
+        {
+          "events": [
+            "call:ondemand::object_iterator::operator*",
+            "ok:ondemand::object_iterator::operator*",
+            "call:simdjson_result<ondemand::field>::unescaped_key",
+            "ok:simdjson_result<ondemand::field>::unescaped_key",
+            "call:ondemand::field::unescaped_key"
+          ],
+          "allowed": false,
+          "reason": "unescaped twice"
+        }
+      ]
+    },
+    {
+      "id": "ondemand_raw_json_string_input",
+      "rule": "A raw_json_string is 'A pointer to the raw JSON for the given string' (singleheader/simdjson.h:84784): it points into the input of the iterated document, which the next iterate / iterate_many replaces (and parser move-assignment orphans). The == / != comparisons (singleheader/simdjson.h:86366-86372) need a live raw_json_string.",
+      "formula": "(!s_use W s_new) & G(s_gone -> X(!s_use W s_new))",
+      "apis": [
+        "ondemand::field::key",
+        "ondemand::operator!=(raw_json_string)",
+        "ondemand::operator==(raw_json_string)",
+        "ondemand::parser::iterate",
+        "ondemand::parser::iterate_many",
+        "ondemand::parser::operator=",
+        "ondemand::value::get_raw_json_string",
+        "simdjson_result<ondemand::value>::get_raw_json_string"
+      ],
+      "predicates": {
+        "s_new": {
+          "meaning": "a raw_json_string was obtained",
+          "events": [
+            "ok:ondemand::value::get_raw_json_string",
+            "ok:simdjson_result<ondemand::value>::get_raw_json_string",
+            "ok:ondemand::field::key"
+          ]
+        },
+        "s_gone": {
+          "meaning": "its input buffer is replaced",
+          "events": [
+            "call:ondemand::parser::iterate",
+            "call:ondemand::parser::iterate_many",
+            "call:ondemand::parser::operator="
+          ]
+        },
+        "s_use": {
+          "meaning": "a comparison is about to read it",
+          "events": [
+            "call:ondemand::operator==(raw_json_string)",
+            "call:ondemand::operator!=(raw_json_string)"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ondemand::field::key",
+            "ok:ondemand::field::key",
+            "call:ondemand::operator==(raw_json_string)",
+            "ok:ondemand::operator==(raw_json_string)"
+          ],
+          "allowed": true,
+          "reason": "compare a live key"
+        },
+        {
+          "events": [
+            "call:ondemand::operator!=(raw_json_string)"
+          ],
+          "allowed": false,
+          "reason": "nothing obtained"
+        },
+        {
+          "events": [
+            "call:ondemand::value::get_raw_json_string",
+            "ok:ondemand::value::get_raw_json_string",
+            "call:ondemand::parser::iterate",
+            "ok:ondemand::parser::iterate",
+            "call:ondemand::operator==(raw_json_string)"
+          ],
+          "allowed": false,
+          "reason": "the input was replaced"
+        }
+      ]
+    }
+  ]
+}

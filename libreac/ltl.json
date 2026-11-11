@@ -1,0 +1,2187 @@
+{
+  "properties": [
+    {
+      "id": "fsm_init_before_step",
+      "rule": "reac_fsm.h: reac_fsm_init sets up the JOIN/HOLD machine (FSM_PHY_DOWN, the counters and the heartbeat period reac_fsm_step reads), and reac_fsm_step advances that one machine in place. The harness keeps a single struct reac_fsm and initialises it before any step.",
+      "formula": "!f_step W f_init",
+      "apis": [
+        "reac_fsm_init",
+        "reac_fsm_step"
+      ],
+      "predicates": {
+        "f_init": {
+          "meaning": "reac_fsm_init completed",
+          "events": [
+            "ok:reac_fsm_init"
+          ]
+        },
+        "f_step": {
+          "meaning": "reac_fsm_step is about to advance the machine",
+          "events": [
+            "call:reac_fsm_step"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_fsm_init",
+            "ok:reac_fsm_init",
+            "call:reac_fsm_step",
+            "call:reac_fsm_step"
+          ],
+          "allowed": true,
+          "reason": "the machine is initialised before it is stepped"
+        },
+        {
+          "events": [
+            "call:reac_fsm_step"
+          ],
+          "allowed": false,
+          "reason": "no reac_fsm_init"
+        },
+        {
+          "events": [
+            "call:reac_knock_init",
+            "ok:reac_knock_init",
+            "call:reac_fsm_step"
+          ],
+          "allowed": false,
+          "reason": "another family's init does not initialise the fsm"
+        }
+      ]
+    },
+    {
+      "id": "master_init_before_use",
+      "rule": "reac_master.h: reac_master_init initialises the master for a source MAC, console config and frame rate, and starts it in IDLE with no box; every other reac_master_* routine takes that initialised struct (reac_master.h: reac_master_next 'Call exactly once per emitted downstream frame', reac_master_stamp takes a downstream frame the master stamped). The harness keeps one struct reac_master.",
+      "formula": "!m_use W m_new",
+      "apis": [
+        "reac_master_init",
+        "reac_master_identity_answered",
+        "reac_master_has_box",
+        "reac_master_set_box",
+        "reac_master_forget_box",
+        "reac_master_regrant",
+        "reac_master_set_headamp_src",
+        "reac_master_rx",
+        "reac_master_next",
+        "reac_master_stamp",
+        "reac_master_grant_anchor"
+      ],
+      "predicates": {
+        "m_new": {
+          "meaning": "the master was initialised",
+          "events": [
+            "ok:reac_master_init"
+          ]
+        },
+        "m_use": {
+          "meaning": "a routine taking the master instance is about to be called",
+          "events": [
+            "call:reac_master_identity_answered",
+            "call:reac_master_has_box",
+            "call:reac_master_set_box",
+            "call:reac_master_forget_box",
+            "call:reac_master_regrant",
+            "call:reac_master_set_headamp_src",
+            "call:reac_master_rx",
+            "call:reac_master_next",
+            "call:reac_master_stamp",
+            "call:reac_master_grant_anchor"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_master_init",
+            "ok:reac_master_init",
+            "call:reac_master_next",
+            "ok:reac_master_next",
+            "call:reac_master_stamp",
+            "fail:reac_master_stamp"
+          ],
+          "allowed": true,
+          "reason": "uses follow reac_master_init; a documented refusal is still a use"
+        },
+        {
+          "events": [
+            "call:reac_master_next"
+          ],
+          "allowed": false,
+          "reason": "no reac_master_init"
+        },
+        {
+          "events": [
+            "call:reac_master_set_box",
+            "call:reac_master_init",
+            "ok:reac_master_init"
+          ],
+          "allowed": false,
+          "reason": "set_box on an uninitialised master"
+        }
+      ]
+    },
+    {
+      "id": "identity_init_before_ingest",
+      "rule": "reac_identity.h: 'Zero-initialise with reac_identity_init before the first ingest' (struct reac_identity's has_* flags are the answer 'nothing seen yet'). reac_ctrlblk.h: 'Zero-initialise `f` before the first call' for struct reac_identity_frag, which the harness clears with the same init. reac_box_facts.h reads the accumulated page.",
+      "formula": "!i_use W i_init",
+      "examples": [
+        {
+          "events": [
+            "call:reac_identity_init",
+            "ok:reac_identity_init",
+            "call:reac_identity_ingest",
+            "ok:reac_identity_ingest",
+            "call:reac_ctrl_identity_fragment",
+            "fail:reac_ctrl_identity_fragment"
+          ],
+          "allowed": true,
+          "reason": "ingest and reassembly follow the clear"
+        },
+        {
+          "events": [
+            "call:reac_identity_ingest"
+          ],
+          "allowed": false,
+          "reason": "no reac_identity_init"
+        },
+        {
+          "events": [
+            "call:reac_ctrl_identity_fragment",
+            "call:reac_identity_init",
+            "ok:reac_identity_init"
+          ],
+          "allowed": false,
+          "reason": "the fragment buffer was not zero-initialised"
+        }
+      ],
+      "predicates": {
+        "i_init": {
+          "meaning": "the identity accumulator (and its fragment buffer) was cleared",
+          "events": [
+            "ok:reac_identity_init"
+          ]
+        },
+        "i_use": {
+          "meaning": "a routine reading or writing the accumulated identity page is about to be called",
+          "events": [
+            "call:reac_identity_ingest",
+            "call:reac_ctrl_identity_fragment",
+            "call:reac_box_family_of"
+          ]
+        }
+      }
+    },
+    {
+      "id": "disco_table_init_before_use",
+      "rule": "reac_disco.h: struct reac_disco_table is the fixed-size sighting table ('fixed-size (RT discipline: no allocation) and saturates rather than evicting'; one live table, main thread only), and reac_disco_table_init is its reset. observe/age/json all take the table's own counters (n, overflowed, seq).",
+      "formula": "!t_use W t_new",
+      "apis": [
+        "reac_disco_table_init",
+        "reac_disco_table_observe",
+        "reac_disco_table_age",
+        "reac_disco_table_json"
+      ],
+      "predicates": {
+        "t_new": {
+          "meaning": "the table was reset to empty",
+          "events": [
+            "ok:reac_disco_table_init"
+          ]
+        },
+        "t_use": {
+          "meaning": "a routine reading or updating the table is about to be called",
+          "events": [
+            "call:reac_disco_table_observe",
+            "call:reac_disco_table_age",
+            "call:reac_disco_table_json"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_disco_table_init",
+            "ok:reac_disco_table_init",
+            "call:reac_disco_table_observe",
+            "ok:reac_disco_table_observe",
+            "call:reac_disco_table_observe",
+            "ok:reac_disco_table_observe",
+            "call:reac_disco_table_age",
+            "ok:reac_disco_table_age",
+            "call:reac_disco_table_json",
+            "fail:reac_disco_table_json"
+          ],
+          "allowed": true,
+          "reason": "init then observe/age/serialise; a short buffer is a documented -1"
+        },
+        {
+          "events": [
+            "call:reac_disco_table_age"
+          ],
+          "allowed": false,
+          "reason": "no reac_disco_table_init"
+        },
+        {
+          "events": [
+            "call:reac_disco_table_json",
+            "call:reac_disco_table_init",
+            "ok:reac_disco_table_init"
+          ],
+          "allowed": false,
+          "reason": "serialising an uninitialised table"
+        }
+      ]
+    },
+    {
+      "id": "peer_lock_init_before_classify",
+      "rule": "reac_disco.h: struct reac_disco_peer_lock is per-segment established-peer state \u2014 'One instance per segment's own pacer ... Zero-initialize with reac_disco_peer_lock_init' \u2014 and reac_disco_classify_on_segment latches its mac/once for that instance's lifetime.",
+      "formula": "!p_use W p_new",
+      "apis": [
+        "reac_disco_peer_lock_init",
+        "reac_disco_classify_on_segment"
+      ],
+      "predicates": {
+        "p_new": {
+          "meaning": "the peer lock was cleared (unlocked)",
+          "events": [
+            "ok:reac_disco_peer_lock_init"
+          ]
+        },
+        "p_use": {
+          "meaning": "the lock-taking classifier is about to be called",
+          "events": [
+            "call:reac_disco_classify_on_segment"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_disco_peer_lock_init",
+            "ok:reac_disco_peer_lock_init",
+            "call:reac_disco_classify_on_segment",
+            "fail:reac_disco_classify_on_segment"
+          ],
+          "allowed": true,
+          "reason": "classify follows the lock's own init"
+        },
+        {
+          "events": [
+            "call:reac_disco_classify_on_segment"
+          ],
+          "allowed": false,
+          "reason": "no reac_disco_peer_lock_init"
+        },
+        {
+          "events": [
+            "call:reac_disco_classify",
+            "call:reac_disco_classify_on_segment"
+          ],
+          "allowed": false,
+          "reason": "the stateless classifier does not initialise a lock"
+        }
+      ]
+    },
+    {
+      "id": "gate_init_before_push",
+      "rule": "reac_disco.h: struct reac_disco_gate is the RT-side announce gate ('Pacer-thread-local: single-writer', its entry table and n), reset by reac_disco_gate_init, and reac_disco_gate_should_push is the only reader/writer of those entries afterwards.",
+      "formula": "!g_use W g_new",
+      "apis": [
+        "reac_disco_gate_init",
+        "reac_disco_gate_should_push"
+      ],
+      "predicates": {
+        "g_new": {
+          "meaning": "the gate was emptied",
+          "events": [
+            "ok:reac_disco_gate_init"
+          ]
+        },
+        "g_use": {
+          "meaning": "the gate is asked whether a sighting must be pushed",
+          "events": [
+            "call:reac_disco_gate_should_push"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_disco_gate_init",
+            "ok:reac_disco_gate_init",
+            "call:reac_disco_gate_should_push",
+            "ok:reac_disco_gate_should_push"
+          ],
+          "allowed": true,
+          "reason": "gate used after init"
+        },
+        {
+          "events": [
+            "call:reac_disco_gate_should_push"
+          ],
+          "allowed": false,
+          "reason": "no reac_disco_gate_init"
+        },
+        {
+          "events": [
+            "call:reac_disco_table_init",
+            "ok:reac_disco_table_init",
+            "call:reac_disco_gate_should_push"
+          ],
+          "allowed": false,
+          "reason": "the table's init does not initialise the gate"
+        }
+      ]
+    },
+    {
+      "id": "hunt_init_before_use",
+      "rule": "reac_hunt.h: reac_hunt_init starts the hunt on a segment with its own MAC and clock, and the hunt is one object per passive sniffer ('one hunt per passive sniffer'); pin/silence_proven/observe/step/role/heard_anything all answer from that object's table, peer lock and verdict.",
+      "formula": "!h_use W h_new",
+      "apis": [
+        "reac_hunt_init",
+        "reac_hunt_pin",
+        "reac_hunt_silence_proven",
+        "reac_hunt_observe",
+        "reac_hunt_step",
+        "reac_hunt_role",
+        "reac_hunt_heard_anything"
+      ],
+      "predicates": {
+        "h_new": {
+          "meaning": "the hunt was started on a segment",
+          "events": [
+            "ok:reac_hunt_init"
+          ]
+        },
+        "h_use": {
+          "meaning": "a routine reading or advancing the hunt is about to be called",
+          "events": [
+            "call:reac_hunt_pin",
+            "call:reac_hunt_silence_proven",
+            "call:reac_hunt_observe",
+            "call:reac_hunt_step",
+            "call:reac_hunt_role",
+            "call:reac_hunt_heard_anything"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_hunt_init",
+            "ok:reac_hunt_init",
+            "call:reac_hunt_pin",
+            "call:reac_hunt_observe",
+            "fail:reac_hunt_observe",
+            "call:reac_hunt_step",
+            "ok:reac_hunt_step",
+            "call:reac_hunt_role",
+            "call:reac_hunt_heard_anything"
+          ],
+          "allowed": true,
+          "reason": "the hunt's own init precedes every use; a non-REAC frame is a documented -1"
+        },
+        {
+          "events": [
+            "call:reac_hunt_observe"
+          ],
+          "allowed": false,
+          "reason": "no reac_hunt_init"
+        },
+        {
+          "events": [
+            "call:reac_hunt_step",
+            "call:reac_hunt_init",
+            "ok:reac_hunt_init"
+          ],
+          "allowed": false,
+          "reason": "stepping a hunt that was never started"
+        }
+      ]
+    },
+    {
+      "id": "knock_init_before_step",
+      "rule": "reac_knock.h: reac_knock_init 'Begin listening on a wire that has just come up' \u2014 it stamps opened_ns and due_ns from that instant \u2014 and reac_knock_heard / reac_knock_step read that observation window (heard_ns, granted) to answer ACT_DRIVE exactly once.",
+      "formula": "!k_use W k_new",
+      "apis": [
+        "reac_knock_init",
+        "reac_knock_heard",
+        "reac_knock_step"
+      ],
+      "predicates": {
+        "k_new": {
+          "meaning": "the masterless observation was opened",
+          "events": [
+            "ok:reac_knock_init"
+          ]
+        },
+        "k_use": {
+          "meaning": "a routine advancing or cancelling the observation is about to be called",
+          "events": [
+            "call:reac_knock_heard",
+            "call:reac_knock_step"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_knock_init",
+            "ok:reac_knock_init",
+            "call:reac_knock_step",
+            "call:reac_knock_heard",
+            "call:reac_knock_step"
+          ],
+          "allowed": true,
+          "reason": "heard and step follow the observation's own start"
+        },
+        {
+          "events": [
+            "call:reac_knock_step"
+          ],
+          "allowed": false,
+          "reason": "no reac_knock_init"
+        },
+        {
+          "events": [
+            "call:reac_knock_heard"
+          ],
+          "allowed": false,
+          "reason": "no reac_knock_init"
+        }
+      ]
+    },
+    {
+      "id": "dll_init_before_update",
+      "rule": "reac_clock.h: reac_dll_init fixes the rate's nominal period ('the rate's period \u2014 never modified by the loop') and the loop's memory; reac_dll_update, period_ns, applied_ppm, resid_sigma, stability and stability_reset all read or steer that one struct reac_dll.",
+      "formula": "!d_use W d_new",
+      "apis": [
+        "reac_dll_init",
+        "reac_dll_update",
+        "reac_dll_period_ns",
+        "reac_dll_applied_ppm",
+        "reac_dll_resid_sigma",
+        "reac_dll_stability",
+        "reac_dll_stability_reset"
+      ],
+      "predicates": {
+        "d_new": {
+          "meaning": "the DLL was initialised with a nominal period",
+          "events": [
+            "ok:reac_dll_init"
+          ]
+        },
+        "d_use": {
+          "meaning": "a routine reading or steering the loop is about to be called",
+          "events": [
+            "call:reac_dll_update",
+            "call:reac_dll_period_ns",
+            "call:reac_dll_applied_ppm",
+            "call:reac_dll_resid_sigma",
+            "call:reac_dll_stability",
+            "call:reac_dll_stability_reset"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_dll_init",
+            "ok:reac_dll_init",
+            "call:reac_dll_update",
+            "fail:reac_dll_update",
+            "call:reac_dll_period_ns",
+            "call:reac_dll_stability_reset",
+            "call:reac_dll_stability"
+          ],
+          "allowed": true,
+          "reason": "a rejected sample is a documented refusal, not a reason to re-init"
+        },
+        {
+          "events": [
+            "call:reac_dll_update"
+          ],
+          "allowed": false,
+          "reason": "no reac_dll_init"
+        },
+        {
+          "events": [
+            "call:reac_dll_period_ns"
+          ],
+          "allowed": false,
+          "reason": "the period is meaningless without a nominal"
+        }
+      ]
+    },
+    {
+      "id": "clock_disc_init_before_update",
+      "rule": "reac_clock.h: reac_clock_disc_init fixes the role ('fixes WHICH hierarchy applies, for this process') and the nominal period the discipline steers; set_quality, quality, update, period_ns and describe all answer from that one struct reac_clock_disc and its embedded DLL.",
+      "formula": "!c_use W c_new",
+      "apis": [
+        "reac_clock_disc_init",
+        "reac_clock_disc_set_quality",
+        "reac_clock_disc_quality",
+        "reac_clock_disc_update",
+        "reac_clock_disc_period_ns",
+        "reac_clock_disc_describe"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "the discipline was initialised for a role",
+          "events": [
+            "ok:reac_clock_disc_init"
+          ]
+        },
+        "c_use": {
+          "meaning": "a routine reading or advancing the discipline is about to be called",
+          "events": [
+            "call:reac_clock_disc_set_quality",
+            "call:reac_clock_disc_quality",
+            "call:reac_clock_disc_update",
+            "call:reac_clock_disc_period_ns",
+            "call:reac_clock_disc_describe"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_clock_disc_init",
+            "ok:reac_clock_disc_init",
+            "call:reac_clock_disc_set_quality",
+            "call:reac_clock_disc_update",
+            "call:reac_clock_disc_quality",
+            "call:reac_clock_disc_describe",
+            "ok:reac_clock_disc_describe"
+          ],
+          "allowed": true,
+          "reason": "init then grade, evaluate and describe"
+        },
+        {
+          "events": [
+            "call:reac_clock_disc_update"
+          ],
+          "allowed": false,
+          "reason": "no reac_clock_disc_init"
+        },
+        {
+          "events": [
+            "call:reac_clock_disc_describe"
+          ],
+          "allowed": false,
+          "reason": "describing a discipline that was never initialised"
+        }
+      ]
+    },
+    {
+      "id": "headamp_tx_init_before_set",
+      "rule": "reac_headamp_tx.h: reac_headamp_tx_init initialises 'an empty (inactive) table', and set/effective/arm_scene/set_resweep/next all read or write that table's value/set/dirty cells and replay cursor. The sweep builders take the table only as an optional source (reac_grant.h: '`tx` may be NULL'), so they are not a use.",
+      "formula": "!a_use W a_new",
+      "apis": [
+        "reac_headamp_tx_init",
+        "reac_headamp_tx_set",
+        "reac_headamp_tx_effective",
+        "reac_headamp_tx_arm_scene",
+        "reac_headamp_tx_set_resweep",
+        "reac_headamp_tx_next"
+      ],
+      "predicates": {
+        "a_new": {
+          "meaning": "the head-amp table was initialised empty",
+          "events": [
+            "ok:reac_headamp_tx_init"
+          ]
+        },
+        "a_use": {
+          "meaning": "a routine reading or advancing the head-amp table is about to be called",
+          "events": [
+            "call:reac_headamp_tx_set",
+            "call:reac_headamp_tx_effective",
+            "call:reac_headamp_tx_arm_scene",
+            "call:reac_headamp_tx_set_resweep",
+            "call:reac_headamp_tx_next"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_headamp_tx_init",
+            "ok:reac_headamp_tx_init",
+            "call:reac_headamp_tx_set",
+            "fail:reac_headamp_tx_set",
+            "call:reac_headamp_tx_arm_scene",
+            "call:reac_headamp_tx_next",
+            "ok:reac_headamp_tx_next"
+          ],
+          "allowed": true,
+          "reason": "a refused cell is a documented -1; the table is still initialised"
+        },
+        {
+          "events": [
+            "call:reac_headamp_tx_next"
+          ],
+          "allowed": false,
+          "reason": "no reac_headamp_tx_init"
+        },
+        {
+          "events": [
+            "call:reac_headamp_tx_set",
+            "call:reac_headamp_tx_init",
+            "ok:reac_headamp_tx_init"
+          ],
+          "allowed": false,
+          "reason": "setting a cell in a table that was never initialised"
+        }
+      ]
+    },
+    {
+      "id": "boxreg_init_before_use",
+      "rule": "reac_boxreg.h: reac_boxreg_init resets the registry to empty with its fabric width, and find/add/declare/set_name all work on that struct reac_boxreg's boxes and n ('Reset the registry to empty with `fabric` total AUDIO slots').",
+      "formula": "!b_use W b_new",
+      "apis": [
+        "reac_boxreg_init",
+        "reac_boxreg_find",
+        "reac_boxreg_add",
+        "reac_boxreg_declare",
+        "reac_boxreg_set_name"
+      ],
+      "predicates": {
+        "b_new": {
+          "meaning": "the registry was reset to empty",
+          "events": [
+            "ok:reac_boxreg_init"
+          ]
+        },
+        "b_use": {
+          "meaning": "a routine reading or updating the registry is about to be called",
+          "events": [
+            "call:reac_boxreg_find",
+            "call:reac_boxreg_add",
+            "call:reac_boxreg_declare",
+            "call:reac_boxreg_set_name"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_boxreg_init",
+            "ok:reac_boxreg_init",
+            "call:reac_boxreg_declare",
+            "ok:reac_boxreg_declare",
+            "call:reac_boxreg_add",
+            "ok:reac_boxreg_add",
+            "call:reac_boxreg_find",
+            "call:reac_boxreg_set_name"
+          ],
+          "allowed": true,
+          "reason": "declare/join/find/name all follow the reset"
+        },
+        {
+          "events": [
+            "call:reac_boxreg_add"
+          ],
+          "allowed": false,
+          "reason": "no reac_boxreg_init"
+        },
+        {
+          "events": [
+            "call:reac_boxreg_find"
+          ],
+          "allowed": false,
+          "reason": "looking up a box in an uninitialised registry"
+        }
+      ]
+    },
+    {
+      "id": "ring_init_before_use",
+      "rule": "reac_ring.h: reac_ring_init allocates the planar buffer (returns 0 / -1) and reac_ring_free releases it (reac_ring.c sets buf NULL); readable/writable/write/read_planar/trim all index r->buf. The harness keeps one struct reac_ring.",
+      "formula": "(!x_use W x_new) & G(x_free -> X(!x_use W x_new))",
+      "apis": [
+        "reac_ring_free",
+        "reac_ring_init",
+        "reac_ring_read_planar",
+        "reac_ring_readable",
+        "reac_ring_trim",
+        "reac_ring_writable",
+        "reac_ring_write"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "reac_ring_init succeeded",
+          "events": [
+            "ok:reac_ring_init"
+          ]
+        },
+        "x_free": {
+          "meaning": "reac_ring_free is about to release the sample ring",
+          "events": [
+            "call:reac_ring_free"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the sample ring, or its release, is about to be called",
+          "events": [
+            "call:reac_ring_readable",
+            "call:reac_ring_writable",
+            "call:reac_ring_write",
+            "call:reac_ring_read_planar",
+            "call:reac_ring_trim",
+            "call:reac_ring_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_ring_init",
+            "ok:reac_ring_init",
+            "call:reac_ring_readable",
+            "call:reac_ring_free",
+            "call:reac_ring_init",
+            "ok:reac_ring_init",
+            "call:reac_ring_trim"
+          ],
+          "allowed": true,
+          "reason": "every use follows a successful constructor, and a released one is rebuilt before reuse"
+        },
+        {
+          "events": [
+            "call:reac_ring_init",
+            "fail:reac_ring_init",
+            "call:reac_ring_readable"
+          ],
+          "allowed": false,
+          "reason": "the constructor failed"
+        },
+        {
+          "events": [
+            "call:reac_ring_init",
+            "ok:reac_ring_init",
+            "call:reac_ring_free",
+            "call:reac_ring_trim"
+          ],
+          "allowed": false,
+          "reason": "use after reac_ring_free"
+        }
+      ]
+    },
+    {
+      "id": "frame_ring_init_before_use",
+      "rule": "reac_pacer.h: reac_frame_ring_init allocates the slot buffers (0 / -1) and reac_frame_ring_free releases them; push/pop/readable/trim index r->buf and r->len. The harness keeps one struct reac_frame_ring.",
+      "formula": "(!x_use W x_new) & G(x_free -> X(!x_use W x_new))",
+      "apis": [
+        "reac_frame_ring_free",
+        "reac_frame_ring_init",
+        "reac_frame_ring_pop",
+        "reac_frame_ring_push",
+        "reac_frame_ring_readable",
+        "reac_frame_ring_trim"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "reac_frame_ring_init succeeded",
+          "events": [
+            "ok:reac_frame_ring_init"
+          ]
+        },
+        "x_free": {
+          "meaning": "reac_frame_ring_free is about to release the frame ring",
+          "events": [
+            "call:reac_frame_ring_free"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the frame ring, or its release, is about to be called",
+          "events": [
+            "call:reac_frame_ring_push",
+            "call:reac_frame_ring_pop",
+            "call:reac_frame_ring_readable",
+            "call:reac_frame_ring_trim",
+            "call:reac_frame_ring_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_frame_ring_init",
+            "ok:reac_frame_ring_init",
+            "call:reac_frame_ring_push",
+            "call:reac_frame_ring_free",
+            "call:reac_frame_ring_init",
+            "ok:reac_frame_ring_init",
+            "call:reac_frame_ring_trim"
+          ],
+          "allowed": true,
+          "reason": "every use follows a successful constructor, and a released one is rebuilt before reuse"
+        },
+        {
+          "events": [
+            "call:reac_frame_ring_init",
+            "fail:reac_frame_ring_init",
+            "call:reac_frame_ring_push"
+          ],
+          "allowed": false,
+          "reason": "the constructor failed"
+        },
+        {
+          "events": [
+            "call:reac_frame_ring_init",
+            "ok:reac_frame_ring_init",
+            "call:reac_frame_ring_free",
+            "call:reac_frame_ring_trim"
+          ],
+          "allowed": false,
+          "reason": "use after reac_frame_ring_free"
+        }
+      ]
+    },
+    {
+      "id": "pcap_source_open_before_next",
+      "rule": "pcap_source.h: pcap_source_open returns 0 on success, -1 on error; pcap_source_next reads the opened file; pcap_source_close releases it. The harness keeps one struct pcap_source.",
+      "formula": "(!x_use W x_new) & G(x_free -> X(!x_use W x_new))",
+      "apis": [
+        "pcap_source_close",
+        "pcap_source_next",
+        "pcap_source_open"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "pcap_source_open succeeded",
+          "events": [
+            "ok:pcap_source_open"
+          ]
+        },
+        "x_free": {
+          "meaning": "pcap_source_close is about to release the pcap source",
+          "events": [
+            "call:pcap_source_close"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the pcap source, or its release, is about to be called",
+          "events": [
+            "call:pcap_source_next",
+            "call:pcap_source_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:pcap_source_open",
+            "ok:pcap_source_open",
+            "call:pcap_source_next",
+            "call:pcap_source_close",
+            "call:pcap_source_open",
+            "ok:pcap_source_open",
+            "call:pcap_source_next"
+          ],
+          "allowed": true,
+          "reason": "every use follows a successful constructor, and a released one is rebuilt before reuse"
+        },
+        {
+          "events": [
+            "call:pcap_source_open",
+            "fail:pcap_source_open",
+            "call:pcap_source_next"
+          ],
+          "allowed": false,
+          "reason": "the constructor failed"
+        },
+        {
+          "events": [
+            "call:pcap_source_open",
+            "ok:pcap_source_open",
+            "call:pcap_source_close",
+            "call:pcap_source_next"
+          ],
+          "allowed": false,
+          "reason": "use after pcap_source_close"
+        }
+      ]
+    },
+    {
+      "id": "pacer_started_after_open",
+      "rule": "reac_pacer.h: reac_pacer_open \"Open the TX socket + size the frame ring ... Does NOT start the thread\" and reac_pacer_start \"Spawn the pacer thread\"; rx_ingest, headamp_drain, apply_rate, rate_drain and clock_tick are \"PACER THREAD ONLY\" (the thread owns struct reac_master and the head-amp table), so the caller may run them only while no pacer thread is running, i.e. between a successful start and reac_pacer_stop it calls none of them and does not close the socket the thread sends on.",
+      "formula": "(!p_start W p_open) & G(p_close -> X(!p_start W p_open)) & G(p_started -> X(!p_thread W p_stop))",
+      "apis": [
+        "reac_pacer_apply_rate",
+        "reac_pacer_clock_tick",
+        "reac_pacer_close",
+        "reac_pacer_headamp_drain",
+        "reac_pacer_open",
+        "reac_pacer_rate_drain",
+        "reac_pacer_rx_ingest",
+        "reac_pacer_start",
+        "reac_pacer_stop"
+      ],
+      "predicates": {
+        "p_open": {
+          "meaning": "reac_pacer_open succeeded",
+          "events": [
+            "ok:reac_pacer_open"
+          ]
+        },
+        "p_start": {
+          "meaning": "reac_pacer_start is about to spawn the thread",
+          "events": [
+            "call:reac_pacer_start"
+          ]
+        },
+        "p_started": {
+          "meaning": "the pacer thread is running",
+          "events": [
+            "ok:reac_pacer_start"
+          ]
+        },
+        "p_stop": {
+          "meaning": "reac_pacer_stop is about to join the thread",
+          "events": [
+            "call:reac_pacer_stop"
+          ]
+        },
+        "p_close": {
+          "meaning": "reac_pacer_close is about to release the socket and ring",
+          "events": [
+            "call:reac_pacer_close"
+          ]
+        },
+        "p_thread": {
+          "meaning": "a pacer-thread-only routine or the close is about to be called",
+          "events": [
+            "call:reac_pacer_rx_ingest",
+            "call:reac_pacer_headamp_drain",
+            "call:reac_pacer_apply_rate",
+            "call:reac_pacer_rate_drain",
+            "call:reac_pacer_clock_tick",
+            "call:reac_pacer_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_pacer_open",
+            "ok:reac_pacer_open",
+            "call:reac_pacer_start",
+            "ok:reac_pacer_start",
+            "call:reac_pacer_stop",
+            "call:reac_pacer_rx_ingest",
+            "call:reac_pacer_close"
+          ],
+          "allowed": true,
+          "reason": "start after a successful open; thread-only calls after stop"
+        },
+        {
+          "events": [
+            "call:reac_pacer_open",
+            "fail:reac_pacer_open",
+            "call:reac_pacer_start"
+          ],
+          "allowed": false,
+          "reason": "start without a successful open"
+        },
+        {
+          "events": [
+            "call:reac_pacer_open",
+            "ok:reac_pacer_open",
+            "call:reac_pacer_start",
+            "ok:reac_pacer_start",
+            "call:reac_pacer_apply_rate"
+          ],
+          "allowed": false,
+          "reason": "a pacer-thread-only call while the thread runs"
+        }
+      ]
+    },
+    {
+      "id": "pace_watch_init_before_use",
+      "rule": "reac_pace_watch.h: reac_pace_watch_init sets the configured rate and opens no window; reset, frame, observed and configured read and advance that struct. The harness keeps one struct reac_pace_watch.",
+      "formula": "!x_use W x_init",
+      "apis": [
+        "reac_pace_watch_configured",
+        "reac_pace_watch_frame",
+        "reac_pace_watch_init",
+        "reac_pace_watch_observed",
+        "reac_pace_watch_reset"
+      ],
+      "predicates": {
+        "x_init": {
+          "meaning": "reac_pace_watch_init completed",
+          "events": [
+            "ok:reac_pace_watch_init"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the pace watch is about to be called",
+          "events": [
+            "call:reac_pace_watch_reset",
+            "call:reac_pace_watch_frame",
+            "call:reac_pace_watch_observed",
+            "call:reac_pace_watch_configured"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_pace_watch_init",
+            "ok:reac_pace_watch_init",
+            "call:reac_pace_watch_reset",
+            "call:reac_pace_watch_configured"
+          ],
+          "allowed": true,
+          "reason": "reac_pace_watch_init precedes every use"
+        },
+        {
+          "events": [
+            "call:reac_pace_watch_reset"
+          ],
+          "allowed": false,
+          "reason": "no reac_pace_watch_init"
+        },
+        {
+          "events": [
+            "call:reac_ring_init",
+            "ok:reac_ring_init",
+            "call:reac_pace_watch_configured"
+          ],
+          "allowed": false,
+          "reason": "reac_ring_init does not initialise the pace watch"
+        }
+      ]
+    },
+    {
+      "id": "role_swap_init_before_use",
+      "rule": "reac_role_swap.h: reac_role_swap_init \"Seed the record from the role this segment boots in\"; request, opened, closed and state read and update that record. The harness keeps one struct reac_role_swap.",
+      "formula": "!x_use W x_init",
+      "apis": [
+        "reac_role_swap_closed",
+        "reac_role_swap_init",
+        "reac_role_swap_opened",
+        "reac_role_swap_request",
+        "reac_role_swap_state"
+      ],
+      "predicates": {
+        "x_init": {
+          "meaning": "reac_role_swap_init completed",
+          "events": [
+            "ok:reac_role_swap_init"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the role-swap record is about to be called",
+          "events": [
+            "call:reac_role_swap_request",
+            "call:reac_role_swap_opened",
+            "call:reac_role_swap_closed",
+            "call:reac_role_swap_state"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_role_swap_init",
+            "ok:reac_role_swap_init",
+            "call:reac_role_swap_request",
+            "call:reac_role_swap_state"
+          ],
+          "allowed": true,
+          "reason": "reac_role_swap_init precedes every use"
+        },
+        {
+          "events": [
+            "call:reac_role_swap_request"
+          ],
+          "allowed": false,
+          "reason": "no reac_role_swap_init"
+        },
+        {
+          "events": [
+            "call:reac_pace_watch_init",
+            "ok:reac_pace_watch_init",
+            "call:reac_role_swap_state"
+          ],
+          "allowed": false,
+          "reason": "reac_pace_watch_init does not initialise the role-swap record"
+        }
+      ]
+    },
+    {
+      "id": "seglock_released_before_reclaim",
+      "rule": "reac_seglock.h: a successful reac_seglock_claim holds the segment through an allocated handle, released by reac_seglock_release (\"Safe on an unheld lock\"). reac_seglock_init makes \"A lock that holds nothing\", and reac_seglock_claim begins with reac_seglock_init (reac_seglock.c:33), so neither may run on a held lock: the claim would be forgotten, not released.",
+      "formula": "G(l_held -> X(!l_reinit W l_release))",
+      "apis": [
+        "reac_seglock_claim",
+        "reac_seglock_init",
+        "reac_seglock_release"
+      ],
+      "predicates": {
+        "l_held": {
+          "meaning": "reac_seglock_claim succeeded",
+          "events": [
+            "ok:reac_seglock_claim"
+          ]
+        },
+        "l_reinit": {
+          "meaning": "reac_seglock_init or reac_seglock_claim is about to reset the lock",
+          "events": [
+            "call:reac_seglock_init",
+            "call:reac_seglock_claim"
+          ]
+        },
+        "l_release": {
+          "meaning": "reac_seglock_release is about to release the claim",
+          "events": [
+            "call:reac_seglock_release"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_seglock_claim",
+            "ok:reac_seglock_claim",
+            "call:reac_seglock_release",
+            "call:reac_seglock_claim",
+            "fail:reac_seglock_claim",
+            "call:reac_seglock_claim"
+          ],
+          "allowed": true,
+          "reason": "released before the next claim; a failed claim holds nothing"
+        },
+        {
+          "events": [
+            "call:reac_seglock_claim",
+            "ok:reac_seglock_claim",
+            "call:reac_seglock_claim"
+          ],
+          "allowed": false,
+          "reason": "a second claim on a held lock"
+        },
+        {
+          "events": [
+            "call:reac_seglock_claim",
+            "ok:reac_seglock_claim",
+            "call:reac_seglock_init"
+          ],
+          "allowed": false,
+          "reason": "init on a held lock"
+        }
+      ]
+    },
+    {
+      "id": "segment_heard_init_before_step",
+      "rule": "reac_segment_ident.h: reac_segment_heard_init \"Seed the latch: nothing heard yet, whatever the counter already reads\"; reac_segment_heard_step compares against last_frames. The harness keeps one latch.",
+      "formula": "!x_use W x_init",
+      "apis": [
+        "reac_segment_heard_init",
+        "reac_segment_heard_step"
+      ],
+      "predicates": {
+        "x_init": {
+          "meaning": "reac_segment_heard_init completed",
+          "events": [
+            "ok:reac_segment_heard_init"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the heard latch is about to be called",
+          "events": [
+            "call:reac_segment_heard_step"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_segment_heard_init",
+            "ok:reac_segment_heard_init",
+            "call:reac_segment_heard_step",
+            "call:reac_segment_heard_step"
+          ],
+          "allowed": true,
+          "reason": "reac_segment_heard_init precedes every use"
+        },
+        {
+          "events": [
+            "call:reac_segment_heard_step"
+          ],
+          "allowed": false,
+          "reason": "no reac_segment_heard_init"
+        },
+        {
+          "events": [
+            "call:reac_role_swap_init",
+            "ok:reac_role_swap_init",
+            "call:reac_segment_heard_step"
+          ],
+          "allowed": false,
+          "reason": "reac_role_swap_init does not initialise the heard latch"
+        }
+      ]
+    },
+    {
+      "id": "slave_init_before_step",
+      "rule": "reac_slave.h: reac_slave_fsm_init (or reac_slave_open, which also opens the socket) initialises the FSM the PURE steps advance; reac_slave_start \"Spawn the engine thread\" needs the socket reac_slave_open opened, and while that thread runs it owns the FSM (\"the engine thread (the FSM owner)\"), so the steps, the head-amp ingest, a re-init and the close wait for reac_slave_stop.",
+      "formula": "(!s_use W s_init) & (!s_start W s_open) & G(s_close -> X(!s_start W s_open)) & G(s_started -> X(!s_owner W s_stop))",
+      "apis": [
+        "reac_slave_close",
+        "reac_slave_fsm_init",
+        "reac_slave_headamp_rx",
+        "reac_slave_open",
+        "reac_slave_set_phy_up",
+        "reac_slave_start",
+        "reac_slave_step_phy",
+        "reac_slave_step_rx",
+        "reac_slave_step_tick",
+        "reac_slave_stop"
+      ],
+      "predicates": {
+        "s_init": {
+          "meaning": "the slave FSM was initialised",
+          "events": [
+            "ok:reac_slave_fsm_init",
+            "ok:reac_slave_open"
+          ]
+        },
+        "s_open": {
+          "meaning": "reac_slave_open succeeded",
+          "events": [
+            "ok:reac_slave_open"
+          ]
+        },
+        "s_start": {
+          "meaning": "reac_slave_start is about to spawn the engine",
+          "events": [
+            "call:reac_slave_start"
+          ]
+        },
+        "s_started": {
+          "meaning": "the engine thread is running",
+          "events": [
+            "ok:reac_slave_start"
+          ]
+        },
+        "s_stop": {
+          "meaning": "reac_slave_stop is about to join the engine",
+          "events": [
+            "call:reac_slave_stop"
+          ]
+        },
+        "s_close": {
+          "meaning": "reac_slave_close is about to release the socket",
+          "events": [
+            "call:reac_slave_close"
+          ]
+        },
+        "s_use": {
+          "meaning": "a routine taking the slave is about to be called",
+          "events": [
+            "call:reac_slave_step_rx",
+            "call:reac_slave_step_tick",
+            "call:reac_slave_step_phy",
+            "call:reac_slave_headamp_rx",
+            "call:reac_slave_set_phy_up",
+            "call:reac_slave_start",
+            "call:reac_slave_stop",
+            "call:reac_slave_close"
+          ]
+        },
+        "s_owner": {
+          "meaning": "a routine that needs the FSM, or the close, is about to be called",
+          "events": [
+            "call:reac_slave_step_rx",
+            "call:reac_slave_step_tick",
+            "call:reac_slave_step_phy",
+            "call:reac_slave_headamp_rx",
+            "call:reac_slave_fsm_init",
+            "call:reac_slave_open",
+            "call:reac_slave_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_slave_fsm_init",
+            "ok:reac_slave_fsm_init",
+            "call:reac_slave_step_phy",
+            "call:reac_slave_step_tick",
+            "call:reac_slave_open",
+            "ok:reac_slave_open",
+            "call:reac_slave_start",
+            "ok:reac_slave_start",
+            "call:reac_slave_set_phy_up",
+            "call:reac_slave_stop",
+            "call:reac_slave_close"
+          ],
+          "allowed": true,
+          "reason": "steps on an initialised FSM; the engine starts after a successful open and is stopped before the close"
+        },
+        {
+          "events": [
+            "call:reac_slave_step_tick"
+          ],
+          "allowed": false,
+          "reason": "no FSM init"
+        },
+        {
+          "events": [
+            "call:reac_slave_open",
+            "ok:reac_slave_open",
+            "call:reac_slave_start",
+            "ok:reac_slave_start",
+            "call:reac_slave_step_rx"
+          ],
+          "allowed": false,
+          "reason": "a step while the engine thread owns the FSM"
+        }
+      ]
+    },
+    {
+      "id": "tap_survey_init_before_use",
+      "rule": "reac_tap.h: reac_tap_survey_init empties the roster; set_self, frame, rate, resolve, master and box read or extend it. The harness keeps one struct reac_tap_survey.",
+      "formula": "!x_use W x_init",
+      "apis": [
+        "reac_tap_survey_box",
+        "reac_tap_survey_frame",
+        "reac_tap_survey_init",
+        "reac_tap_survey_master",
+        "reac_tap_survey_rate",
+        "reac_tap_survey_resolve",
+        "reac_tap_survey_set_self"
+      ],
+      "predicates": {
+        "x_init": {
+          "meaning": "reac_tap_survey_init completed",
+          "events": [
+            "ok:reac_tap_survey_init"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the survey is about to be called",
+          "events": [
+            "call:reac_tap_survey_set_self",
+            "call:reac_tap_survey_frame",
+            "call:reac_tap_survey_rate",
+            "call:reac_tap_survey_resolve",
+            "call:reac_tap_survey_master",
+            "call:reac_tap_survey_box"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_tap_survey_init",
+            "ok:reac_tap_survey_init",
+            "call:reac_tap_survey_set_self",
+            "call:reac_tap_survey_box"
+          ],
+          "allowed": true,
+          "reason": "reac_tap_survey_init precedes every use"
+        },
+        {
+          "events": [
+            "call:reac_tap_survey_set_self"
+          ],
+          "allowed": false,
+          "reason": "no reac_tap_survey_init"
+        },
+        {
+          "events": [
+            "call:reac_segment_heard_init",
+            "ok:reac_segment_heard_init",
+            "call:reac_tap_survey_box"
+          ],
+          "allowed": false,
+          "reason": "reac_segment_heard_init does not initialise the survey"
+        }
+      ]
+    },
+    {
+      "id": "tap_opened_before_serve",
+      "rule": "reac_tap.h: reac_tap_open listens, classifies and sizes one ring per stream (0, or -1 when the source cannot be read); stream_count/stream_at/ring_at/start/stop read that roster and rings; reac_tap_close stops the feeders and frees the rings.",
+      "formula": "(!x_use W x_new) & G(x_free -> X(!x_use W x_new))",
+      "apis": [
+        "reac_tap_close",
+        "reac_tap_open",
+        "reac_tap_ring_at",
+        "reac_tap_start",
+        "reac_tap_stop",
+        "reac_tap_stream_at",
+        "reac_tap_stream_count"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "reac_tap_open succeeded",
+          "events": [
+            "ok:reac_tap_open"
+          ]
+        },
+        "x_free": {
+          "meaning": "reac_tap_close is about to release the tap",
+          "events": [
+            "call:reac_tap_close"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the tap, or its release, is about to be called",
+          "events": [
+            "call:reac_tap_stream_count",
+            "call:reac_tap_stream_at",
+            "call:reac_tap_ring_at",
+            "call:reac_tap_start",
+            "call:reac_tap_stop",
+            "call:reac_tap_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_tap_open",
+            "ok:reac_tap_open",
+            "call:reac_tap_stream_count",
+            "call:reac_tap_close",
+            "call:reac_tap_open",
+            "ok:reac_tap_open",
+            "call:reac_tap_stop"
+          ],
+          "allowed": true,
+          "reason": "every use follows a successful constructor, and a released one is rebuilt before reuse"
+        },
+        {
+          "events": [
+            "call:reac_tap_open",
+            "fail:reac_tap_open",
+            "call:reac_tap_stream_count"
+          ],
+          "allowed": false,
+          "reason": "the constructor failed"
+        },
+        {
+          "events": [
+            "call:reac_tap_open",
+            "ok:reac_tap_open",
+            "call:reac_tap_close",
+            "call:reac_tap_stop"
+          ],
+          "allowed": false,
+          "reason": "use after reac_tap_close"
+        }
+      ]
+    },
+    {
+      "id": "rx_opened_before_feed",
+      "rule": "reac_rx.h: reac_rx_open \"Open the source, detect (or accept the forced) rate, and allocate the ring ... Does NOT start the thread\"; reac_rx_start spawns the feeder and reac_rx_stop \"Signal stop and join\" joins it (reac_rx.c pthread_join(rx->thread) unconditionally), so a stop needs a started feeder; close ends the open.",
+      "formula": "(!x_use W x_open) & G(x_close -> X(!x_use W x_open)) & (!x_stop W x_started) & G(x_stop -> X(!x_stop W x_started))",
+      "apis": [
+        "reac_rx_close",
+        "reac_rx_open",
+        "reac_rx_peer_reset",
+        "reac_rx_session_end",
+        "reac_rx_start",
+        "reac_rx_stop"
+      ],
+      "predicates": {
+        "x_open": {
+          "meaning": "reac_rx_open succeeded",
+          "events": [
+            "ok:reac_rx_open"
+          ]
+        },
+        "x_close": {
+          "meaning": "reac_rx_close is about to end the open",
+          "events": [
+            "call:reac_rx_close"
+          ]
+        },
+        "x_started": {
+          "meaning": "reac_rx_start spawned the feeder",
+          "events": [
+            "ok:reac_rx_start"
+          ]
+        },
+        "x_stop": {
+          "meaning": "reac_rx_stop is about to join the feeder",
+          "events": [
+            "call:reac_rx_stop"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the rx is about to be called",
+          "events": [
+            "call:reac_rx_start",
+            "call:reac_rx_stop",
+            "call:reac_rx_peer_reset",
+            "call:reac_rx_session_end",
+            "call:reac_rx_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_rx_open",
+            "ok:reac_rx_open",
+            "call:reac_rx_start",
+            "ok:reac_rx_start",
+            "call:reac_rx_peer_reset",
+            "call:reac_rx_stop",
+            "call:reac_rx_close"
+          ],
+          "allowed": true,
+          "reason": "open, start, stop, close in order"
+        },
+        {
+          "events": [
+            "call:reac_rx_open",
+            "ok:reac_rx_open",
+            "call:reac_rx_stop"
+          ],
+          "allowed": false,
+          "reason": "a stop with no started feeder"
+        },
+        {
+          "events": [
+            "call:reac_rx_open",
+            "fail:reac_rx_open",
+            "call:reac_rx_start"
+          ],
+          "allowed": false,
+          "reason": "start without a successful open"
+        }
+      ]
+    },
+    {
+      "id": "topo_init_before_use",
+      "rule": "reac_topo.h: reac_topo_init empties the parent table and event queue; every other table routine reads or updates it. The harness keeps one struct reac_topo.",
+      "formula": "!x_use W x_init",
+      "apis": [
+        "reac_topo_count",
+        "reac_topo_ensure_failed",
+        "reac_topo_ensured",
+        "reac_topo_find",
+        "reac_topo_heard_vids",
+        "reac_topo_init",
+        "reac_topo_is_trunk",
+        "reac_topo_next",
+        "reac_topo_release_all",
+        "reac_topo_saw",
+        "reac_topo_tick",
+        "reac_topo_untagged_on_trunk",
+        "reac_topo_unwatch",
+        "reac_topo_vlan_find",
+        "reac_topo_watch"
+      ],
+      "predicates": {
+        "x_init": {
+          "meaning": "reac_topo_init completed",
+          "events": [
+            "ok:reac_topo_init"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the topology table is about to be called",
+          "events": [
+            "call:reac_topo_watch",
+            "call:reac_topo_unwatch",
+            "call:reac_topo_saw",
+            "call:reac_topo_ensured",
+            "call:reac_topo_ensure_failed",
+            "call:reac_topo_tick",
+            "call:reac_topo_release_all",
+            "call:reac_topo_next",
+            "call:reac_topo_find",
+            "call:reac_topo_vlan_find",
+            "call:reac_topo_is_trunk",
+            "call:reac_topo_untagged_on_trunk",
+            "call:reac_topo_count",
+            "call:reac_topo_heard_vids"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_topo_init",
+            "ok:reac_topo_init",
+            "call:reac_topo_watch",
+            "call:reac_topo_heard_vids"
+          ],
+          "allowed": true,
+          "reason": "reac_topo_init precedes every use"
+        },
+        {
+          "events": [
+            "call:reac_topo_watch"
+          ],
+          "allowed": false,
+          "reason": "no reac_topo_init"
+        },
+        {
+          "events": [
+            "call:reac_tap_survey_init",
+            "ok:reac_tap_survey_init",
+            "call:reac_topo_heard_vids"
+          ],
+          "allowed": false,
+          "reason": "reac_tap_survey_init does not initialise the topology table"
+        }
+      ]
+    },
+    {
+      "id": "vlan_deleted_only_if_minted",
+      "rule": "reac_vlan.h: reac_vlan_delete \"Remove name. Only ever called for a netdev this daemon minted\" (reac_vlan_create returns 0 on a netdev it created), and once removed it is not ours any more.",
+      "formula": "(!v_del W v_minted) & G(v_del -> X(!v_del W v_minted))",
+      "apis": [
+        "reac_vlan_create",
+        "reac_vlan_delete"
+      ],
+      "predicates": {
+        "v_minted": {
+          "meaning": "reac_vlan_create made a netdev",
+          "events": [
+            "ok:reac_vlan_create"
+          ]
+        },
+        "v_del": {
+          "meaning": "reac_vlan_delete is about to remove a netdev",
+          "events": [
+            "call:reac_vlan_delete"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_vlan_create",
+            "ok:reac_vlan_create",
+            "call:reac_vlan_delete"
+          ],
+          "allowed": true,
+          "reason": "deletes the netdev it minted"
+        },
+        {
+          "events": [
+            "call:reac_vlan_create",
+            "fail:reac_vlan_create",
+            "call:reac_vlan_delete"
+          ],
+          "allowed": false,
+          "reason": "nothing was minted"
+        },
+        {
+          "events": [
+            "call:reac_vlan_create",
+            "ok:reac_vlan_create",
+            "call:reac_vlan_delete",
+            "call:reac_vlan_delete"
+          ],
+          "allowed": false,
+          "reason": "the minted netdev is already deleted"
+        }
+      ]
+    },
+    {
+      "id": "etf_qdisc_removed_only_if_found",
+      "rule": "reac_etf_qdisc.h: reac_etf_qdisc_remove \"NEVER CALL THIS BLIND. ... the caller checks reac_etf_qdisc_state first and removes only an etf it found\"; a readable state precedes every remove.",
+      "formula": "(!e_rm W e_state) & G(e_rm -> X(!e_rm W e_state))",
+      "apis": [
+        "reac_etf_qdisc_remove",
+        "reac_etf_qdisc_state"
+      ],
+      "predicates": {
+        "e_state": {
+          "meaning": "reac_etf_qdisc_state read the qdisc table",
+          "events": [
+            "ok:reac_etf_qdisc_state"
+          ]
+        },
+        "e_rm": {
+          "meaning": "reac_etf_qdisc_remove is about to delete the root qdisc",
+          "events": [
+            "call:reac_etf_qdisc_remove"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_etf_qdisc_state",
+            "ok:reac_etf_qdisc_state",
+            "call:reac_etf_qdisc_remove"
+          ],
+          "allowed": true,
+          "reason": "state read first"
+        },
+        {
+          "events": [
+            "call:reac_etf_qdisc_remove"
+          ],
+          "allowed": false,
+          "reason": "a blind remove"
+        },
+        {
+          "events": [
+            "call:reac_etf_qdisc_state",
+            "fail:reac_etf_qdisc_state",
+            "call:reac_etf_qdisc_remove"
+          ],
+          "allowed": false,
+          "reason": "the state was unreadable"
+        }
+      ]
+    },
+    {
+      "id": "ifscan_init_before_use",
+      "rule": "reac_ifscan.h: reac_ifscan_init sets up the pure table; reac_ifscan_open calls it and opens the RTNLGRP_LINK watch, \"Returns 0, or -1 with the struct left inert (fd -1; the pure calls above still work)\"; reac_ifscan_close releases the handle, and an init or open on an open table would drop it unreleased (reac_ifscan.c:61).",
+      "formula": "(!w_use W w_new) & G(w_opened -> X(!w_reinit W w_close))",
+      "apis": [
+        "reac_ifscan_close",
+        "reac_ifscan_count",
+        "reac_ifscan_drain",
+        "reac_ifscan_fd",
+        "reac_ifscan_feed",
+        "reac_ifscan_find",
+        "reac_ifscan_gone",
+        "reac_ifscan_heard",
+        "reac_ifscan_init",
+        "reac_ifscan_next",
+        "reac_ifscan_observe",
+        "reac_ifscan_open",
+        "reac_ifscan_resync",
+        "reac_ifscan_serve_failed",
+        "reac_ifscan_tick"
+      ],
+      "predicates": {
+        "w_new": {
+          "meaning": "the table was initialised (a failed open leaves it inert and initialised)",
+          "events": [
+            "ok:reac_ifscan_init",
+            "ok:reac_ifscan_open",
+            "fail:reac_ifscan_open"
+          ]
+        },
+        "w_opened": {
+          "meaning": "reac_ifscan_open holds a netlink socket",
+          "events": [
+            "ok:reac_ifscan_open"
+          ]
+        },
+        "w_reinit": {
+          "meaning": "an init or open is about to reset the struct",
+          "events": [
+            "call:reac_ifscan_init",
+            "call:reac_ifscan_open"
+          ]
+        },
+        "w_close": {
+          "meaning": "reac_ifscan_close is about to release the socket",
+          "events": [
+            "call:reac_ifscan_close"
+          ]
+        },
+        "w_use": {
+          "meaning": "a routine taking the struct is about to be called",
+          "events": [
+            "call:reac_ifscan_observe",
+            "call:reac_ifscan_gone",
+            "call:reac_ifscan_heard",
+            "call:reac_ifscan_serve_failed",
+            "call:reac_ifscan_tick",
+            "call:reac_ifscan_next",
+            "call:reac_ifscan_find",
+            "call:reac_ifscan_count",
+            "call:reac_ifscan_feed",
+            "call:reac_ifscan_fd",
+            "call:reac_ifscan_drain",
+            "call:reac_ifscan_resync",
+            "call:reac_ifscan_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_ifscan_open",
+            "fail:reac_ifscan_open",
+            "call:reac_ifscan_observe",
+            "call:reac_ifscan_open",
+            "ok:reac_ifscan_open",
+            "call:reac_ifscan_resync",
+            "call:reac_ifscan_close",
+            "call:reac_ifscan_init",
+            "ok:reac_ifscan_init"
+          ],
+          "allowed": true,
+          "reason": "uses after init/open; re-init only after the close"
+        },
+        {
+          "events": [
+            "call:reac_ifscan_observe"
+          ],
+          "allowed": false,
+          "reason": "no init or open"
+        },
+        {
+          "events": [
+            "call:reac_ifscan_open",
+            "ok:reac_ifscan_open",
+            "call:reac_ifscan_init"
+          ],
+          "allowed": false,
+          "reason": "init drops the open socket"
+        }
+      ]
+    },
+    {
+      "id": "linkmon_init_before_use",
+      "rule": "reac_linkmon.h: reac_linkmon_init \"Initialise WITHOUT opening a socket\"; reac_linkmon_open calls it and opens the watch, a failure leaving \"the struct ... safe and inert\"; reac_linkmon_close releases the handle, which an init or open would otherwise drop unreleased (reac_linkmon.c:32).",
+      "formula": "(!w_use W w_new) & G(w_opened -> X(!w_reinit W w_close))",
+      "apis": [
+        "reac_linkmon_carrier",
+        "reac_linkmon_close",
+        "reac_linkmon_drain",
+        "reac_linkmon_fd",
+        "reac_linkmon_feed",
+        "reac_linkmon_init",
+        "reac_linkmon_observe",
+        "reac_linkmon_open",
+        "reac_linkmon_resync",
+        "reac_linkmon_take"
+      ],
+      "predicates": {
+        "w_new": {
+          "meaning": "the table was initialised (a failed open leaves it inert and initialised)",
+          "events": [
+            "ok:reac_linkmon_init",
+            "ok:reac_linkmon_open",
+            "fail:reac_linkmon_open"
+          ]
+        },
+        "w_opened": {
+          "meaning": "reac_linkmon_open holds a netlink socket",
+          "events": [
+            "ok:reac_linkmon_open"
+          ]
+        },
+        "w_reinit": {
+          "meaning": "an init or open is about to reset the struct",
+          "events": [
+            "call:reac_linkmon_init",
+            "call:reac_linkmon_open"
+          ]
+        },
+        "w_close": {
+          "meaning": "reac_linkmon_close is about to release the socket",
+          "events": [
+            "call:reac_linkmon_close"
+          ]
+        },
+        "w_use": {
+          "meaning": "a routine taking the struct is about to be called",
+          "events": [
+            "call:reac_linkmon_fd",
+            "call:reac_linkmon_drain",
+            "call:reac_linkmon_resync",
+            "call:reac_linkmon_observe",
+            "call:reac_linkmon_feed",
+            "call:reac_linkmon_take",
+            "call:reac_linkmon_carrier",
+            "call:reac_linkmon_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_linkmon_open",
+            "fail:reac_linkmon_open",
+            "call:reac_linkmon_fd",
+            "call:reac_linkmon_open",
+            "ok:reac_linkmon_open",
+            "call:reac_linkmon_carrier",
+            "call:reac_linkmon_close",
+            "call:reac_linkmon_init",
+            "ok:reac_linkmon_init"
+          ],
+          "allowed": true,
+          "reason": "uses after init/open; re-init only after the close"
+        },
+        {
+          "events": [
+            "call:reac_linkmon_fd"
+          ],
+          "allowed": false,
+          "reason": "no init or open"
+        },
+        {
+          "events": [
+            "call:reac_linkmon_open",
+            "ok:reac_linkmon_open",
+            "call:reac_linkmon_init"
+          ],
+          "allowed": false,
+          "reason": "init drops the open socket"
+        }
+      ]
+    },
+    {
+      "id": "tx_open_before_emit",
+      "rule": "reac_tx.h: reac_tx_open \"Open an AF_PACKET raw TX socket on ifname ... 0 / -1\" and reac_tx_emit sends on it; reac_tx_close releases it, and reac_tx_open starts by clearing the handle (reac_tx.c) so a reopen would leak it.",
+      "formula": "(!o_use W o_ok) & G(o_close -> X(!o_use W o_ok)) & G(o_ok -> X(!o_open W o_close))",
+      "apis": [
+        "reac_tx_close",
+        "reac_tx_emit",
+        "reac_tx_open"
+      ],
+      "predicates": {
+        "o_ok": {
+          "meaning": "reac_tx_open succeeded",
+          "events": [
+            "ok:reac_tx_open"
+          ]
+        },
+        "o_open": {
+          "meaning": "reac_tx_open is about to (re)open the TX socket",
+          "events": [
+            "call:reac_tx_open"
+          ]
+        },
+        "o_close": {
+          "meaning": "reac_tx_close is about to release the TX socket",
+          "events": [
+            "call:reac_tx_close"
+          ]
+        },
+        "o_use": {
+          "meaning": "a routine reading the open TX socket is about to be called",
+          "events": [
+            "call:reac_tx_emit"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_tx_open",
+            "ok:reac_tx_open",
+            "call:reac_tx_emit",
+            "call:reac_tx_close",
+            "call:reac_tx_open",
+            "fail:reac_tx_open"
+          ],
+          "allowed": true,
+          "reason": "used while open; reopened only after the close"
+        },
+        {
+          "events": [
+            "call:reac_tx_open",
+            "fail:reac_tx_open",
+            "call:reac_tx_emit"
+          ],
+          "allowed": false,
+          "reason": "the open failed"
+        },
+        {
+          "events": [
+            "call:reac_tx_open",
+            "ok:reac_tx_open",
+            "call:reac_tx_open"
+          ],
+          "allowed": false,
+          "reason": "a reopen drops the open TX socket"
+        }
+      ]
+    },
+    {
+      "id": "topo_tap_open_before_read",
+      "rule": "reac_topo.h: reac_topo_tap_open \"0 on success, -1 with errno set\"; reac_topo_tap_read / _next read the tap; reac_topo_tap_close releases the handle, which a second open would overwrite.",
+      "formula": "(!o_use W o_ok) & G(o_close -> X(!o_use W o_ok)) & G(o_ok -> X(!o_open W o_close))",
+      "apis": [
+        "reac_topo_tap_close",
+        "reac_topo_tap_next",
+        "reac_topo_tap_open",
+        "reac_topo_tap_read"
+      ],
+      "predicates": {
+        "o_ok": {
+          "meaning": "reac_topo_tap_open succeeded",
+          "events": [
+            "ok:reac_topo_tap_open"
+          ]
+        },
+        "o_open": {
+          "meaning": "reac_topo_tap_open is about to (re)open the tap socket",
+          "events": [
+            "call:reac_topo_tap_open"
+          ]
+        },
+        "o_close": {
+          "meaning": "reac_topo_tap_close is about to release the tap socket",
+          "events": [
+            "call:reac_topo_tap_close"
+          ]
+        },
+        "o_use": {
+          "meaning": "a routine reading the open tap socket is about to be called",
+          "events": [
+            "call:reac_topo_tap_read",
+            "call:reac_topo_tap_next"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_topo_tap_open",
+            "ok:reac_topo_tap_open",
+            "call:reac_topo_tap_read",
+            "call:reac_topo_tap_close",
+            "call:reac_topo_tap_open",
+            "fail:reac_topo_tap_open"
+          ],
+          "allowed": true,
+          "reason": "used while open; reopened only after the close"
+        },
+        {
+          "events": [
+            "call:reac_topo_tap_open",
+            "fail:reac_topo_tap_open",
+            "call:reac_topo_tap_next"
+          ],
+          "allowed": false,
+          "reason": "the open failed"
+        },
+        {
+          "events": [
+            "call:reac_topo_tap_open",
+            "ok:reac_topo_tap_open",
+            "call:reac_topo_tap_open"
+          ],
+          "allowed": false,
+          "reason": "a reopen drops the open tap socket"
+        }
+      ]
+    },
+    {
+      "id": "capture_closed_before_reopen",
+      "rule": "reac_capture.h: reac_capture_open \"Open a raw AF_PACKET socket bound to ifname. Returns 0 / -1\" into c->fd, which reac_capture_close closes; an open on an open capture overwrites the descriptor without closing it.",
+      "formula": "G(c_ok -> X(!c_open W c_close))",
+      "apis": [
+        "reac_capture_close",
+        "reac_capture_open"
+      ],
+      "predicates": {
+        "c_ok": {
+          "meaning": "reac_capture_open succeeded",
+          "events": [
+            "ok:reac_capture_open"
+          ]
+        },
+        "c_open": {
+          "meaning": "reac_capture_open is about to overwrite c->fd",
+          "events": [
+            "call:reac_capture_open"
+          ]
+        },
+        "c_close": {
+          "meaning": "reac_capture_close is about to close c->fd",
+          "events": [
+            "call:reac_capture_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_capture_open",
+            "ok:reac_capture_open",
+            "call:reac_capture_close",
+            "call:reac_capture_open"
+          ],
+          "allowed": true,
+          "reason": "closed before the reopen"
+        },
+        {
+          "events": [
+            "call:reac_capture_open",
+            "ok:reac_capture_open",
+            "call:reac_capture_open"
+          ],
+          "allowed": false,
+          "reason": "a reopen leaks the socket"
+        },
+        {
+          "events": [
+            "call:reac_capture_open",
+            "ok:reac_capture_open",
+            "call:reac_capture_next",
+            "call:reac_capture_open"
+          ],
+          "allowed": false,
+          "reason": "a read is not a close"
+        }
+      ]
+    },
+    {
+      "id": "packet_socket_deaf_before_bind",
+      "rule": "reac_packet_socket.h: reac_packet_socket_bind \"Make a deaf socket live on ONE interface: binds fd\"; the fd is the one reac_packet_socket_deaf returned.",
+      "formula": "!b_bind W d_ok",
+      "apis": [
+        "reac_packet_socket_bind",
+        "reac_packet_socket_deaf"
+      ],
+      "predicates": {
+        "d_ok": {
+          "meaning": "reac_packet_socket_deaf returned a descriptor",
+          "events": [
+            "ok:reac_packet_socket_deaf"
+          ]
+        },
+        "b_bind": {
+          "meaning": "reac_packet_socket_bind is about to bind it",
+          "events": [
+            "call:reac_packet_socket_bind"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:reac_packet_socket_deaf",
+            "ok:reac_packet_socket_deaf",
+            "call:reac_packet_socket_bind"
+          ],
+          "allowed": true,
+          "reason": "bind a deaf socket"
+        },
+        {
+          "events": [
+            "call:reac_packet_socket_bind"
+          ],
+          "allowed": false,
+          "reason": "no deaf socket"
+        },
+        {
+          "events": [
+            "call:reac_packet_socket_deaf",
+            "fail:reac_packet_socket_deaf",
+            "call:reac_packet_socket_bind"
+          ],
+          "allowed": false,
+          "reason": "the deaf socket was not created"
+        }
+      ]
+    }
+  ]
+}

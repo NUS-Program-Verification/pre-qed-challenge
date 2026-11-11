@@ -1,0 +1,21 @@
+{
+  "repository": "https://github.com/FreeMixer/omx-clap-core",
+  "commit": "246923f04ac0ff2adb189bb9280816670c05b36c",
+  "extra": [
+    {
+      "path": "deps/clap",
+      "repository": "https://github.com/free-audio/clap",
+      "commit": "a47f6badb49d948fd009998f28309cdab78979c9"
+    },
+    {
+      "path": "deps/omx-dsp",
+      "repository": "https://github.com/FreeMixer/omx-dsp",
+      "commit": "bb2fafcf"
+    },
+    {
+      "path": "deps/omx-contract",
+      "repository": "https://github.com/FreeMixer/omx-contract",
+      "commit": "1d72c7a5"
+    }
+  ]
+}

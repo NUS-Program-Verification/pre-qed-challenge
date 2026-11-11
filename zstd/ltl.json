@@ -1,0 +1,1687 @@
+{
+  "properties": [
+    {
+      "id": "cctx_lifecycle",
+      "rule": "zstd.h: every ZSTD_CCtx_* / ZSTD_compress*Ctx / streaming compression routine takes a context from ZSTD_createCCtx or ZSTD_createCStream (the two are the same type); ZSTD_freeCCtx / ZSTD_freeCStream release it. The harness keeps one CCtx. ZSTD_initStaticCCtx / ZSTD_initStaticCStream emplace one in a caller-owned workspace. The experimental entry points taking a CCtx (parameter structures, advanced initialisers, buffer-less and block-level compression, sequence compression, thread pool reference) need it as well.",
+      "formula": "(!c_use W c_new) & G(c_free -> X(!c_use W c_new))",
+      "apis": [
+        "ZSTD_createCCtx",
+        "ZSTD_createCStream",
+        "ZSTD_freeCCtx",
+        "ZSTD_freeCStream",
+        "ZSTD_sizeof_CCtx",
+        "ZSTD_sizeof_CStream",
+        "ZSTD_compressCCtx",
+        "ZSTD_CCtx_setParameter",
+        "ZSTD_CCtx_setPledgedSrcSize",
+        "ZSTD_CCtx_reset",
+        "ZSTD_compress2",
+        "ZSTD_compressStream2",
+        "ZSTD_initCStream",
+        "ZSTD_compressStream",
+        "ZSTD_flushStream",
+        "ZSTD_endStream",
+        "ZSTD_CCtx_loadDictionary",
+        "ZSTD_CCtx_refCDict",
+        "ZSTD_CCtx_refPrefix",
+        "ZSTD_compress_usingDict",
+        "ZSTD_compress_usingCDict",
+        "ZSTD_initStaticCCtx",
+        "ZSTD_initStaticCStream",
+        "ZSTD_CCtx_getParameter",
+        "ZSTD_CCtx_setCParams",
+        "ZSTD_CCtx_setFParams",
+        "ZSTD_CCtx_setParams",
+        "ZSTD_getFrameProgression",
+        "ZSTD_toFlushNow",
+        "ZSTD_compress_advanced",
+        "ZSTD_compress_usingCDict_advanced",
+        "ZSTD_CCtx_loadDictionary_byReference",
+        "ZSTD_CCtx_refThreadPool",
+        "ZSTD_initCStream_srcSize",
+        "ZSTD_initCStream_usingDict",
+        "ZSTD_initCStream_advanced",
+        "ZSTD_initCStream_usingCDict",
+        "ZSTD_initCStream_usingCDict_advanced",
+        "ZSTD_resetCStream",
+        "ZSTD_registerSequenceProducer",
+        "ZSTD_compressBegin",
+        "ZSTD_compressBegin_usingDict",
+        "ZSTD_compressBegin_advanced",
+        "ZSTD_compressBegin_usingCDict",
+        "ZSTD_compressBegin_usingCDict_advanced",
+        "ZSTD_compressContinue",
+        "ZSTD_compressEnd",
+        "ZSTD_getBlockSize",
+        "ZSTD_compressBlock",
+        "ZSTD_copyCCtx",
+        "ZSTD_compressSequences",
+        "ZSTD_CCtx_setParametersUsingCCtxParams"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a CCtx was created",
+          "events": [
+            "ok:ZSTD_createCCtx",
+            "ok:ZSTD_createCStream",
+            "ok:ZSTD_initStaticCCtx",
+            "ok:ZSTD_initStaticCStream"
+          ]
+        },
+        "c_free": {
+          "meaning": "the CCtx is about to be freed",
+          "events": [
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream"
+          ]
+        },
+        "c_use": {
+          "meaning": "a routine taking the CCtx is about to be called",
+          "events": [
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream",
+            "call:ZSTD_sizeof_CCtx",
+            "call:ZSTD_sizeof_CStream",
+            "call:ZSTD_compressCCtx",
+            "call:ZSTD_CCtx_setParameter",
+            "call:ZSTD_CCtx_setPledgedSrcSize",
+            "call:ZSTD_CCtx_reset",
+            "call:ZSTD_compress2",
+            "call:ZSTD_compressStream2",
+            "call:ZSTD_initCStream",
+            "call:ZSTD_compressStream",
+            "call:ZSTD_flushStream",
+            "call:ZSTD_endStream",
+            "call:ZSTD_CCtx_loadDictionary",
+            "call:ZSTD_CCtx_refCDict",
+            "call:ZSTD_CCtx_refPrefix",
+            "call:ZSTD_compress_usingDict",
+            "call:ZSTD_compress_usingCDict",
+            "call:ZSTD_CCtx_getParameter",
+            "call:ZSTD_CCtx_setCParams",
+            "call:ZSTD_CCtx_setFParams",
+            "call:ZSTD_CCtx_setParams",
+            "call:ZSTD_getFrameProgression",
+            "call:ZSTD_toFlushNow",
+            "call:ZSTD_compress_advanced",
+            "call:ZSTD_compress_usingCDict_advanced",
+            "call:ZSTD_CCtx_loadDictionary_byReference",
+            "call:ZSTD_CCtx_refThreadPool",
+            "call:ZSTD_initCStream_srcSize",
+            "call:ZSTD_initCStream_usingDict",
+            "call:ZSTD_initCStream_advanced",
+            "call:ZSTD_initCStream_usingCDict",
+            "call:ZSTD_initCStream_usingCDict_advanced",
+            "call:ZSTD_resetCStream",
+            "call:ZSTD_registerSequenceProducer",
+            "call:ZSTD_compressBegin",
+            "call:ZSTD_compressBegin_usingDict",
+            "call:ZSTD_compressBegin_advanced",
+            "call:ZSTD_compressBegin_usingCDict",
+            "call:ZSTD_compressBegin_usingCDict_advanced",
+            "call:ZSTD_compressContinue",
+            "call:ZSTD_compressEnd",
+            "call:ZSTD_getBlockSize",
+            "call:ZSTD_compressBlock",
+            "call:ZSTD_copyCCtx",
+            "call:ZSTD_compressSequences",
+            "call:ZSTD_CCtx_setParametersUsingCCtxParams"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_createCCtx",
+            "ok:ZSTD_createCCtx",
+            "call:ZSTD_compress2",
+            "ok:ZSTD_compress2",
+            "call:ZSTD_freeCCtx",
+            "ok:ZSTD_freeCCtx",
+            "call:ZSTD_createCStream",
+            "ok:ZSTD_createCStream",
+            "call:ZSTD_compressStream2"
+          ],
+          "allowed": true,
+          "reason": "uses sit between create and free"
+        },
+        {
+          "events": [
+            "call:ZSTD_compress2"
+          ],
+          "allowed": false,
+          "reason": "no context"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCCtx",
+            "fail:ZSTD_createCCtx",
+            "call:ZSTD_freeCCtx"
+          ],
+          "allowed": false,
+          "reason": "creation failed"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCCtx",
+            "ok:ZSTD_createCCtx",
+            "call:ZSTD_freeCCtx",
+            "ok:ZSTD_freeCCtx",
+            "call:ZSTD_CCtx_reset"
+          ],
+          "allowed": false,
+          "reason": "use after free"
+        },
+        {
+          "events": [
+            "call:ZSTD_initStaticCCtx",
+            "ok:ZSTD_initStaticCCtx",
+            "call:ZSTD_compressBegin",
+            "ok:ZSTD_compressBegin",
+            "call:ZSTD_compressContinue"
+          ],
+          "allowed": true,
+          "reason": "a static context is a context"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressBegin"
+          ],
+          "allowed": false,
+          "reason": "no context"
+        }
+      ]
+    },
+    {
+      "id": "dctx_lifecycle",
+      "rule": "zstd.h: every ZSTD_DCtx_* / ZSTD_decompress*Ctx / streaming decompression routine takes a context from ZSTD_createDCtx or ZSTD_createDStream; ZSTD_freeDCtx / ZSTD_freeDStream release it. The harness keeps one DCtx. ZSTD_createDCtx_advanced / ZSTD_createDStream_advanced (custom allocator) and ZSTD_initStaticDCtx / ZSTD_initStaticDStream (caller-owned workspace) create one too.",
+      "formula": "(!d_use W d_new) & G(d_free -> X(!d_use W d_new))",
+      "apis": [
+        "ZSTD_createDCtx",
+        "ZSTD_createDStream",
+        "ZSTD_freeDCtx",
+        "ZSTD_freeDStream",
+        "ZSTD_sizeof_DCtx",
+        "ZSTD_sizeof_DStream",
+        "ZSTD_decompressDCtx",
+        "ZSTD_DCtx_setParameter",
+        "ZSTD_DCtx_reset",
+        "ZSTD_initDStream",
+        "ZSTD_decompressStream",
+        "ZSTD_DCtx_loadDictionary",
+        "ZSTD_DCtx_refDDict",
+        "ZSTD_DCtx_refPrefix",
+        "ZSTD_decompress_usingDict",
+        "ZSTD_decompress_usingDDict",
+        "ZSTD_createDCtx_advanced",
+        "ZSTD_createDStream_advanced",
+        "ZSTD_initStaticDCtx",
+        "ZSTD_initStaticDStream",
+        "ZSTD_DCtx_getParameter",
+        "ZSTD_DCtx_setFormat",
+        "ZSTD_DCtx_setMaxWindowSize",
+        "ZSTD_DCtx_loadDictionary_byReference",
+        "ZSTD_decompressStream_simpleArgs",
+        "ZSTD_initDStream_usingDict",
+        "ZSTD_initDStream_usingDDict",
+        "ZSTD_resetDStream",
+        "ZSTD_decompressBegin",
+        "ZSTD_decompressBlock",
+        "ZSTD_insertBlock"
+      ],
+      "predicates": {
+        "d_new": {
+          "meaning": "a DCtx was created",
+          "events": [
+            "ok:ZSTD_createDCtx",
+            "ok:ZSTD_createDStream",
+            "ok:ZSTD_createDCtx_advanced",
+            "ok:ZSTD_createDStream_advanced",
+            "ok:ZSTD_initStaticDCtx",
+            "ok:ZSTD_initStaticDStream"
+          ]
+        },
+        "d_free": {
+          "meaning": "the DCtx is about to be freed",
+          "events": [
+            "call:ZSTD_freeDCtx",
+            "call:ZSTD_freeDStream"
+          ]
+        },
+        "d_use": {
+          "meaning": "a routine taking the DCtx is about to be called",
+          "events": [
+            "call:ZSTD_freeDCtx",
+            "call:ZSTD_freeDStream",
+            "call:ZSTD_sizeof_DCtx",
+            "call:ZSTD_sizeof_DStream",
+            "call:ZSTD_decompressDCtx",
+            "call:ZSTD_DCtx_setParameter",
+            "call:ZSTD_DCtx_reset",
+            "call:ZSTD_initDStream",
+            "call:ZSTD_decompressStream",
+            "call:ZSTD_DCtx_loadDictionary",
+            "call:ZSTD_DCtx_refDDict",
+            "call:ZSTD_DCtx_refPrefix",
+            "call:ZSTD_decompress_usingDict",
+            "call:ZSTD_decompress_usingDDict",
+            "call:ZSTD_DCtx_getParameter",
+            "call:ZSTD_DCtx_setFormat",
+            "call:ZSTD_DCtx_setMaxWindowSize",
+            "call:ZSTD_DCtx_loadDictionary_byReference",
+            "call:ZSTD_decompressStream_simpleArgs",
+            "call:ZSTD_initDStream_usingDict",
+            "call:ZSTD_initDStream_usingDDict",
+            "call:ZSTD_resetDStream",
+            "call:ZSTD_decompressBegin",
+            "call:ZSTD_decompressBlock",
+            "call:ZSTD_insertBlock"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_createDStream",
+            "ok:ZSTD_createDStream",
+            "call:ZSTD_initDStream",
+            "ok:ZSTD_initDStream",
+            "call:ZSTD_decompressStream",
+            "fail:ZSTD_decompressStream",
+            "call:ZSTD_freeDStream",
+            "ok:ZSTD_freeDStream"
+          ],
+          "allowed": true,
+          "reason": "normal lifetime"
+        },
+        {
+          "events": [
+            "call:ZSTD_decompressDCtx"
+          ],
+          "allowed": false,
+          "reason": "no context"
+        },
+        {
+          "events": [
+            "call:ZSTD_createDCtx",
+            "ok:ZSTD_createDCtx",
+            "call:ZSTD_freeDCtx",
+            "ok:ZSTD_freeDCtx",
+            "call:ZSTD_freeDCtx"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        },
+        {
+          "events": [
+            "call:ZSTD_createDCtx_advanced",
+            "ok:ZSTD_createDCtx_advanced",
+            "call:ZSTD_decompressBegin",
+            "ok:ZSTD_decompressBegin",
+            "call:ZSTD_decompressBlock"
+          ],
+          "allowed": true,
+          "reason": "context from the advanced constructor"
+        },
+        {
+          "events": [
+            "call:ZSTD_decompressBegin"
+          ],
+          "allowed": false,
+          "reason": "no context"
+        }
+      ]
+    },
+    {
+      "id": "cdict_outlives_reference",
+      "rule": "zstd.h ZSTD_CCtx_refCDict Note 2: 'CDict is just referenced, its lifetime must outlive its usage within CCtx'. ZSTD_compress_usingCDict and ZSTD_getDictID_fromCDict / ZSTD_sizeof_CDict take the CDict directly. The harness keeps one CDict; a successful ZSTD_CCtx_refCDict makes the CCtx hold it until the reference is replaced (loadDictionary, refPrefix, another refCDict, ZSTD_initCStream, a parameter reset) or the CCtx is freed. ZSTD_CCtx_loadDictionary / ZSTD_CCtx_refPrefix drop the reference only when they succeed: inside a session they fail with stage_wrong and the CCtx keeps using the CDict. ZSTD_createCDict_byReference and ZSTD_initStaticCDict create a CDict too; ZSTD_initCStream_usingCDict(_advanced) reference it ('cdict will just be referenced, and must outlive compression session'), the other ZSTD_initCStream_* variants replace the reference when they succeed.",
+      "formula": "(!cd_use W cd_new) & G(cd_free -> X(!cd_use W cd_new)) & G(cd_ref -> X(!cd_free W cd_unref))",
+      "apis": [
+        "ZSTD_createCDict",
+        "ZSTD_freeCDict",
+        "ZSTD_sizeof_CDict",
+        "ZSTD_getDictID_fromCDict",
+        "ZSTD_compress_usingCDict",
+        "ZSTD_CCtx_refCDict",
+        "ZSTD_CCtx_loadDictionary",
+        "ZSTD_CCtx_refPrefix",
+        "ZSTD_initCStream",
+        "ZSTD_CCtx_reset",
+        "ZSTD_freeCCtx",
+        "ZSTD_freeCStream",
+        "ZSTD_createCDict_byReference",
+        "ZSTD_initStaticCDict",
+        "ZSTD_compress_usingCDict_advanced",
+        "ZSTD_compressBegin_usingCDict",
+        "ZSTD_compressBegin_usingCDict_advanced",
+        "ZSTD_initCStream_usingCDict",
+        "ZSTD_initCStream_usingCDict_advanced",
+        "ZSTD_CCtx_loadDictionary_byReference",
+        "ZSTD_initCStream_srcSize",
+        "ZSTD_initCStream_usingDict",
+        "ZSTD_initCStream_advanced"
+      ],
+      "predicates": {
+        "cd_new": {
+          "meaning": "a CDict was created",
+          "events": [
+            "ok:ZSTD_createCDict",
+            "ok:ZSTD_createCDict_byReference",
+            "ok:ZSTD_initStaticCDict"
+          ]
+        },
+        "cd_free": {
+          "meaning": "ZSTD_freeCDict is about to be called",
+          "events": [
+            "call:ZSTD_freeCDict"
+          ]
+        },
+        "cd_use": {
+          "meaning": "a routine taking the CDict is about to be called",
+          "events": [
+            "call:ZSTD_freeCDict",
+            "call:ZSTD_sizeof_CDict",
+            "call:ZSTD_getDictID_fromCDict",
+            "call:ZSTD_compress_usingCDict",
+            "call:ZSTD_compress_usingCDict_advanced",
+            "call:ZSTD_compressBegin_usingCDict",
+            "call:ZSTD_compressBegin_usingCDict_advanced",
+            "call:ZSTD_initCStream_usingCDict",
+            "call:ZSTD_initCStream_usingCDict_advanced"
+          ]
+        },
+        "cd_ref": {
+          "meaning": "the CCtx took a reference to the CDict",
+          "events": [
+            "ok:ZSTD_CCtx_refCDict",
+            "ok:ZSTD_initCStream_usingCDict",
+            "ok:ZSTD_initCStream_usingCDict_advanced"
+          ]
+        },
+        "cd_unref": {
+          "meaning": "the CCtx dropped its dictionary reference",
+          "events": [
+            "call:ZSTD_CCtx_refCDict",
+            "ok:ZSTD_CCtx_loadDictionary",
+            "ok:ZSTD_CCtx_refPrefix",
+            "call:ZSTD_initCStream",
+            "call:ZSTD_CCtx_reset",
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream",
+            "ok:ZSTD_CCtx_loadDictionary_byReference",
+            "ok:ZSTD_initCStream_srcSize",
+            "ok:ZSTD_initCStream_usingDict",
+            "ok:ZSTD_initCStream_advanced"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_createCDict",
+            "ok:ZSTD_createCDict",
+            "call:ZSTD_CCtx_refCDict",
+            "ok:ZSTD_CCtx_refCDict",
+            "call:ZSTD_compress2",
+            "ok:ZSTD_compress2",
+            "call:ZSTD_CCtx_loadDictionary",
+            "ok:ZSTD_CCtx_loadDictionary",
+            "call:ZSTD_freeCDict",
+            "ok:ZSTD_freeCDict"
+          ],
+          "allowed": true,
+          "reason": "loadDictionary replaced the reference; freeing after it is fine"
+        },
+        {
+          "events": [
+            "call:ZSTD_freeCDict"
+          ],
+          "allowed": false,
+          "reason": "no CDict"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCDict",
+            "ok:ZSTD_createCDict",
+            "call:ZSTD_CCtx_refCDict",
+            "ok:ZSTD_CCtx_refCDict",
+            "call:ZSTD_freeCDict"
+          ],
+          "allowed": false,
+          "reason": "CDict freed while the CCtx still references it"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCDict",
+            "ok:ZSTD_createCDict",
+            "call:ZSTD_freeCDict",
+            "ok:ZSTD_freeCDict",
+            "call:ZSTD_compress_usingCDict"
+          ],
+          "allowed": false,
+          "reason": "use after free"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCDict",
+            "ok:ZSTD_createCDict",
+            "call:ZSTD_CCtx_refCDict",
+            "ok:ZSTD_CCtx_refCDict",
+            "call:ZSTD_compressStream2",
+            "ok:ZSTD_compressStream2",
+            "call:ZSTD_CCtx_loadDictionary",
+            "fail:ZSTD_CCtx_loadDictionary",
+            "call:ZSTD_freeCDict"
+          ],
+          "allowed": false,
+          "reason": "loadDictionary failed inside the session: the CCtx still uses the CDict"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCDict_byReference",
+            "ok:ZSTD_createCDict_byReference",
+            "call:ZSTD_initCStream_usingCDict",
+            "ok:ZSTD_initCStream_usingCDict",
+            "call:ZSTD_initCStream_srcSize",
+            "ok:ZSTD_initCStream_srcSize",
+            "call:ZSTD_freeCDict",
+            "ok:ZSTD_freeCDict"
+          ],
+          "allowed": true,
+          "reason": "initCStream_srcSize cleared the reference taken by initCStream_usingCDict"
+        }
+      ]
+    },
+    {
+      "id": "ddict_outlives_reference",
+      "rule": "zstd.h ZSTD_DCtx_refDDict Note 2: 'DDict is just referenced, its lifetime must outlive its usage from DCtx'. The harness keeps one DDict; a successful ZSTD_DCtx_refDDict makes the DCtx hold it until the reference is replaced or the DCtx is freed. ZSTD_DCtx_loadDictionary / ZSTD_DCtx_refPrefix drop the reference only when they succeed (inside a frame they fail with stage_wrong). ZSTD_createDDict_byReference and ZSTD_initStaticDDict create a DDict too; ZSTD_initDStream_usingDDict references it ('ddict is referenced, it must outlive decompression session').",
+      "formula": "(!dd_use W dd_new) & G(dd_free -> X(!dd_use W dd_new)) & G(dd_ref -> X(!dd_free W dd_unref))",
+      "apis": [
+        "ZSTD_createDDict",
+        "ZSTD_freeDDict",
+        "ZSTD_sizeof_DDict",
+        "ZSTD_getDictID_fromDDict",
+        "ZSTD_decompress_usingDDict",
+        "ZSTD_DCtx_refDDict",
+        "ZSTD_DCtx_loadDictionary",
+        "ZSTD_DCtx_refPrefix",
+        "ZSTD_initDStream",
+        "ZSTD_DCtx_reset",
+        "ZSTD_freeDCtx",
+        "ZSTD_freeDStream",
+        "ZSTD_createDDict_byReference",
+        "ZSTD_initStaticDDict",
+        "ZSTD_initDStream_usingDDict",
+        "ZSTD_DCtx_loadDictionary_byReference",
+        "ZSTD_initDStream_usingDict"
+      ],
+      "predicates": {
+        "dd_new": {
+          "meaning": "a DDict was created",
+          "events": [
+            "ok:ZSTD_createDDict",
+            "ok:ZSTD_createDDict_byReference",
+            "ok:ZSTD_initStaticDDict"
+          ]
+        },
+        "dd_free": {
+          "meaning": "ZSTD_freeDDict is about to be called",
+          "events": [
+            "call:ZSTD_freeDDict"
+          ]
+        },
+        "dd_use": {
+          "meaning": "a routine taking the DDict is about to be called",
+          "events": [
+            "call:ZSTD_freeDDict",
+            "call:ZSTD_sizeof_DDict",
+            "call:ZSTD_getDictID_fromDDict",
+            "call:ZSTD_decompress_usingDDict",
+            "call:ZSTD_initDStream_usingDDict"
+          ]
+        },
+        "dd_ref": {
+          "meaning": "the DCtx took a reference to the DDict",
+          "events": [
+            "ok:ZSTD_DCtx_refDDict",
+            "ok:ZSTD_initDStream_usingDDict"
+          ]
+        },
+        "dd_unref": {
+          "meaning": "the DCtx dropped its dictionary reference",
+          "events": [
+            "call:ZSTD_DCtx_refDDict",
+            "ok:ZSTD_DCtx_loadDictionary",
+            "ok:ZSTD_DCtx_refPrefix",
+            "call:ZSTD_initDStream",
+            "call:ZSTD_DCtx_reset",
+            "call:ZSTD_freeDCtx",
+            "call:ZSTD_freeDStream",
+            "ok:ZSTD_DCtx_loadDictionary_byReference",
+            "ok:ZSTD_initDStream_usingDict"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_createDDict",
+            "ok:ZSTD_createDDict",
+            "call:ZSTD_DCtx_refDDict",
+            "ok:ZSTD_DCtx_refDDict",
+            "call:ZSTD_decompressStream",
+            "ok:ZSTD_decompressStream",
+            "call:ZSTD_freeDCtx",
+            "ok:ZSTD_freeDCtx",
+            "call:ZSTD_freeDDict",
+            "ok:ZSTD_freeDDict"
+          ],
+          "allowed": true,
+          "reason": "DCtx freed first"
+        },
+        {
+          "events": [
+            "call:ZSTD_sizeof_DDict"
+          ],
+          "allowed": false,
+          "reason": "no DDict"
+        },
+        {
+          "events": [
+            "call:ZSTD_createDDict",
+            "ok:ZSTD_createDDict",
+            "call:ZSTD_DCtx_refDDict",
+            "ok:ZSTD_DCtx_refDDict",
+            "call:ZSTD_freeDDict"
+          ],
+          "allowed": false,
+          "reason": "DDict freed while referenced"
+        },
+        {
+          "events": [
+            "call:ZSTD_createDDict",
+            "ok:ZSTD_createDDict",
+            "call:ZSTD_DCtx_refDDict",
+            "ok:ZSTD_DCtx_refDDict",
+            "call:ZSTD_decompressStream",
+            "ok:ZSTD_decompressStream",
+            "call:ZSTD_DCtx_loadDictionary",
+            "fail:ZSTD_DCtx_loadDictionary",
+            "call:ZSTD_freeDDict"
+          ],
+          "allowed": false,
+          "reason": "loadDictionary failed inside the frame: the DCtx still uses the DDict"
+        },
+        {
+          "events": [
+            "call:ZSTD_createDDict_byReference",
+            "ok:ZSTD_createDDict_byReference",
+            "call:ZSTD_initDStream_usingDDict",
+            "ok:ZSTD_initDStream_usingDDict",
+            "call:ZSTD_freeDDict"
+          ],
+          "allowed": false,
+          "reason": "DDict freed while the stream references it"
+        }
+      ]
+    },
+    {
+      "id": "no_oneshot_during_streaming_session",
+      "rule": "zstd.h advanced API: parameters 'can only be changed between 2 sessions'; a streaming session opens with the first ZSTD_compressStream/compressStream2/flushStream call and closes when ZSTD_endStream or compressStream2(ZSTD_e_end) returns 0, or on ZSTD_CCtx_reset / ZSTD_initCStream. Running a one-shot compression (ZSTD_compressCCtx, ZSTD_compress2, ZSTD_compress_usingDict, ZSTD_compress_usingCDict) on the same CCtx inside an open session re-initialises the context in unbuffered mode while the stream stage remains 'load'; the next streaming call dereferences a NULL input buffer (zstd_compress.c ZSTD_compressStream_generic). The same holds for the experimental entry points that re-initialise the context: ZSTD_compress_advanced, ZSTD_compress_usingCDict_advanced, ZSTD_compressSequences and every ZSTD_compressBegin* variant. The deprecated ZSTD_initCStream_* variants and ZSTD_resetCStream start with ZSTD_CCtx_reset(session_only) and therefore close the session. ZSTD_compressSequences opens a session too and returns without closing it (zstd_compress.c ZSTD_compressSequences: ZSTD_CCtx_init_compressStream2 sets the stream stage, nothing resets it), so after it the context needs ZSTD_CCtx_reset or a ZSTD_initCStream* before the next one-shot (repro.c case 4).",
+      "formula": "G(stream_call -> X(!oneshot W session_end))",
+      "apis": [
+        "ZSTD_compressStream2",
+        "ZSTD_compressStream",
+        "ZSTD_flushStream",
+        "ZSTD_endStream",
+        "ZSTD_compressCCtx",
+        "ZSTD_compress2",
+        "ZSTD_compress_usingDict",
+        "ZSTD_compress_usingCDict",
+        "ZSTD_CCtx_reset",
+        "ZSTD_initCStream",
+        "ZSTD_freeCCtx",
+        "ZSTD_freeCStream",
+        "ZSTD_compress_advanced",
+        "ZSTD_compress_usingCDict_advanced",
+        "ZSTD_compressSequences",
+        "ZSTD_compressBegin",
+        "ZSTD_compressBegin_usingDict",
+        "ZSTD_compressBegin_advanced",
+        "ZSTD_compressBegin_usingCDict",
+        "ZSTD_compressBegin_usingCDict_advanced",
+        "ZSTD_initCStream_srcSize",
+        "ZSTD_initCStream_usingDict",
+        "ZSTD_initCStream_advanced",
+        "ZSTD_initCStream_usingCDict",
+        "ZSTD_initCStream_usingCDict_advanced",
+        "ZSTD_resetCStream"
+      ],
+      "predicates": {
+        "stream_call": {
+          "meaning": "a streaming compression routine is about to be called",
+          "events": [
+            "call:ZSTD_compressStream2",
+            "call:ZSTD_compressStream",
+            "call:ZSTD_flushStream",
+            "call:ZSTD_endStream",
+            "call:ZSTD_compressSequences"
+          ]
+        },
+        "oneshot": {
+          "meaning": "a one-shot compression on the CCtx is about to be called",
+          "events": [
+            "call:ZSTD_compressCCtx",
+            "call:ZSTD_compress2",
+            "call:ZSTD_compress_usingDict",
+            "call:ZSTD_compress_usingCDict",
+            "call:ZSTD_compress_advanced",
+            "call:ZSTD_compress_usingCDict_advanced",
+            "call:ZSTD_compressSequences",
+            "call:ZSTD_compressBegin",
+            "call:ZSTD_compressBegin_usingDict",
+            "call:ZSTD_compressBegin_advanced",
+            "call:ZSTD_compressBegin_usingCDict",
+            "call:ZSTD_compressBegin_usingCDict_advanced"
+          ]
+        },
+        "session_end": {
+          "meaning": "the frame completed (endStream returned 0) or the session was reset",
+          "events": [
+            "ok:ZSTD_endStream",
+            "call:ZSTD_CCtx_reset",
+            "call:ZSTD_initCStream",
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream",
+            "call:ZSTD_initCStream_srcSize",
+            "call:ZSTD_initCStream_usingDict",
+            "call:ZSTD_initCStream_advanced",
+            "call:ZSTD_initCStream_usingCDict",
+            "call:ZSTD_initCStream_usingCDict_advanced",
+            "call:ZSTD_resetCStream"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_compressStream2",
+            "ok:ZSTD_compressStream2",
+            "call:ZSTD_endStream",
+            "ok:ZSTD_endStream",
+            "call:ZSTD_compress2",
+            "ok:ZSTD_compress2"
+          ],
+          "allowed": true,
+          "reason": "frame ended before the one-shot"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressStream",
+            "ok:ZSTD_compressStream",
+            "call:ZSTD_CCtx_reset",
+            "ok:ZSTD_CCtx_reset",
+            "call:ZSTD_compressCCtx"
+          ],
+          "allowed": true,
+          "reason": "session reset before the one-shot"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressStream2",
+            "ok:ZSTD_compressStream2",
+            "call:ZSTD_compress_usingDict"
+          ],
+          "allowed": false,
+          "reason": "one-shot inside an open streaming session"
+        },
+        {
+          "events": [
+            "call:ZSTD_flushStream",
+            "ok:ZSTD_flushStream",
+            "call:ZSTD_endStream",
+            "fail:ZSTD_endStream",
+            "call:ZSTD_compress2"
+          ],
+          "allowed": false,
+          "reason": "endStream did not complete the frame"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressStream",
+            "ok:ZSTD_compressStream",
+            "call:ZSTD_compressBegin"
+          ],
+          "allowed": false,
+          "reason": "buffer-less begin inside an open streaming session"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressStream",
+            "ok:ZSTD_compressStream",
+            "call:ZSTD_resetCStream",
+            "ok:ZSTD_resetCStream",
+            "call:ZSTD_compress_advanced"
+          ],
+          "allowed": true,
+          "reason": "resetCStream closed the session"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressSequences",
+            "ok:ZSTD_compressSequences",
+            "call:ZSTD_compressCCtx"
+          ],
+          "allowed": false,
+          "reason": "ZSTD_compressSequences left its session open"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressSequences",
+            "ok:ZSTD_compressSequences",
+            "call:ZSTD_CCtx_reset",
+            "ok:ZSTD_CCtx_reset",
+            "call:ZSTD_compressSequences"
+          ],
+          "allowed": true,
+          "reason": "session reset between two sequence compressions"
+        }
+      ]
+    },
+    {
+      "id": "reset_after_streaming_error",
+      "rule": "zstd.h ZSTD_CCtx_reset: resetting the session is 'useful after an error, or to interrupt any ongoing compression'. After a streaming compression call returns an error the context's buffers are inconsistent; continuing to stream without ZSTD_CCtx_reset or ZSTD_initCStream dereferences a NULL input buffer. The deprecated ZSTD_initCStream_* variants and ZSTD_resetCStream reset the session as well. ZSTD_compressSequences leaves the context inside a session that was not fed through the streaming buffers; the harness requires the same reset after it, whether it succeeded or not.",
+      "formula": "G(stream_fail -> X(!stream_call W stream_reset))",
+      "apis": [
+        "ZSTD_compressStream2",
+        "ZSTD_compressStream",
+        "ZSTD_flushStream",
+        "ZSTD_endStream",
+        "ZSTD_CCtx_reset",
+        "ZSTD_initCStream",
+        "ZSTD_freeCCtx",
+        "ZSTD_freeCStream",
+        "ZSTD_initCStream_srcSize",
+        "ZSTD_initCStream_usingDict",
+        "ZSTD_initCStream_advanced",
+        "ZSTD_initCStream_usingCDict",
+        "ZSTD_initCStream_usingCDict_advanced",
+        "ZSTD_resetCStream",
+        "ZSTD_compressSequences"
+      ],
+      "predicates": {
+        "stream_fail": {
+          "meaning": "a streaming compression call returned an error, or ZSTD_compressSequences was called",
+          "events": [
+            "fail:ZSTD_compressStream2",
+            "fail:ZSTD_compressStream",
+            "fail:ZSTD_flushStream",
+            "fail:ZSTD_endStream",
+            "call:ZSTD_compressSequences"
+          ]
+        },
+        "stream_call": {
+          "meaning": "a streaming compression routine is about to be called",
+          "events": [
+            "call:ZSTD_compressStream2",
+            "call:ZSTD_compressStream",
+            "call:ZSTD_flushStream",
+            "call:ZSTD_endStream"
+          ]
+        },
+        "stream_reset": {
+          "meaning": "the session was reset",
+          "events": [
+            "call:ZSTD_CCtx_reset",
+            "call:ZSTD_initCStream",
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream",
+            "call:ZSTD_initCStream_srcSize",
+            "call:ZSTD_initCStream_usingDict",
+            "call:ZSTD_initCStream_advanced",
+            "call:ZSTD_initCStream_usingCDict",
+            "call:ZSTD_initCStream_usingCDict_advanced",
+            "call:ZSTD_resetCStream"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_compressStream2",
+            "fail:ZSTD_compressStream2",
+            "call:ZSTD_CCtx_reset",
+            "ok:ZSTD_CCtx_reset",
+            "call:ZSTD_compressStream2"
+          ],
+          "allowed": true,
+          "reason": "reset after the error"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressStream2",
+            "fail:ZSTD_compressStream2",
+            "call:ZSTD_flushStream"
+          ],
+          "allowed": false,
+          "reason": "streaming continued after an error"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressStream",
+            "fail:ZSTD_compressStream",
+            "call:ZSTD_initCStream_srcSize",
+            "ok:ZSTD_initCStream_srcSize",
+            "call:ZSTD_compressStream"
+          ],
+          "allowed": true,
+          "reason": "initCStream_srcSize reset the session"
+        },
+        {
+          "events": [
+            "call:ZSTD_endStream",
+            "fail:ZSTD_endStream",
+            "call:ZSTD_compressStream"
+          ],
+          "allowed": false,
+          "reason": "streaming continued after an error"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressSequences",
+            "ok:ZSTD_compressSequences",
+            "call:ZSTD_compressStream2"
+          ],
+          "allowed": false,
+          "reason": "streaming continued on the session ZSTD_compressSequences left open"
+        }
+      ]
+    },
+    {
+      "id": "static_objects_have_no_free",
+      "rule": "zstd.h ZSTD_initStatic*() Note 2: 'there is no corresponding \"free\" function. Since workspace is allocated externally, it must be freed externally too.' Limitation 1: a static context is 'currently not compatible with internal dictionary creation, triggered by ZSTD_CCtx_loadDictionary(), ZSTD_initCStream_usingDict() or ZSTD_initDStream_usingDict()'; the entry points listed here are the ones that do not reject a static context themselves and would leave a malloc'ed dictionary behind (zstd_compress.c ZSTD_initLocalDict, zstd_decompress.c ZSTD_DCtx_loadDictionary_advanced). The harness keeps a static object until the end of the run, when it releases the workspace.",
+      "formula": "G(sc_new -> X(G(!sc_bad))) & G(sd_new -> X(G(!sd_bad))) & G(scd_new -> X(G(!scd_bad))) & G(sdd_new -> X(G(!sdd_bad)))",
+      "apis": [
+        "ZSTD_initStaticCCtx",
+        "ZSTD_initStaticCStream",
+        "ZSTD_freeCCtx",
+        "ZSTD_freeCStream",
+        "ZSTD_CCtx_loadDictionary_byReference",
+        "ZSTD_initStaticDCtx",
+        "ZSTD_initStaticDStream",
+        "ZSTD_freeDCtx",
+        "ZSTD_freeDStream",
+        "ZSTD_DCtx_loadDictionary",
+        "ZSTD_DCtx_loadDictionary_byReference",
+        "ZSTD_DCtx_refPrefix",
+        "ZSTD_initDStream_usingDict",
+        "ZSTD_initStaticCDict",
+        "ZSTD_freeCDict",
+        "ZSTD_initStaticDDict",
+        "ZSTD_freeDDict"
+      ],
+      "predicates": {
+        "sc_new": {
+          "meaning": "a CCtx was emplaced in a caller-owned workspace",
+          "events": [
+            "ok:ZSTD_initStaticCCtx",
+            "ok:ZSTD_initStaticCStream"
+          ]
+        },
+        "sc_bad": {
+          "meaning": "the CCtx is about to be freed or to be given a dictionary by reference",
+          "events": [
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream",
+            "call:ZSTD_CCtx_loadDictionary_byReference"
+          ]
+        },
+        "sd_new": {
+          "meaning": "a DCtx was emplaced in a caller-owned workspace",
+          "events": [
+            "ok:ZSTD_initStaticDCtx",
+            "ok:ZSTD_initStaticDStream"
+          ]
+        },
+        "sd_bad": {
+          "meaning": "the DCtx is about to be freed or to create an internal dictionary",
+          "events": [
+            "call:ZSTD_freeDCtx",
+            "call:ZSTD_freeDStream",
+            "call:ZSTD_DCtx_loadDictionary",
+            "call:ZSTD_DCtx_loadDictionary_byReference",
+            "call:ZSTD_DCtx_refPrefix",
+            "call:ZSTD_initDStream_usingDict"
+          ]
+        },
+        "scd_new": {
+          "meaning": "a CDict was emplaced in a caller-owned workspace",
+          "events": [
+            "ok:ZSTD_initStaticCDict"
+          ]
+        },
+        "scd_bad": {
+          "meaning": "ZSTD_freeCDict is about to be called",
+          "events": [
+            "call:ZSTD_freeCDict"
+          ]
+        },
+        "sdd_new": {
+          "meaning": "a DDict was emplaced in a caller-owned workspace",
+          "events": [
+            "ok:ZSTD_initStaticDDict"
+          ]
+        },
+        "sdd_bad": {
+          "meaning": "ZSTD_freeDDict is about to be called",
+          "events": [
+            "call:ZSTD_freeDDict"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_initStaticCCtx",
+            "ok:ZSTD_initStaticCCtx",
+            "call:ZSTD_compress2",
+            "ok:ZSTD_compress2",
+            "call:ZSTD_initStaticDCtx",
+            "ok:ZSTD_initStaticDCtx",
+            "call:ZSTD_decompressDCtx",
+            "ok:ZSTD_decompressDCtx"
+          ],
+          "allowed": true,
+          "reason": "static contexts are used and never freed"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCCtx",
+            "ok:ZSTD_createCCtx",
+            "call:ZSTD_freeCCtx",
+            "ok:ZSTD_freeCCtx"
+          ],
+          "allowed": true,
+          "reason": "heap contexts are freed as usual"
+        },
+        {
+          "events": [
+            "call:ZSTD_initStaticCCtx",
+            "ok:ZSTD_initStaticCCtx",
+            "call:ZSTD_freeCCtx"
+          ],
+          "allowed": false,
+          "reason": "a static CCtx has no free function"
+        },
+        {
+          "events": [
+            "call:ZSTD_initStaticDStream",
+            "ok:ZSTD_initStaticDStream",
+            "call:ZSTD_DCtx_loadDictionary"
+          ],
+          "allowed": false,
+          "reason": "internal dictionary creation on a static DCtx"
+        },
+        {
+          "events": [
+            "call:ZSTD_initStaticCDict",
+            "ok:ZSTD_initStaticCDict",
+            "call:ZSTD_freeCDict"
+          ],
+          "allowed": false,
+          "reason": "a static CDict has no free function"
+        }
+      ]
+    },
+    {
+      "id": "cctx_params_lifecycle",
+      "rule": "zstd.h ZSTD_CCtx_params quick howto: 'ZSTD_createCCtxParams() : Create a ZSTD_CCtx_params structure ... ZSTD_freeCCtxParams() : Free the memory'. Every ZSTD_CCtxParams_* routine, ZSTD_CCtx_setParametersUsingCCtxParams and ZSTD_estimateC{Ctx,Stream}Size_usingCCtxParams take a live structure. The harness keeps one.",
+      "formula": "(!p_use W p_new) & G(p_free -> X(!p_use W p_new))",
+      "apis": [
+        "ZSTD_createCCtxParams",
+        "ZSTD_freeCCtxParams",
+        "ZSTD_CCtxParams_reset",
+        "ZSTD_CCtxParams_init",
+        "ZSTD_CCtxParams_init_advanced",
+        "ZSTD_CCtxParams_setParameter",
+        "ZSTD_CCtxParams_getParameter",
+        "ZSTD_CCtxParams_registerSequenceProducer",
+        "ZSTD_CCtx_setParametersUsingCCtxParams",
+        "ZSTD_estimateCCtxSize_usingCCtxParams",
+        "ZSTD_estimateCStreamSize_usingCCtxParams"
+      ],
+      "predicates": {
+        "p_new": {
+          "meaning": "a parameter structure was created",
+          "events": [
+            "ok:ZSTD_createCCtxParams"
+          ]
+        },
+        "p_free": {
+          "meaning": "the parameter structure is about to be freed",
+          "events": [
+            "call:ZSTD_freeCCtxParams"
+          ]
+        },
+        "p_use": {
+          "meaning": "a routine taking the parameter structure is about to be called",
+          "events": [
+            "call:ZSTD_freeCCtxParams",
+            "call:ZSTD_CCtxParams_reset",
+            "call:ZSTD_CCtxParams_init",
+            "call:ZSTD_CCtxParams_init_advanced",
+            "call:ZSTD_CCtxParams_setParameter",
+            "call:ZSTD_CCtxParams_getParameter",
+            "call:ZSTD_CCtxParams_registerSequenceProducer",
+            "call:ZSTD_CCtx_setParametersUsingCCtxParams",
+            "call:ZSTD_estimateCCtxSize_usingCCtxParams",
+            "call:ZSTD_estimateCStreamSize_usingCCtxParams"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_createCCtxParams",
+            "ok:ZSTD_createCCtxParams",
+            "call:ZSTD_CCtxParams_setParameter",
+            "ok:ZSTD_CCtxParams_setParameter",
+            "call:ZSTD_CCtx_setParametersUsingCCtxParams",
+            "ok:ZSTD_CCtx_setParametersUsingCCtxParams",
+            "call:ZSTD_freeCCtxParams",
+            "ok:ZSTD_freeCCtxParams",
+            "call:ZSTD_createCCtxParams",
+            "ok:ZSTD_createCCtxParams",
+            "call:ZSTD_CCtxParams_init"
+          ],
+          "allowed": true,
+          "reason": "uses sit between create and free"
+        },
+        {
+          "events": [
+            "call:ZSTD_CCtxParams_setParameter"
+          ],
+          "allowed": false,
+          "reason": "no parameter structure"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCCtxParams",
+            "ok:ZSTD_createCCtxParams",
+            "call:ZSTD_freeCCtxParams",
+            "ok:ZSTD_freeCCtxParams",
+            "call:ZSTD_estimateCCtxSize_usingCCtxParams"
+          ],
+          "allowed": false,
+          "reason": "use after free"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCCtxParams",
+            "fail:ZSTD_createCCtxParams",
+            "call:ZSTD_freeCCtxParams"
+          ],
+          "allowed": false,
+          "reason": "creation failed"
+        }
+      ]
+    },
+    {
+      "id": "thread_pool_outlives_cctx",
+      "rule": "zstd.h thread pool: 'Note that the lifetime of such pool must exist while being used. ZSTD_CCtx_refThreadPool assigns a thread pool to a context (use NULL argument value to use an internal thread pool).' The multi-threading context a CCtx creates on first use keeps the pool it was created with (zstd_compress.c ZSTD_CCtx_init_compressStream2: ZSTDMT_createCCtx_advanced(..., cctx->pool) only when cctx->mtctx == NULL), so a later ZSTD_CCtx_refThreadPool(cctx, NULL) does not release it: the pool has to outlive the CCtx (repro.c case 3). The harness keeps one pool and counts every successful ZSTD_CCtx_refThreadPool as a reference.",
+      "formula": "(!tp_use W tp_new) & G(tp_free -> X(!tp_use W tp_new)) & G(tp_ref -> X(!tp_free W c_gone))",
+      "apis": [
+        "ZSTD_createThreadPool",
+        "ZSTD_freeThreadPool",
+        "ZSTD_CCtx_refThreadPool",
+        "ZSTD_freeCCtx",
+        "ZSTD_freeCStream"
+      ],
+      "predicates": {
+        "tp_new": {
+          "meaning": "a thread pool was created",
+          "events": [
+            "ok:ZSTD_createThreadPool"
+          ]
+        },
+        "tp_free": {
+          "meaning": "the thread pool is about to be freed",
+          "events": [
+            "call:ZSTD_freeThreadPool"
+          ]
+        },
+        "tp_use": {
+          "meaning": "a routine taking the thread pool is about to be called",
+          "events": [
+            "call:ZSTD_freeThreadPool"
+          ]
+        },
+        "tp_ref": {
+          "meaning": "the CCtx was given a thread pool",
+          "events": [
+            "ok:ZSTD_CCtx_refThreadPool"
+          ]
+        },
+        "c_gone": {
+          "meaning": "the CCtx is about to be freed",
+          "events": [
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_createThreadPool",
+            "ok:ZSTD_createThreadPool",
+            "call:ZSTD_CCtx_refThreadPool",
+            "ok:ZSTD_CCtx_refThreadPool",
+            "call:ZSTD_compressStream2",
+            "ok:ZSTD_compressStream2",
+            "call:ZSTD_freeCCtx",
+            "ok:ZSTD_freeCCtx",
+            "call:ZSTD_freeThreadPool",
+            "ok:ZSTD_freeThreadPool"
+          ],
+          "allowed": true,
+          "reason": "CCtx freed before the pool"
+        },
+        {
+          "events": [
+            "call:ZSTD_freeThreadPool"
+          ],
+          "allowed": false,
+          "reason": "no pool"
+        },
+        {
+          "events": [
+            "call:ZSTD_createThreadPool",
+            "ok:ZSTD_createThreadPool",
+            "call:ZSTD_CCtx_refThreadPool",
+            "ok:ZSTD_CCtx_refThreadPool",
+            "call:ZSTD_freeThreadPool"
+          ],
+          "allowed": false,
+          "reason": "pool freed while the CCtx may use it"
+        },
+        {
+          "events": [
+            "call:ZSTD_createThreadPool",
+            "ok:ZSTD_createThreadPool",
+            "call:ZSTD_CCtx_refThreadPool",
+            "ok:ZSTD_CCtx_refThreadPool",
+            "call:ZSTD_CCtx_refThreadPool",
+            "ok:ZSTD_CCtx_refThreadPool",
+            "call:ZSTD_freeThreadPool"
+          ],
+          "allowed": false,
+          "reason": "a second ref (even of NULL) does not detach the pool from the CCtx"
+        }
+      ]
+    },
+    {
+      "id": "bufferless_compress_session",
+      "rule": "zstd.h buffer-less streaming compression: 'Start by initializing a context. Use ZSTD_compressBegin(), or ZSTD_compressBegin_usingDict() ... Then, consume your input using ZSTD_compressContinue() ... Finish a frame with ZSTD_compressEnd() ... ZSTD_CCtx object can be reused (ZSTD_compressBegin()) to compress again', and 'ZSTD_compressContinue() doesn't guarantee recover after a failed compression'. Block-level API: 'It is necessary to init context before starting + compression : any ZSTD_compressBegin*() variant'. ZSTD_copyCCtx duplicates a begun context. Any other compression, reset or initialisation of the CCtx ends the session. A session begun with ZSTD_compressBegin_usingCDict(_advanced) may search the CDict's tables in place, so the CDict must not be freed before the session ends.",
+      "formula": "(!bl_use W bl_begin) & G(bl_end -> X(!bl_use W bl_begin)) & G(bl_begin_cdict -> X(!cd_free W bl_end))",
+      "apis": [
+        "ZSTD_compressBegin",
+        "ZSTD_compressBegin_usingDict",
+        "ZSTD_compressBegin_advanced",
+        "ZSTD_compressBegin_usingCDict",
+        "ZSTD_compressBegin_usingCDict_advanced",
+        "ZSTD_compressContinue",
+        "ZSTD_compressEnd",
+        "ZSTD_getBlockSize",
+        "ZSTD_compressBlock",
+        "ZSTD_copyCCtx",
+        "ZSTD_compressCCtx",
+        "ZSTD_compress2",
+        "ZSTD_compress_usingDict",
+        "ZSTD_compress_usingCDict",
+        "ZSTD_compress_advanced",
+        "ZSTD_compress_usingCDict_advanced",
+        "ZSTD_compressSequences",
+        "ZSTD_compressStream2",
+        "ZSTD_compressStream",
+        "ZSTD_flushStream",
+        "ZSTD_endStream",
+        "ZSTD_CCtx_reset",
+        "ZSTD_initCStream",
+        "ZSTD_initCStream_srcSize",
+        "ZSTD_initCStream_usingDict",
+        "ZSTD_initCStream_advanced",
+        "ZSTD_initCStream_usingCDict",
+        "ZSTD_initCStream_usingCDict_advanced",
+        "ZSTD_resetCStream",
+        "ZSTD_freeCCtx",
+        "ZSTD_freeCStream",
+        "ZSTD_freeCDict"
+      ],
+      "predicates": {
+        "bl_begin": {
+          "meaning": "a buffer-less session was begun",
+          "events": [
+            "ok:ZSTD_compressBegin",
+            "ok:ZSTD_compressBegin_usingDict",
+            "ok:ZSTD_compressBegin_advanced",
+            "ok:ZSTD_compressBegin_usingCDict",
+            "ok:ZSTD_compressBegin_usingCDict_advanced"
+          ]
+        },
+        "bl_begin_cdict": {
+          "meaning": "a buffer-less session was begun with the CDict",
+          "events": [
+            "ok:ZSTD_compressBegin_usingCDict",
+            "ok:ZSTD_compressBegin_usingCDict_advanced"
+          ]
+        },
+        "bl_use": {
+          "meaning": "a routine needing a begun session is about to be called",
+          "events": [
+            "call:ZSTD_compressContinue",
+            "call:ZSTD_compressEnd",
+            "call:ZSTD_getBlockSize",
+            "call:ZSTD_compressBlock",
+            "call:ZSTD_copyCCtx"
+          ]
+        },
+        "bl_end": {
+          "meaning": "the session ended: frame finished, a call failed, or the CCtx was put to another use",
+          "events": [
+            "call:ZSTD_compressEnd",
+            "fail:ZSTD_compressContinue",
+            "fail:ZSTD_compressBlock",
+            "call:ZSTD_compressBegin",
+            "call:ZSTD_compressBegin_usingDict",
+            "call:ZSTD_compressBegin_advanced",
+            "call:ZSTD_compressBegin_usingCDict",
+            "call:ZSTD_compressBegin_usingCDict_advanced",
+            "call:ZSTD_compressCCtx",
+            "call:ZSTD_compress2",
+            "call:ZSTD_compress_usingDict",
+            "call:ZSTD_compress_usingCDict",
+            "call:ZSTD_compress_advanced",
+            "call:ZSTD_compress_usingCDict_advanced",
+            "call:ZSTD_compressSequences",
+            "call:ZSTD_compressStream2",
+            "call:ZSTD_compressStream",
+            "call:ZSTD_flushStream",
+            "call:ZSTD_endStream",
+            "call:ZSTD_CCtx_reset",
+            "call:ZSTD_initCStream",
+            "call:ZSTD_initCStream_srcSize",
+            "call:ZSTD_initCStream_usingDict",
+            "call:ZSTD_initCStream_advanced",
+            "call:ZSTD_initCStream_usingCDict",
+            "call:ZSTD_initCStream_usingCDict_advanced",
+            "call:ZSTD_resetCStream",
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream"
+          ]
+        },
+        "cd_free": {
+          "meaning": "ZSTD_freeCDict is about to be called",
+          "events": [
+            "call:ZSTD_freeCDict"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_compressBegin",
+            "ok:ZSTD_compressBegin",
+            "call:ZSTD_compressContinue",
+            "ok:ZSTD_compressContinue",
+            "call:ZSTD_compressContinue",
+            "ok:ZSTD_compressContinue",
+            "call:ZSTD_compressEnd",
+            "ok:ZSTD_compressEnd",
+            "call:ZSTD_compressBegin_usingDict",
+            "ok:ZSTD_compressBegin_usingDict",
+            "call:ZSTD_getBlockSize",
+            "ok:ZSTD_getBlockSize",
+            "call:ZSTD_compressBlock",
+            "ok:ZSTD_compressBlock"
+          ],
+          "allowed": true,
+          "reason": "begin, continue, end, then a new session"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressBegin_usingCDict",
+            "ok:ZSTD_compressBegin_usingCDict",
+            "call:ZSTD_compressEnd",
+            "ok:ZSTD_compressEnd",
+            "call:ZSTD_freeCDict",
+            "ok:ZSTD_freeCDict"
+          ],
+          "allowed": true,
+          "reason": "CDict freed after the session ended"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressContinue"
+          ],
+          "allowed": false,
+          "reason": "no ZSTD_compressBegin"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressBegin",
+            "ok:ZSTD_compressBegin",
+            "call:ZSTD_compressEnd",
+            "ok:ZSTD_compressEnd",
+            "call:ZSTD_compressContinue"
+          ],
+          "allowed": false,
+          "reason": "the frame was finished"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressBegin",
+            "ok:ZSTD_compressBegin",
+            "call:ZSTD_compressContinue",
+            "fail:ZSTD_compressContinue",
+            "call:ZSTD_compressEnd"
+          ],
+          "allowed": false,
+          "reason": "no recovery after a failed ZSTD_compressContinue"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressBegin",
+            "ok:ZSTD_compressBegin",
+            "call:ZSTD_compress2",
+            "ok:ZSTD_compress2",
+            "call:ZSTD_compressBlock"
+          ],
+          "allowed": false,
+          "reason": "a one-shot compression took over the context"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressBegin_usingCDict",
+            "ok:ZSTD_compressBegin_usingCDict",
+            "call:ZSTD_compressContinue",
+            "ok:ZSTD_compressContinue",
+            "call:ZSTD_freeCDict"
+          ],
+          "allowed": false,
+          "reason": "CDict freed inside the session that searches it"
+        }
+      ]
+    },
+    {
+      "id": "block_decode_after_begin",
+      "rule": "zstd.h block-level API: 'It is necessary to init context before starting + decompression : any ZSTD_decompressBegin*() variant'. ZSTD_decompressBlock and ZSTD_insertBlock continue the history set up by ZSTD_decompressBegin; any other decompression, reset or initialisation of the DCtx, or a failed ZSTD_decompressBlock, leaves it in another state and a new ZSTD_decompressBegin is needed.",
+      "formula": "(!blk W d_begin) & G(d_other -> X(!blk W d_begin))",
+      "apis": [
+        "ZSTD_decompressBegin",
+        "ZSTD_decompressBlock",
+        "ZSTD_insertBlock",
+        "ZSTD_decompressDCtx",
+        "ZSTD_decompress_usingDict",
+        "ZSTD_decompress_usingDDict",
+        "ZSTD_decompressStream",
+        "ZSTD_decompressStream_simpleArgs",
+        "ZSTD_DCtx_reset",
+        "ZSTD_initDStream",
+        "ZSTD_initDStream_usingDict",
+        "ZSTD_initDStream_usingDDict",
+        "ZSTD_resetDStream",
+        "ZSTD_freeDCtx",
+        "ZSTD_freeDStream"
+      ],
+      "predicates": {
+        "d_begin": {
+          "meaning": "ZSTD_decompressBegin succeeded",
+          "events": [
+            "ok:ZSTD_decompressBegin"
+          ]
+        },
+        "blk": {
+          "meaning": "a block-level routine is about to be called",
+          "events": [
+            "call:ZSTD_decompressBlock",
+            "call:ZSTD_insertBlock"
+          ]
+        },
+        "d_other": {
+          "meaning": "the DCtx was put to another use, or a block failed to decode",
+          "events": [
+            "fail:ZSTD_decompressBlock",
+            "call:ZSTD_decompressBegin",
+            "call:ZSTD_decompressDCtx",
+            "call:ZSTD_decompress_usingDict",
+            "call:ZSTD_decompress_usingDDict",
+            "call:ZSTD_decompressStream",
+            "call:ZSTD_decompressStream_simpleArgs",
+            "call:ZSTD_DCtx_reset",
+            "call:ZSTD_initDStream",
+            "call:ZSTD_initDStream_usingDict",
+            "call:ZSTD_initDStream_usingDDict",
+            "call:ZSTD_resetDStream",
+            "call:ZSTD_freeDCtx",
+            "call:ZSTD_freeDStream"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_decompressBegin",
+            "ok:ZSTD_decompressBegin",
+            "call:ZSTD_insertBlock",
+            "ok:ZSTD_insertBlock",
+            "call:ZSTD_decompressBlock",
+            "ok:ZSTD_decompressBlock",
+            "call:ZSTD_decompressBlock",
+            "ok:ZSTD_decompressBlock"
+          ],
+          "allowed": true,
+          "reason": "blocks decoded after begin"
+        },
+        {
+          "events": [
+            "call:ZSTD_decompressBlock"
+          ],
+          "allowed": false,
+          "reason": "no ZSTD_decompressBegin"
+        },
+        {
+          "events": [
+            "call:ZSTD_decompressBegin",
+            "ok:ZSTD_decompressBegin",
+            "call:ZSTD_decompressDCtx",
+            "fail:ZSTD_decompressDCtx",
+            "call:ZSTD_insertBlock"
+          ],
+          "allowed": false,
+          "reason": "a frame decompression took over the context"
+        },
+        {
+          "events": [
+            "call:ZSTD_decompressBegin",
+            "ok:ZSTD_decompressBegin",
+            "call:ZSTD_decompressBlock",
+            "fail:ZSTD_decompressBlock",
+            "call:ZSTD_decompressBlock"
+          ],
+          "allowed": false,
+          "reason": "a block failed to decode"
+        }
+      ]
+    },
+    {
+      "id": "reset_cstream_after_init",
+      "rule": "zstd.h ZSTD_resetCStream: 'Note that zcs must be init at least once before using ZSTD_resetCStream()'.",
+      "formula": "(!rst W cs_init) & G(c_gone -> X(!rst W cs_init))",
+      "apis": [
+        "ZSTD_initCStream",
+        "ZSTD_initCStream_srcSize",
+        "ZSTD_initCStream_usingDict",
+        "ZSTD_initCStream_advanced",
+        "ZSTD_initCStream_usingCDict",
+        "ZSTD_initCStream_usingCDict_advanced",
+        "ZSTD_resetCStream",
+        "ZSTD_freeCCtx",
+        "ZSTD_freeCStream"
+      ],
+      "predicates": {
+        "cs_init": {
+          "meaning": "a ZSTD_initCStream* variant succeeded",
+          "events": [
+            "ok:ZSTD_initCStream",
+            "ok:ZSTD_initCStream_srcSize",
+            "ok:ZSTD_initCStream_usingDict",
+            "ok:ZSTD_initCStream_advanced",
+            "ok:ZSTD_initCStream_usingCDict",
+            "ok:ZSTD_initCStream_usingCDict_advanced"
+          ]
+        },
+        "rst": {
+          "meaning": "ZSTD_resetCStream is about to be called",
+          "events": [
+            "call:ZSTD_resetCStream"
+          ]
+        },
+        "c_gone": {
+          "meaning": "the CCtx is about to be freed",
+          "events": [
+            "call:ZSTD_freeCCtx",
+            "call:ZSTD_freeCStream"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_createCStream",
+            "ok:ZSTD_createCStream",
+            "call:ZSTD_initCStream",
+            "ok:ZSTD_initCStream",
+            "call:ZSTD_compressStream",
+            "ok:ZSTD_compressStream",
+            "call:ZSTD_resetCStream",
+            "ok:ZSTD_resetCStream",
+            "call:ZSTD_resetCStream",
+            "ok:ZSTD_resetCStream"
+          ],
+          "allowed": true,
+          "reason": "initialised once, reset as often as needed"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCStream",
+            "ok:ZSTD_createCStream",
+            "call:ZSTD_resetCStream"
+          ],
+          "allowed": false,
+          "reason": "never initialised"
+        },
+        {
+          "events": [
+            "call:ZSTD_createCStream",
+            "ok:ZSTD_createCStream",
+            "call:ZSTD_initCStream_srcSize",
+            "ok:ZSTD_initCStream_srcSize",
+            "call:ZSTD_freeCStream",
+            "ok:ZSTD_freeCStream",
+            "call:ZSTD_createCStream",
+            "ok:ZSTD_createCStream",
+            "call:ZSTD_resetCStream"
+          ],
+          "allowed": false,
+          "reason": "the new stream was never initialised"
+        }
+      ]
+    },
+    {
+      "id": "sequence_array_format",
+      "rule": "zstd.h: ZSTD_generateSequences writes a ZSTD_Sequence array in which 'Each block will end with a dummy sequence' (explicit block delimiters); ZSTD_mergeBlockDelimiters removes them ('the final generated result has no explicit representation of block boundaries'). ZSTD_compressSequencesAndLiterals 'Only supports explicit delimiter mode', so it cannot take a merged array. In this harness every sequence array comes from ZSTD_generateSequences.",
+      "formula": "(!seq_use W seq_gen) & G(seq_merge -> X(!seq_lit W seq_gen))",
+      "apis": [
+        "ZSTD_generateSequences",
+        "ZSTD_mergeBlockDelimiters",
+        "ZSTD_compressSequences",
+        "ZSTD_compressSequencesAndLiterals"
+      ],
+      "predicates": {
+        "seq_gen": {
+          "meaning": "a sequence array was generated",
+          "events": [
+            "ok:ZSTD_generateSequences"
+          ]
+        },
+        "seq_use": {
+          "meaning": "a routine taking the sequence array is about to be called",
+          "events": [
+            "call:ZSTD_mergeBlockDelimiters",
+            "call:ZSTD_compressSequences",
+            "call:ZSTD_compressSequencesAndLiterals"
+          ]
+        },
+        "seq_merge": {
+          "meaning": "the block delimiters were merged away",
+          "events": [
+            "ok:ZSTD_mergeBlockDelimiters"
+          ]
+        },
+        "seq_lit": {
+          "meaning": "ZSTD_compressSequencesAndLiterals is about to be called",
+          "events": [
+            "call:ZSTD_compressSequencesAndLiterals"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ZSTD_generateSequences",
+            "ok:ZSTD_generateSequences",
+            "call:ZSTD_compressSequencesAndLiterals",
+            "ok:ZSTD_compressSequencesAndLiterals",
+            "call:ZSTD_mergeBlockDelimiters",
+            "ok:ZSTD_mergeBlockDelimiters",
+            "call:ZSTD_compressSequences",
+            "ok:ZSTD_compressSequences",
+            "call:ZSTD_generateSequences",
+            "ok:ZSTD_generateSequences",
+            "call:ZSTD_compressSequencesAndLiterals"
+          ],
+          "allowed": true,
+          "reason": "explicit delimiters until merged; a new array has them again"
+        },
+        {
+          "events": [
+            "call:ZSTD_compressSequences"
+          ],
+          "allowed": false,
+          "reason": "no sequence array"
+        },
+        {
+          "events": [
+            "call:ZSTD_generateSequences",
+            "fail:ZSTD_generateSequences",
+            "call:ZSTD_mergeBlockDelimiters"
+          ],
+          "allowed": false,
+          "reason": "generation failed"
+        },
+        {
+          "events": [
+            "call:ZSTD_generateSequences",
+            "ok:ZSTD_generateSequences",
+            "call:ZSTD_mergeBlockDelimiters",
+            "ok:ZSTD_mergeBlockDelimiters",
+            "call:ZSTD_compressSequencesAndLiterals"
+          ],
+          "allowed": false,
+          "reason": "merged array has no block delimiters"
+        }
+      ]
+    }
+  ]
+}

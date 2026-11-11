@@ -1,0 +1,454 @@
+{
+  "properties": [
+    {
+      "id": "message_init_before_attr",
+      "rule": "ns_turn_msg.h: every attribute writer takes (buf, size_t *len) and appends at the offset the header's own length field names: stun_attr_add_str (ns_turn_msg.c:1675) computes clen = stun_get_command_message_len_str(buf, *len) and writes at buf + clen, so -1 on a buffer no initialiser wrote, and the attribute then lands before the buffer. The initialisers stun_init_buffer_str/stun_init_command_str/stun_init_request_str/... and the stun_set_*_str setters are what establish the header and *len. A setter that returned false leaves the message part written and *len unspecified until an initialiser succeeds again.",
+      "formula": "(!a_add W m_ok) & G(m_call -> X(!a_add W m_ok))",
+      "apis": [
+        "stun_init_buffer_str",
+        "stun_init_command_str",
+        "old_stun_init_command_str",
+        "stun_init_request_str",
+        "stun_init_indication_str",
+        "stun_init_success_response_str",
+        "old_stun_init_success_response_str",
+        "stun_init_error_response_str",
+        "old_stun_init_error_response_str",
+        "stun_init_channel_message_str",
+        "stun_set_binding_request_str",
+        "stun_set_binding_response_str",
+        "stun_set_allocate_request_str",
+        "stun_set_allocate_response_str",
+        "stun_set_channel_bind_request_str",
+        "stun_set_channel_bind_response_str",
+        "stun_attr_add_str",
+        "stun_attr_add_addr_str",
+        "stun_attr_add_channel_number_str",
+        "stun_attr_add_bandwidth_str",
+        "stun_attr_add_address_error_code",
+        "stun_attr_add_change_request_str",
+        "stun_attr_add_response_port_str",
+        "stun_attr_add_padding_str",
+        "stun_attr_add_integrity_str",
+        "stun_attr_add_integrity_by_key_str",
+        "stun_attr_add_integrity_by_user_str",
+        "stun_attr_add_integrity_by_user_short_term_str",
+        "stun_attr_add_fingerprint_str"
+      ],
+      "predicates": {
+        "m_ok": {
+          "meaning": "an initialiser or setter completed with a usable message",
+          "events": [
+            "ok:stun_init_buffer_str",
+            "ok:stun_init_command_str",
+            "ok:old_stun_init_command_str",
+            "ok:stun_init_request_str",
+            "ok:stun_init_indication_str",
+            "ok:stun_init_success_response_str",
+            "ok:old_stun_init_success_response_str",
+            "ok:stun_init_error_response_str",
+            "ok:old_stun_init_error_response_str",
+            "ok:stun_init_channel_message_str",
+            "ok:stun_set_binding_request_str",
+            "ok:stun_set_binding_response_str",
+            "ok:stun_set_allocate_request_str",
+            "ok:stun_set_allocate_response_str",
+            "ok:stun_set_channel_bind_request_str",
+            "ok:stun_set_channel_bind_response_str"
+          ]
+        },
+        "m_call": {
+          "meaning": "an initialiser or setter is about to overwrite the message buffer",
+          "events": [
+            "call:stun_init_buffer_str",
+            "call:stun_init_command_str",
+            "call:old_stun_init_command_str",
+            "call:stun_init_request_str",
+            "call:stun_init_indication_str",
+            "call:stun_init_success_response_str",
+            "call:old_stun_init_success_response_str",
+            "call:stun_init_error_response_str",
+            "call:old_stun_init_error_response_str",
+            "call:stun_init_channel_message_str",
+            "call:stun_set_binding_request_str",
+            "call:stun_set_binding_response_str",
+            "call:stun_set_allocate_request_str",
+            "call:stun_set_allocate_response_str",
+            "call:stun_set_channel_bind_request_str",
+            "call:stun_set_channel_bind_response_str"
+          ]
+        },
+        "a_add": {
+          "meaning": "an attribute writer is about to append at the header's length offset",
+          "events": [
+            "call:stun_attr_add_str",
+            "call:stun_attr_add_addr_str",
+            "call:stun_attr_add_channel_number_str",
+            "call:stun_attr_add_bandwidth_str",
+            "call:stun_attr_add_address_error_code",
+            "call:stun_attr_add_change_request_str",
+            "call:stun_attr_add_response_port_str",
+            "call:stun_attr_add_padding_str",
+            "call:stun_attr_add_integrity_str",
+            "call:stun_attr_add_integrity_by_key_str",
+            "call:stun_attr_add_integrity_by_user_str",
+            "call:stun_attr_add_integrity_by_user_short_term_str",
+            "call:stun_attr_add_fingerprint_str"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:stun_init_request_str",
+            "ok:stun_init_request_str",
+            "call:stun_attr_add_str",
+            "fail:stun_attr_add_str",
+            "call:stun_attr_add_str",
+            "ok:stun_attr_add_str"
+          ],
+          "allowed": true,
+          "reason": "attributes are appended after the initialiser wrote the header"
+        },
+        {
+          "events": ["call:stun_attr_add_str"],
+          "allowed": false,
+          "reason": "no initialiser has run on the buffer"
+        },
+        {
+          "events": [
+            "call:stun_init_request_str",
+            "ok:stun_init_request_str",
+            "call:stun_set_allocate_request_str",
+            "fail:stun_set_allocate_request_str",
+            "call:stun_attr_add_str"
+          ],
+          "allowed": false,
+          "reason": "the setter failed and left *len undefined; an initialiser must succeed first"
+        }
+      ]
+    },
+    {
+      "id": "attributes_stop_after_integrity",
+      "rule": "ns_turn_msg.h (stun_attr_get_next_covered_str): RFC 8489 section 9 - agents MUST ignore every attribute that follows MESSAGE-INTEGRITY except MESSAGE-INTEGRITY-SHA256 and FINGERPRINT, because the HMAC covers only the bytes up to the end of MESSAGE-INTEGRITY. Adding an attribute after the integrity attribute therefore produces a message whose trailing attributes are attacker-mutable, so only FINGERPRINT (the unkeyed whole-message checksum) may follow.",
+      "formula": "G(i_add -> X(!a_plain W fp_add))",
+      "apis": [
+        "stun_attr_add_integrity_str",
+        "stun_attr_add_integrity_by_key_str",
+        "stun_attr_add_integrity_by_user_str",
+        "stun_attr_add_integrity_by_user_short_term_str",
+        "stun_attr_add_fingerprint_str",
+        "stun_attr_add_str"
+      ],
+      "predicates": {
+        "i_add": {
+          "meaning": "MESSAGE-INTEGRITY is being appended",
+          "events": [
+            "call:stun_attr_add_integrity_str",
+            "call:stun_attr_add_integrity_by_key_str",
+            "call:stun_attr_add_integrity_by_user_str",
+            "call:stun_attr_add_integrity_by_user_short_term_str"
+          ]
+        },
+        "a_plain": {
+          "meaning": "an ordinary attribute is being appended",
+          "events": [
+            "call:stun_attr_add_str",
+            "call:stun_attr_add_addr_str",
+            "call:stun_attr_add_channel_number_str",
+            "call:stun_attr_add_bandwidth_str",
+            "call:stun_attr_add_address_error_code",
+            "call:stun_attr_add_change_request_str",
+            "call:stun_attr_add_response_port_str",
+            "call:stun_attr_add_padding_str"
+          ]
+        },
+        "fp_add": {
+          "meaning": "FINGERPRINT is appended, the only attribute allowed after MESSAGE-INTEGRITY",
+          "events": ["call:stun_attr_add_fingerprint_str"]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:stun_attr_add_integrity_by_user_str",
+            "ok:stun_attr_add_integrity_by_user_str",
+            "call:stun_attr_add_fingerprint_str",
+            "ok:stun_attr_add_fingerprint_str"
+          ],
+          "allowed": true,
+          "reason": "only FINGERPRINT follows the integrity attribute"
+        },
+        {
+          "events": [
+            "call:stun_attr_add_integrity_by_user_str",
+            "ok:stun_attr_add_integrity_by_user_str",
+            "call:stun_attr_add_str",
+            "ok:stun_attr_add_str"
+          ],
+          "allowed": false,
+          "reason": "an ordinary attribute after MESSAGE-INTEGRITY is outside the HMAC"
+        }
+      ]
+    },
+    {
+      "id": "fingerprint_is_last",
+      "rule": "ns_turn_msg.h (stun_attr_add_fingerprint_str): FINGERPRINT is the CRC-32 over the whole message with the length field temporarily set to include it (stun_is_command_message_full_check_str, ns_turn_msg.c:635), so any attribute appended after it changes the bytes the CRC covers and the message fails its own fingerprint check.",
+      "formula": "G(fp_add -> X(G(!a_any)))",
+      "apis": ["stun_attr_add_fingerprint_str", "stun_attr_add_str", "stun_attr_add_integrity_by_user_str"],
+      "predicates": {
+        "fp_add": {
+          "meaning": "FINGERPRINT is being appended",
+          "events": ["call:stun_attr_add_fingerprint_str"]
+        },
+        "a_any": {
+          "meaning": "any attribute is being appended",
+          "events": [
+            "call:stun_attr_add_str",
+            "call:stun_attr_add_addr_str",
+            "call:stun_attr_add_channel_number_str",
+            "call:stun_attr_add_bandwidth_str",
+            "call:stun_attr_add_address_error_code",
+            "call:stun_attr_add_change_request_str",
+            "call:stun_attr_add_response_port_str",
+            "call:stun_attr_add_padding_str",
+            "call:stun_attr_add_integrity_str",
+            "call:stun_attr_add_integrity_by_key_str",
+            "call:stun_attr_add_integrity_by_user_str",
+            "call:stun_attr_add_integrity_by_user_short_term_str",
+            "call:stun_attr_add_fingerprint_str"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:stun_attr_add_str",
+            "ok:stun_attr_add_str",
+            "call:stun_attr_add_fingerprint_str",
+            "ok:stun_attr_add_fingerprint_str"
+          ],
+          "allowed": true,
+          "reason": "FINGERPRINT closes the attribute list"
+        },
+        {
+          "events": [
+            "call:stun_attr_add_fingerprint_str",
+            "ok:stun_attr_add_fingerprint_str",
+            "call:stun_attr_add_str"
+          ],
+          "allowed": false,
+          "reason": "an attribute after FINGERPRINT invalidates the CRC"
+        }
+      ]
+    },
+    {
+      "id": "attr_ref_belongs_to_current_message",
+      "rule": "ns_turn_msg.h: stun_attr_ref is 'typedef const void *' - the readers and the iterators take the message (buf, len) plus a ref that stun_attr_get_first_str returns as a pointer into buf + STUN_HEADER_LENGTH. A ref therefore names the bytes of the message it was obtained from: after an initialiser or setter overwrote the buffer, the ref points at whatever those bytes now are, and stun_attr_get_next_str re-validates its length against the new message header.",
+      "formula": "(!r_use W r_ok) & G(m_call -> X(!r_use W r_ok))",
+      "apis": [
+        "stun_attr_get_first_str",
+        "stun_attr_get_first_by_type_str",
+        "stun_attr_get_next_str",
+        "stun_attr_get_next_covered_str",
+        "stun_attr_get_type",
+        "stun_attr_get_len",
+        "stun_attr_get_value",
+        "stun_attr_get_addr_str"
+      ],
+      "predicates": {
+        "r_ok": {
+          "meaning": "an iterator handed out a ref into the current message",
+          "events": [
+            "ok:stun_attr_get_first_str",
+            "ok:stun_attr_get_first_by_type_str",
+            "ok:stun_attr_get_next_str",
+            "ok:stun_attr_get_next_covered_str"
+          ]
+        },
+        "r_use": {
+          "meaning": "a reader or iterator is about to dereference the ref",
+          "events": [
+            "call:stun_attr_get_next_str",
+            "call:stun_attr_get_next_covered_str",
+            "call:stun_attr_get_type",
+            "call:stun_attr_get_len",
+            "call:stun_attr_get_value",
+            "call:stun_attr_is_addr",
+            "call:stun_attr_get_channel_number",
+            "call:stun_attr_get_bandwidth",
+            "call:stun_attr_get_even_port",
+            "call:stun_attr_get_reservation_token_value",
+            "call:stun_attr_get_addr_str",
+            "call:stun_get_requested_address_family",
+            "call:stun_attr_get_change_request_str",
+            "call:stun_attr_get_response_port_str",
+            "call:stun_attr_get_padding_len_str"
+          ]
+        },
+        "m_call": {
+          "meaning": "the message the ref points into is being overwritten",
+          "events": [
+            "call:stun_init_buffer_str",
+            "call:stun_init_command_str",
+            "call:old_stun_init_command_str",
+            "call:stun_init_request_str",
+            "call:stun_init_indication_str",
+            "call:stun_init_success_response_str",
+            "call:old_stun_init_success_response_str",
+            "call:stun_init_error_response_str",
+            "call:old_stun_init_error_response_str",
+            "call:stun_init_channel_message_str",
+            "call:stun_set_binding_request_str",
+            "call:stun_set_binding_response_str",
+            "call:stun_set_allocate_request_str",
+            "call:stun_set_allocate_response_str",
+            "call:stun_set_channel_bind_request_str",
+            "call:stun_set_channel_bind_response_str"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:stun_attr_get_first_str",
+            "ok:stun_attr_get_first_str",
+            "call:stun_attr_get_next_str",
+            "ok:stun_attr_get_next_str",
+            "call:stun_attr_get_next_str",
+            "fail:stun_attr_get_next_str"
+          ],
+          "allowed": true,
+          "reason": "iteration errors are return values; the ref from the last ok still names this message"
+        },
+        {
+          "events": ["call:stun_attr_get_type"],
+          "allowed": false,
+          "reason": "no iterator has produced a ref"
+        },
+        {
+          "events": [
+            "call:stun_attr_get_first_str",
+            "ok:stun_attr_get_first_str",
+            "call:stun_set_binding_request_str",
+            "ok:stun_set_binding_request_str",
+            "call:stun_attr_get_type"
+          ],
+          "allowed": false,
+          "reason": "the message was rebuilt under the ref"
+        }
+      ]
+    },
+    {
+      "id": "tid_before_response",
+      "rule": "ns_turn_msg.h: stun_tid is 'Structure holding the STUN message Transaction ID' (12 bytes) and the only functions that fill it are stun_tid_generate, stun_tid_from_message_str and stun_tid_generate_in_message_str; the response initialisers stun_init_success_response_str / stun_init_error_response_str (and their old_stun_* forms) and the stun_set_*_response_str setters copy it into the header through stun_tid_message_cpy, so a response built from an unfilled tid does not carry the request's transaction ID.",
+      "formula": "(!r_call W t_ok)",
+      "apis": [
+        "stun_tid_generate",
+        "stun_tid_from_message_str",
+        "stun_tid_generate_in_message_str",
+        "stun_init_success_response_str",
+        "stun_init_error_response_str",
+        "stun_set_binding_response_str",
+        "stun_set_allocate_response_str",
+        "stun_set_channel_bind_response_str"
+      ],
+      "predicates": {
+        "t_ok": {
+          "meaning": "a producer filled a transaction ID",
+          "events": [
+            "ok:stun_tid_generate",
+            "ok:stun_tid_from_message_str",
+            "ok:stun_tid_generate_in_message_str"
+          ]
+        },
+        "r_call": {
+          "meaning": "a response is about to copy the transaction ID into the header",
+          "events": [
+            "call:stun_init_success_response_str",
+            "call:old_stun_init_success_response_str",
+            "call:old_stun_init_error_response_str",
+            "call:stun_init_error_response_str",
+            "call:stun_set_binding_response_str",
+            "call:stun_set_allocate_response_str",
+            "call:stun_set_channel_bind_response_str"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:stun_tid_from_message_str",
+            "ok:stun_tid_from_message_str",
+            "call:stun_set_binding_response_str",
+            "ok:stun_set_binding_response_str"
+          ],
+          "allowed": true,
+          "reason": "the response echoes the id parsed from the request"
+        },
+        {
+          "events": ["call:stun_set_binding_response_str"],
+          "allowed": false,
+          "reason": "no transaction id was produced"
+        }
+      ]
+    },
+    {
+      "id": "oauth_key_before_token",
+      "rule": "ns_turn_msg.c: encode_oauth_token and decode_oauth_token take the cipher from key->as_rs_alg and the AES key from key->as_rs_key, and both fields are filled in only by convert_oauth_key_data. A convert that returns false has already cleared the key (memset at its start), so the token calls need a key from the latest convert, and that convert must have returned true.",
+      "formula": "(!t_use W k_ok) & G(k_fail -> X(!t_use W k_ok))",
+      "apis": [
+        "convert_oauth_key_data",
+        "encode_oauth_token",
+        "decode_oauth_token"
+      ],
+      "predicates": {
+        "k_ok": {
+          "meaning": "convert_oauth_key_data returned true",
+          "events": ["ok:convert_oauth_key_data"]
+        },
+        "k_fail": {
+          "meaning": "convert_oauth_key_data returned false and left the key cleared",
+          "events": ["fail:convert_oauth_key_data"]
+        },
+        "t_use": {
+          "meaning": "a token call that reads the key is about to run",
+          "events": [
+            "call:encode_oauth_token",
+            "call:decode_oauth_token"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:convert_oauth_key_data",
+            "ok:convert_oauth_key_data",
+            "call:encode_oauth_token",
+            "ok:encode_oauth_token",
+            "call:decode_oauth_token",
+            "ok:decode_oauth_token"
+          ],
+          "allowed": true,
+          "reason": "the token is encoded and decoded with a converted key"
+        },
+        {
+          "events": ["call:decode_oauth_token"],
+          "allowed": false,
+          "reason": "no key was converted"
+        },
+        {
+          "events": [
+            "call:convert_oauth_key_data",
+            "ok:convert_oauth_key_data",
+            "call:convert_oauth_key_data",
+            "fail:convert_oauth_key_data",
+            "call:encode_oauth_token"
+          ],
+          "allowed": false,
+          "reason": "the failed convert cleared the key"
+        }
+      ]
+    }
+  ]
+}

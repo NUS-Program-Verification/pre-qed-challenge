@@ -1,0 +1,901 @@
+{
+  "properties": [
+    {
+      "id": "cursor_lifecycle",
+      "rule": "json_cursor.hpp:264-445 / staj_cursor.hpp:555-620 / staj_iterator.hpp:49-160: every basic_json_cursor, staj_cursor, ser_context and staj_event routine, and the staj_array/object_iterator built on the cursor, read the cursor's state; the cursor exists after a successful construction. A construction error, or an error from next/read_to/check_done/reset (directly or through an iterator, staj_iterator.hpp:150-170), leaves no usable cursor (jsoncons docs: 'check ec / done()'); the harness drops it.",
+      "formula": "(!c_use W c_new) & G(c_lost -> X(!c_use W c_new))",
+      "apis": [
+        "json_stream_cursor::json_stream_cursor",
+        "json_stream_cursor::current",
+        "json_stream_cursor::next",
+        "json_stream_cursor::check_done",
+        "json_stream_cursor::line",
+        "json_stream_cursor::column",
+        "json_stream_cursor::context",
+        "json_stream_cursor::eof",
+        "json_stream_cursor::read_to",
+        "json_stream_cursor::reset",
+        "ser_context::line",
+        "ser_context::column",
+        "ser_context::position",
+        "ser_context::begin_position",
+        "ser_context::end_position",
+        "staj_cursor::done",
+        "staj_cursor::line",
+        "staj_cursor::column",
+        "staj_cursor::context",
+        "staj_cursor::is_multi_dim",
+        "staj_cursor::extents",
+        "staj_cursor::order",
+        "staj_cursor::is_typed_array",
+        "staj_cursor::array_tag",
+        "staj_cursor::array_buffer",
+        "staj_cursor::to_end_array",
+        "staj_cursor::current",
+        "staj_cursor::next",
+        "staj_cursor::read_to",
+        "staj_cursor::array_expected",
+        "staj_event::size",
+        "staj_event::ext_tag",
+        "staj_event::get",
+        "staj_array_iterator::staj_array_iterator",
+        "staj_array_iterator::operator*",
+        "staj_array_iterator::operator->",
+        "staj_array_iterator::increment",
+        "staj_array_iterator::operator++",
+        "staj_array_iterator::operator=",
+        "staj_object_iterator::staj_object_iterator",
+        "staj_object_iterator::operator*",
+        "staj_object_iterator::operator->",
+        "staj_object_iterator::increment",
+        "staj_object_iterator::operator++",
+        "staj_object_iterator::operator="
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a cursor was constructed without error",
+          "events": [
+            "ok:json_stream_cursor::json_stream_cursor"
+          ]
+        },
+        "c_lost": {
+          "meaning": "the cursor failed or is being replaced",
+          "events": [
+            "fail:json_stream_cursor::next",
+            "call:json_stream_cursor::json_stream_cursor",
+            "fail:json_stream_cursor::check_done",
+            "fail:json_stream_cursor::read_to",
+            "fail:json_stream_cursor::reset",
+            "fail:staj_cursor::next",
+            "fail:staj_cursor::read_to",
+            "fail:staj_array_iterator::staj_array_iterator",
+            "fail:staj_array_iterator::operator*",
+            "fail:staj_array_iterator::operator->",
+            "fail:staj_array_iterator::increment",
+            "fail:staj_array_iterator::operator++",
+            "fail:staj_array_iterator::operator=",
+            "fail:staj_object_iterator::staj_object_iterator",
+            "fail:staj_object_iterator::operator*",
+            "fail:staj_object_iterator::operator->",
+            "fail:staj_object_iterator::increment",
+            "fail:staj_object_iterator::operator++",
+            "fail:staj_object_iterator::operator="
+          ]
+        },
+        "c_use": {
+          "meaning": "a cursor routine is about to be called",
+          "events": [
+            "call:json_stream_cursor::current",
+            "call:json_stream_cursor::next",
+            "call:json_stream_cursor::check_done",
+            "call:json_stream_cursor::line",
+            "call:json_stream_cursor::column",
+            "call:json_stream_cursor::context",
+            "call:json_stream_cursor::eof",
+            "call:json_stream_cursor::read_to",
+            "call:json_stream_cursor::reset",
+            "call:ser_context::line",
+            "call:ser_context::column",
+            "call:ser_context::position",
+            "call:ser_context::begin_position",
+            "call:ser_context::end_position",
+            "call:staj_cursor::done",
+            "call:staj_cursor::line",
+            "call:staj_cursor::column",
+            "call:staj_cursor::context",
+            "call:staj_cursor::is_multi_dim",
+            "call:staj_cursor::extents",
+            "call:staj_cursor::order",
+            "call:staj_cursor::is_typed_array",
+            "call:staj_cursor::array_tag",
+            "call:staj_cursor::array_buffer",
+            "call:staj_cursor::to_end_array",
+            "call:staj_cursor::current",
+            "call:staj_cursor::next",
+            "call:staj_cursor::read_to",
+            "call:staj_cursor::array_expected",
+            "call:staj_event::size",
+            "call:staj_event::ext_tag",
+            "call:staj_event::get",
+            "call:staj_array_iterator::staj_array_iterator",
+            "call:staj_array_iterator::operator*",
+            "call:staj_array_iterator::operator->",
+            "call:staj_array_iterator::increment",
+            "call:staj_array_iterator::operator++",
+            "call:staj_array_iterator::operator=",
+            "call:staj_object_iterator::staj_object_iterator",
+            "call:staj_object_iterator::operator*",
+            "call:staj_object_iterator::operator->",
+            "call:staj_object_iterator::increment",
+            "call:staj_object_iterator::operator++",
+            "call:staj_object_iterator::operator="
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:json_stream_cursor::json_stream_cursor",
+            "ok:json_stream_cursor::json_stream_cursor",
+            "call:json_stream_cursor::current",
+            "ok:json_stream_cursor::current",
+            "call:json_stream_cursor::next",
+            "ok:json_stream_cursor::next"
+          ],
+          "allowed": true,
+          "reason": "walk events"
+        },
+        {
+          "events": [
+            "call:json_stream_cursor::next"
+          ],
+          "allowed": false,
+          "reason": "no cursor"
+        },
+        {
+          "events": [
+            "call:json_stream_cursor::json_stream_cursor",
+            "ok:json_stream_cursor::json_stream_cursor",
+            "call:json_stream_cursor::next",
+            "fail:json_stream_cursor::next",
+            "call:json_stream_cursor::current"
+          ],
+          "allowed": false,
+          "reason": "cursor errored"
+        },
+        {
+          "events": [
+            "call:json_stream_cursor::json_stream_cursor",
+            "ok:json_stream_cursor::json_stream_cursor",
+            "call:staj_array_iterator::increment",
+            "fail:staj_array_iterator::increment",
+            "call:ser_context::line"
+          ],
+          "allowed": false,
+          "reason": "iterator errored the cursor"
+        }
+      ]
+    },
+    {
+      "id": "schema_before_validate",
+      "rule": "jsonschema.hpp / json_schema.hpp:71-180: is_valid, validate, walk and operator= are members of the schema object returned by make_json_schema; make_json_schema throws schema_error for an invalid schema, leaving none.",
+      "formula": "(!validate W schema_ok) & G(schema_fail -> X(!validate W schema_ok))",
+      "apis": [
+        "jsonschema::make_json_schema",
+        "json_schema::is_valid",
+        "json_schema::validate",
+        "json_schema::validate(throw)",
+        "json_schema::walk",
+        "json_schema::operator="
+      ],
+      "predicates": {
+        "schema_ok": {
+          "meaning": "a schema was compiled",
+          "events": [
+            "ok:jsonschema::make_json_schema"
+          ]
+        },
+        "schema_fail": {
+          "meaning": "compiling a new schema failed (the harness drops the old one first)",
+          "events": [
+            "fail:jsonschema::make_json_schema"
+          ]
+        },
+        "validate": {
+          "meaning": "a json_schema member (is_valid, validate, walk, operator=) is about to be called",
+          "events": [
+            "call:json_schema::is_valid",
+            "call:json_schema::validate",
+            "call:json_schema::validate(throw)",
+            "call:json_schema::walk",
+            "call:json_schema::operator="
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:jsonschema::make_json_schema",
+            "ok:jsonschema::make_json_schema",
+            "call:json_schema::is_valid",
+            "ok:json_schema::is_valid"
+          ],
+          "allowed": true,
+          "reason": "compiled first"
+        },
+        {
+          "events": [
+            "call:json_schema::is_valid"
+          ],
+          "allowed": false,
+          "reason": "no schema"
+        },
+        {
+          "events": [
+            "call:jsonschema::make_json_schema",
+            "fail:jsonschema::make_json_schema",
+            "call:json_schema::is_valid"
+          ],
+          "allowed": false,
+          "reason": "compilation failed"
+        }
+      ]
+    },
+    {
+      "id": "bigint_operands_exist",
+      "rule": "bigint.hpp:1180-1640, 1996-2040: the arithmetic, bitwise, conversion and to_string operators are operations on constructed bigint values; binary ones need two. The harness keeps the last two constructed.",
+      "formula": "(!mod W (big_ok & X(!mod W big_ok))) & (!str W big_ok)",
+      "apis": [
+        "bigint::bigint",
+        "bigint::operator%",
+        "bigint::to_string",
+        "bigint::operator&=",
+        "bigint::operator|=",
+        "bigint::operator^=",
+        "bigint::operator+",
+        "bigint::operator*",
+        "bigint::operator^",
+        "bigint::operator/",
+        "bigint::operator(bool)",
+        "bigint::operator(double)",
+        "bigint::operator(long_double)",
+        "bigint::operator(int64_t)",
+        "bigint::operator!",
+        "bigint::operator++",
+        "bigint::operator--",
+        "bigint::to_string_hex",
+        "babs",
+        "bpow",
+        "bigint::operator<<",
+        "bigint::operator>>",
+        "bsqrt"
+      ],
+      "predicates": {
+        "big_ok": {
+          "meaning": "a bigint was constructed",
+          "events": [
+            "ok:bigint::bigint"
+          ]
+        },
+        "mod": {
+          "meaning": "a binary bigint operation is about to be called",
+          "events": [
+            "call:bigint::operator%",
+            "call:bigint::operator&=",
+            "call:bigint::operator|=",
+            "call:bigint::operator^=",
+            "call:bigint::operator+",
+            "call:bigint::operator*",
+            "call:bigint::operator^",
+            "call:bigint::operator/"
+          ]
+        },
+        "str": {
+          "meaning": "a unary bigint operation is about to be called",
+          "events": [
+            "call:bigint::to_string",
+            "call:bigint::operator(bool)",
+            "call:bigint::operator(double)",
+            "call:bigint::operator(long_double)",
+            "call:bigint::operator(int64_t)",
+            "call:bigint::operator!",
+            "call:bigint::operator++",
+            "call:bigint::operator--",
+            "call:bigint::to_string_hex",
+            "call:babs",
+            "call:bpow",
+            "call:bigint::operator<<",
+            "call:bigint::operator>>",
+            "call:bsqrt"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:bigint::bigint",
+            "ok:bigint::bigint",
+            "call:bigint::bigint",
+            "ok:bigint::bigint",
+            "call:bigint::operator%",
+            "ok:bigint::operator%"
+          ],
+          "allowed": true,
+          "reason": "two operands"
+        },
+        {
+          "events": [
+            "call:bigint::to_string"
+          ],
+          "allowed": false,
+          "reason": "no bigint"
+        },
+        {
+          "events": [
+            "call:bigint::bigint",
+            "ok:bigint::bigint",
+            "call:bigint::operator%"
+          ],
+          "allowed": false,
+          "reason": "only one operand"
+        }
+      ]
+    },
+    {
+      "id": "cbor_cursor_lifecycle",
+      "rule": "cbor_cursor.hpp:86-275: the cursor's routines read the event and parser state of a cursor constructed without error; a construction, next, read_to, reset or filter-view (operator|) error leaves no usable cursor (staj_cursor.md: 'check ec / done()'); the harness drops it.",
+      "formula": "(!c_use W c_new) & G(c_lost -> X(!c_use W c_new))",
+      "apis": [
+        "cbor::cbor_bytes_cursor::cbor_bytes_cursor",
+        "cbor::cbor_bytes_cursor::current",
+        "cbor::cbor_bytes_cursor::next",
+        "cbor::cbor_bytes_cursor::done",
+        "cbor::cbor_bytes_cursor::eof",
+        "cbor::cbor_bytes_cursor::line",
+        "cbor::cbor_bytes_cursor::column",
+        "cbor::cbor_bytes_cursor::context",
+        "cbor::cbor_bytes_cursor::read_to",
+        "cbor::cbor_bytes_cursor::reset",
+        "cbor::cbor_bytes_cursor::operator|",
+        "cbor::cbor_bytes_cursor::raw_tag",
+        "cbor::cbor_bytes_cursor::is_typed_array",
+        "cbor::cbor_bytes_cursor::is_multi_dim",
+        "cbor::cbor_bytes_cursor::order",
+        "cbor::cbor_bytes_cursor::array_tag",
+        "cbor::cbor_bytes_cursor::array_buffer",
+        "cbor::cbor_bytes_cursor::extents",
+        "cbor::cbor_bytes_cursor::to_end_array",
+        "staj_cursor::read_typed_array"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a cursor was constructed without error",
+          "events": [
+            "ok:cbor::cbor_bytes_cursor::cbor_bytes_cursor"
+          ]
+        },
+        "c_lost": {
+          "meaning": "the cursor failed or is being replaced",
+          "events": [
+            "fail:cbor::cbor_bytes_cursor::next",
+            "fail:cbor::cbor_bytes_cursor::read_to",
+            "fail:cbor::cbor_bytes_cursor::reset",
+            "fail:cbor::cbor_bytes_cursor::operator|",
+            "call:cbor::cbor_bytes_cursor::cbor_bytes_cursor"
+          ]
+        },
+        "c_use": {
+          "meaning": "a cursor routine is about to be called",
+          "events": [
+            "call:cbor::cbor_bytes_cursor::current",
+            "call:cbor::cbor_bytes_cursor::next",
+            "call:cbor::cbor_bytes_cursor::done",
+            "call:cbor::cbor_bytes_cursor::eof",
+            "call:cbor::cbor_bytes_cursor::line",
+            "call:cbor::cbor_bytes_cursor::column",
+            "call:cbor::cbor_bytes_cursor::context",
+            "call:cbor::cbor_bytes_cursor::read_to",
+            "call:cbor::cbor_bytes_cursor::reset",
+            "call:cbor::cbor_bytes_cursor::operator|",
+            "call:cbor::cbor_bytes_cursor::raw_tag",
+            "call:cbor::cbor_bytes_cursor::is_typed_array",
+            "call:cbor::cbor_bytes_cursor::is_multi_dim",
+            "call:cbor::cbor_bytes_cursor::order",
+            "call:cbor::cbor_bytes_cursor::array_tag",
+            "call:cbor::cbor_bytes_cursor::array_buffer",
+            "call:cbor::cbor_bytes_cursor::extents",
+            "call:cbor::cbor_bytes_cursor::to_end_array",
+            "call:staj_cursor::read_typed_array"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:cbor::cbor_bytes_cursor::cbor_bytes_cursor",
+            "ok:cbor::cbor_bytes_cursor::cbor_bytes_cursor",
+            "call:cbor::cbor_bytes_cursor::current",
+            "ok:cbor::cbor_bytes_cursor::current",
+            "call:cbor::cbor_bytes_cursor::next",
+            "ok:cbor::cbor_bytes_cursor::next"
+          ],
+          "allowed": true,
+          "reason": "walk events"
+        },
+        {
+          "events": [
+            "call:cbor::cbor_bytes_cursor::next"
+          ],
+          "allowed": false,
+          "reason": "no cursor"
+        },
+        {
+          "events": [
+            "call:cbor::cbor_bytes_cursor::cbor_bytes_cursor",
+            "ok:cbor::cbor_bytes_cursor::cbor_bytes_cursor",
+            "call:cbor::cbor_bytes_cursor::read_to",
+            "fail:cbor::cbor_bytes_cursor::read_to",
+            "call:cbor::cbor_bytes_cursor::line"
+          ],
+          "allowed": false,
+          "reason": "cursor errored"
+        }
+      ]
+    },
+    {
+      "id": "bson_cursor_lifecycle",
+      "rule": "bson_cursor.hpp:100-230: the cursor's routines read the event and parser state of a cursor constructed without error; a construction, next, read_to, reset or filter-view (operator|) error leaves no usable cursor (staj_cursor.md: 'check ec / done()'); the harness drops it.",
+      "formula": "(!c_use W c_new) & G(c_lost -> X(!c_use W c_new))",
+      "apis": [
+        "bson::bson_bytes_cursor::bson_bytes_cursor",
+        "bson::bson_bytes_cursor::current",
+        "bson::bson_bytes_cursor::next",
+        "bson::bson_bytes_cursor::done",
+        "bson::bson_bytes_cursor::eof",
+        "bson::bson_bytes_cursor::line",
+        "bson::bson_bytes_cursor::column",
+        "bson::bson_bytes_cursor::context",
+        "bson::bson_bytes_cursor::read_to",
+        "bson::bson_bytes_cursor::reset",
+        "bson::bson_bytes_cursor::operator|",
+        "bson::bson_bytes_cursor::array_expected"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a cursor was constructed without error",
+          "events": [
+            "ok:bson::bson_bytes_cursor::bson_bytes_cursor"
+          ]
+        },
+        "c_lost": {
+          "meaning": "the cursor failed or is being replaced",
+          "events": [
+            "fail:bson::bson_bytes_cursor::next",
+            "fail:bson::bson_bytes_cursor::read_to",
+            "fail:bson::bson_bytes_cursor::reset",
+            "fail:bson::bson_bytes_cursor::operator|",
+            "fail:bson::bson_bytes_cursor::array_expected",
+            "call:bson::bson_bytes_cursor::bson_bytes_cursor"
+          ]
+        },
+        "c_use": {
+          "meaning": "a cursor routine is about to be called",
+          "events": [
+            "call:bson::bson_bytes_cursor::current",
+            "call:bson::bson_bytes_cursor::next",
+            "call:bson::bson_bytes_cursor::done",
+            "call:bson::bson_bytes_cursor::eof",
+            "call:bson::bson_bytes_cursor::line",
+            "call:bson::bson_bytes_cursor::column",
+            "call:bson::bson_bytes_cursor::context",
+            "call:bson::bson_bytes_cursor::read_to",
+            "call:bson::bson_bytes_cursor::reset",
+            "call:bson::bson_bytes_cursor::operator|",
+            "call:bson::bson_bytes_cursor::array_expected"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:bson::bson_bytes_cursor::bson_bytes_cursor",
+            "ok:bson::bson_bytes_cursor::bson_bytes_cursor",
+            "call:bson::bson_bytes_cursor::current",
+            "ok:bson::bson_bytes_cursor::current",
+            "call:bson::bson_bytes_cursor::next",
+            "ok:bson::bson_bytes_cursor::next"
+          ],
+          "allowed": true,
+          "reason": "walk events"
+        },
+        {
+          "events": [
+            "call:bson::bson_bytes_cursor::next"
+          ],
+          "allowed": false,
+          "reason": "no cursor"
+        },
+        {
+          "events": [
+            "call:bson::bson_bytes_cursor::bson_bytes_cursor",
+            "ok:bson::bson_bytes_cursor::bson_bytes_cursor",
+            "call:bson::bson_bytes_cursor::read_to",
+            "fail:bson::bson_bytes_cursor::read_to",
+            "call:bson::bson_bytes_cursor::line"
+          ],
+          "allowed": false,
+          "reason": "cursor errored"
+        }
+      ]
+    },
+    {
+      "id": "msgpack_cursor_lifecycle",
+      "rule": "msgpack_cursor.hpp:100-225: the cursor's routines read the event and parser state of a cursor constructed without error; a construction, next, read_to, reset or filter-view (operator|) error leaves no usable cursor (staj_cursor.md: 'check ec / done()'); the harness drops it.",
+      "formula": "(!c_use W c_new) & G(c_lost -> X(!c_use W c_new))",
+      "apis": [
+        "msgpack::msgpack_bytes_cursor::msgpack_bytes_cursor",
+        "msgpack::msgpack_bytes_cursor::current",
+        "msgpack::msgpack_bytes_cursor::next",
+        "msgpack::msgpack_bytes_cursor::done",
+        "msgpack::msgpack_bytes_cursor::eof",
+        "msgpack::msgpack_bytes_cursor::line",
+        "msgpack::msgpack_bytes_cursor::column",
+        "msgpack::msgpack_bytes_cursor::context",
+        "msgpack::msgpack_bytes_cursor::read_to",
+        "msgpack::msgpack_bytes_cursor::reset",
+        "msgpack::msgpack_bytes_cursor::operator|"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a cursor was constructed without error",
+          "events": [
+            "ok:msgpack::msgpack_bytes_cursor::msgpack_bytes_cursor"
+          ]
+        },
+        "c_lost": {
+          "meaning": "the cursor failed or is being replaced",
+          "events": [
+            "fail:msgpack::msgpack_bytes_cursor::next",
+            "fail:msgpack::msgpack_bytes_cursor::read_to",
+            "fail:msgpack::msgpack_bytes_cursor::reset",
+            "fail:msgpack::msgpack_bytes_cursor::operator|",
+            "call:msgpack::msgpack_bytes_cursor::msgpack_bytes_cursor"
+          ]
+        },
+        "c_use": {
+          "meaning": "a cursor routine is about to be called",
+          "events": [
+            "call:msgpack::msgpack_bytes_cursor::current",
+            "call:msgpack::msgpack_bytes_cursor::next",
+            "call:msgpack::msgpack_bytes_cursor::done",
+            "call:msgpack::msgpack_bytes_cursor::eof",
+            "call:msgpack::msgpack_bytes_cursor::line",
+            "call:msgpack::msgpack_bytes_cursor::column",
+            "call:msgpack::msgpack_bytes_cursor::context",
+            "call:msgpack::msgpack_bytes_cursor::read_to",
+            "call:msgpack::msgpack_bytes_cursor::reset",
+            "call:msgpack::msgpack_bytes_cursor::operator|"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:msgpack::msgpack_bytes_cursor::msgpack_bytes_cursor",
+            "ok:msgpack::msgpack_bytes_cursor::msgpack_bytes_cursor",
+            "call:msgpack::msgpack_bytes_cursor::current",
+            "ok:msgpack::msgpack_bytes_cursor::current",
+            "call:msgpack::msgpack_bytes_cursor::next",
+            "ok:msgpack::msgpack_bytes_cursor::next"
+          ],
+          "allowed": true,
+          "reason": "walk events"
+        },
+        {
+          "events": [
+            "call:msgpack::msgpack_bytes_cursor::next"
+          ],
+          "allowed": false,
+          "reason": "no cursor"
+        },
+        {
+          "events": [
+            "call:msgpack::msgpack_bytes_cursor::msgpack_bytes_cursor",
+            "ok:msgpack::msgpack_bytes_cursor::msgpack_bytes_cursor",
+            "call:msgpack::msgpack_bytes_cursor::read_to",
+            "fail:msgpack::msgpack_bytes_cursor::read_to",
+            "call:msgpack::msgpack_bytes_cursor::line"
+          ],
+          "allowed": false,
+          "reason": "cursor errored"
+        }
+      ]
+    },
+    {
+      "id": "ubjson_cursor_lifecycle",
+      "rule": "ubjson_cursor.hpp:100-215: the cursor's routines read the event and parser state of a cursor constructed without error; a construction, next, read_to, reset or filter-view (operator|) error leaves no usable cursor (staj_cursor.md: 'check ec / done()'); the harness drops it.",
+      "formula": "(!c_use W c_new) & G(c_lost -> X(!c_use W c_new))",
+      "apis": [
+        "ubjson::ubjson_bytes_cursor::ubjson_bytes_cursor",
+        "ubjson::ubjson_bytes_cursor::current",
+        "ubjson::ubjson_bytes_cursor::next",
+        "ubjson::ubjson_bytes_cursor::done",
+        "ubjson::ubjson_bytes_cursor::eof",
+        "ubjson::ubjson_bytes_cursor::line",
+        "ubjson::ubjson_bytes_cursor::column",
+        "ubjson::ubjson_bytes_cursor::context",
+        "ubjson::ubjson_bytes_cursor::read_to",
+        "ubjson::ubjson_bytes_cursor::reset",
+        "ubjson::ubjson_bytes_cursor::operator|"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a cursor was constructed without error",
+          "events": [
+            "ok:ubjson::ubjson_bytes_cursor::ubjson_bytes_cursor"
+          ]
+        },
+        "c_lost": {
+          "meaning": "the cursor failed or is being replaced",
+          "events": [
+            "fail:ubjson::ubjson_bytes_cursor::next",
+            "fail:ubjson::ubjson_bytes_cursor::read_to",
+            "fail:ubjson::ubjson_bytes_cursor::reset",
+            "fail:ubjson::ubjson_bytes_cursor::operator|",
+            "call:ubjson::ubjson_bytes_cursor::ubjson_bytes_cursor"
+          ]
+        },
+        "c_use": {
+          "meaning": "a cursor routine is about to be called",
+          "events": [
+            "call:ubjson::ubjson_bytes_cursor::current",
+            "call:ubjson::ubjson_bytes_cursor::next",
+            "call:ubjson::ubjson_bytes_cursor::done",
+            "call:ubjson::ubjson_bytes_cursor::eof",
+            "call:ubjson::ubjson_bytes_cursor::line",
+            "call:ubjson::ubjson_bytes_cursor::column",
+            "call:ubjson::ubjson_bytes_cursor::context",
+            "call:ubjson::ubjson_bytes_cursor::read_to",
+            "call:ubjson::ubjson_bytes_cursor::reset",
+            "call:ubjson::ubjson_bytes_cursor::operator|"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:ubjson::ubjson_bytes_cursor::ubjson_bytes_cursor",
+            "ok:ubjson::ubjson_bytes_cursor::ubjson_bytes_cursor",
+            "call:ubjson::ubjson_bytes_cursor::current",
+            "ok:ubjson::ubjson_bytes_cursor::current",
+            "call:ubjson::ubjson_bytes_cursor::next",
+            "ok:ubjson::ubjson_bytes_cursor::next"
+          ],
+          "allowed": true,
+          "reason": "walk events"
+        },
+        {
+          "events": [
+            "call:ubjson::ubjson_bytes_cursor::next"
+          ],
+          "allowed": false,
+          "reason": "no cursor"
+        },
+        {
+          "events": [
+            "call:ubjson::ubjson_bytes_cursor::ubjson_bytes_cursor",
+            "ok:ubjson::ubjson_bytes_cursor::ubjson_bytes_cursor",
+            "call:ubjson::ubjson_bytes_cursor::read_to",
+            "fail:ubjson::ubjson_bytes_cursor::read_to",
+            "call:ubjson::ubjson_bytes_cursor::line"
+          ],
+          "allowed": false,
+          "reason": "cursor errored"
+        }
+      ]
+    },
+    {
+      "id": "csv_cursor_lifecycle",
+      "rule": "csv_cursor.hpp:119-345: the cursor's routines read the event and parser state of a cursor constructed without error; a construction, next, read_to, reset or filter-view (operator|) error leaves no usable cursor (staj_cursor.md: 'check ec / done()'); the harness drops it.",
+      "formula": "(!c_use W c_new) & G(c_lost -> X(!c_use W c_new))",
+      "apis": [
+        "csv::csv_string_cursor::csv_string_cursor",
+        "csv::csv_string_cursor::current",
+        "csv::csv_string_cursor::next",
+        "csv::csv_string_cursor::done",
+        "csv::csv_string_cursor::eof",
+        "csv::csv_string_cursor::line",
+        "csv::csv_string_cursor::column",
+        "csv::csv_string_cursor::context",
+        "csv::csv_string_cursor::read_to",
+        "csv::csv_string_cursor::reset",
+        "csv::csv_string_cursor::operator|"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a cursor was constructed without error",
+          "events": [
+            "ok:csv::csv_string_cursor::csv_string_cursor"
+          ]
+        },
+        "c_lost": {
+          "meaning": "the cursor failed or is being replaced",
+          "events": [
+            "fail:csv::csv_string_cursor::next",
+            "fail:csv::csv_string_cursor::read_to",
+            "fail:csv::csv_string_cursor::reset",
+            "fail:csv::csv_string_cursor::operator|",
+            "call:csv::csv_string_cursor::csv_string_cursor"
+          ]
+        },
+        "c_use": {
+          "meaning": "a cursor routine is about to be called",
+          "events": [
+            "call:csv::csv_string_cursor::current",
+            "call:csv::csv_string_cursor::next",
+            "call:csv::csv_string_cursor::done",
+            "call:csv::csv_string_cursor::eof",
+            "call:csv::csv_string_cursor::line",
+            "call:csv::csv_string_cursor::column",
+            "call:csv::csv_string_cursor::context",
+            "call:csv::csv_string_cursor::read_to",
+            "call:csv::csv_string_cursor::reset",
+            "call:csv::csv_string_cursor::operator|"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:csv::csv_string_cursor::csv_string_cursor",
+            "ok:csv::csv_string_cursor::csv_string_cursor",
+            "call:csv::csv_string_cursor::current",
+            "ok:csv::csv_string_cursor::current",
+            "call:csv::csv_string_cursor::next",
+            "ok:csv::csv_string_cursor::next"
+          ],
+          "allowed": true,
+          "reason": "walk events"
+        },
+        {
+          "events": [
+            "call:csv::csv_string_cursor::next"
+          ],
+          "allowed": false,
+          "reason": "no cursor"
+        },
+        {
+          "events": [
+            "call:csv::csv_string_cursor::csv_string_cursor",
+            "ok:csv::csv_string_cursor::csv_string_cursor",
+            "call:csv::csv_string_cursor::read_to",
+            "fail:csv::csv_string_cursor::read_to",
+            "call:csv::csv_string_cursor::line"
+          ],
+          "allowed": false,
+          "reason": "cursor errored"
+        }
+      ]
+    },
+    {
+      "id": "jsonpath_expression_before_use",
+      "rule": "jsonpath_expression.hpp:104-157: select, select_paths, update and operator= are members of the jsonpath_expression that make_expression (:160) returns; make_expression throws jsonpath_error for an invalid path, leaving none.",
+      "formula": "(!use W made) & G(make_fail -> X(!use W made))",
+      "apis": [
+        "jsonpath::make_expression",
+        "jsonpath::jsonpath_expression::select",
+        "jsonpath::jsonpath_expression::select_paths",
+        "jsonpath::jsonpath_expression::update",
+        "jsonpath::jsonpath_expression::operator="
+      ],
+      "predicates": {
+        "made": {
+          "meaning": "an expression was compiled",
+          "events": [
+            "ok:jsonpath::make_expression"
+          ]
+        },
+        "make_fail": {
+          "meaning": "compiling a new expression failed (the harness drops the old one first)",
+          "events": [
+            "fail:jsonpath::make_expression"
+          ]
+        },
+        "use": {
+          "meaning": "a routine of the compiled expression is about to be called",
+          "events": [
+            "call:jsonpath::jsonpath_expression::select",
+            "call:jsonpath::jsonpath_expression::select_paths",
+            "call:jsonpath::jsonpath_expression::update",
+            "call:jsonpath::jsonpath_expression::operator="
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:jsonpath::make_expression",
+            "ok:jsonpath::make_expression",
+            "call:jsonpath::jsonpath_expression::select",
+            "ok:jsonpath::jsonpath_expression::select"
+          ],
+          "allowed": true,
+          "reason": "compiled first"
+        },
+        {
+          "events": [
+            "call:jsonpath::jsonpath_expression::select"
+          ],
+          "allowed": false,
+          "reason": "no expression"
+        },
+        {
+          "events": [
+            "call:jsonpath::make_expression",
+            "fail:jsonpath::make_expression",
+            "call:jsonpath::jsonpath_expression::select"
+          ],
+          "allowed": false,
+          "reason": "compilation failed"
+        }
+      ]
+    },
+    {
+      "id": "jmespath_expression_before_use",
+      "rule": "jmespath.hpp:3567 evaluate is a member of the jmespath_expression that make_expression (:5619) returns; make_expression throws jmespath_error for an invalid expression, leaving none.",
+      "formula": "(!use W made) & G(make_fail -> X(!use W made))",
+      "apis": [
+        "jmespath::make_expression",
+        "jmespath::jmespath_expression::evaluate"
+      ],
+      "predicates": {
+        "made": {
+          "meaning": "an expression was compiled",
+          "events": [
+            "ok:jmespath::make_expression"
+          ]
+        },
+        "make_fail": {
+          "meaning": "compiling a new expression failed (the harness drops the old one first)",
+          "events": [
+            "fail:jmespath::make_expression"
+          ]
+        },
+        "use": {
+          "meaning": "a routine of the compiled expression is about to be called",
+          "events": [
+            "call:jmespath::jmespath_expression::evaluate"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:jmespath::make_expression",
+            "ok:jmespath::make_expression",
+            "call:jmespath::jmespath_expression::evaluate",
+            "ok:jmespath::jmespath_expression::evaluate"
+          ],
+          "allowed": true,
+          "reason": "compiled first"
+        },
+        {
+          "events": [
+            "call:jmespath::jmespath_expression::evaluate"
+          ],
+          "allowed": false,
+          "reason": "no expression"
+        },
+        {
+          "events": [
+            "call:jmespath::make_expression",
+            "fail:jmespath::make_expression",
+            "call:jmespath::jmespath_expression::evaluate"
+          ],
+          "allowed": false,
+          "reason": "compilation failed"
+        }
+      ]
+    }
+  ]
+}

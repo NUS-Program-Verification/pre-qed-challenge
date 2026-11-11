@@ -1,0 +1,32 @@
+{
+  "repository": "https://github.com/boostorg/boost",
+  "commit": "4daa5786d7c5dad39df0429cb078165b3134a06f",
+  "submodules": [
+    "libs/asio",
+    "libs/assert",
+    "libs/beast",
+    "libs/bind",
+    "libs/charconv",
+    "libs/compat",
+    "libs/config",
+    "libs/container",
+    "libs/container_hash",
+    "libs/core",
+    "libs/describe",
+    "libs/endian",
+    "libs/intrusive",
+    "libs/io",
+    "libs/json",
+    "libs/logic",
+    "libs/move",
+    "libs/mp11",
+    "libs/optional",
+    "libs/smart_ptr",
+    "libs/static_string",
+    "libs/system",
+    "libs/throw_exception",
+    "libs/type_traits",
+    "libs/utility",
+    "libs/variant2"
+  ]
+}

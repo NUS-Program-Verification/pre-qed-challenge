@@ -1,0 +1,1705 @@
+{
+  "properties": [
+    {
+      "id": "vsb_lifecycle",
+      "rule": "vsb.h / vsb.c: every VSB_* routine asserts assert_VSB_integrity(s), so it needs a buffer from VSB_new_auto or VSB_init; VSB_destroy and VSB_fini release it. The harness keeps one VSB. VRE_error, VRE_quote and VRE_sub (vre.c: CHECK_OBJ_NOTNULL(vsb, VSB_MAGIC), then VSB_printf / VSB_cat / VSB_bcat) write into it too.",
+      "formula": "(!s_use W s_new) & G(s_end -> X(!s_use W s_new))",
+      "apis": [
+        "VSB_new_auto",
+        "VSB_init",
+        "VSB_bcat",
+        "VSB_cat",
+        "VSB_putc",
+        "VSB_printf",
+        "VSB_vprintf",
+        "VSB_quote",
+        "VSB_quote_pfx",
+        "VSB_indent",
+        "VBT_format",
+        "VSB_finish",
+        "VSB_data",
+        "VSB_tofile",
+        "VSB_clear",
+        "VSB_len",
+        "VSB_error",
+        "VSB_destroy",
+        "VSB_fini",
+        "VRE_error",
+        "VRE_quote",
+        "VRE_sub"
+      ],
+      "predicates": {
+        "s_new": {
+          "meaning": "a VSB was created",
+          "events": [
+            "ok:VSB_new_auto",
+            "ok:VSB_init"
+          ]
+        },
+        "s_end": {
+          "meaning": "the VSB is about to be released",
+          "events": [
+            "call:VSB_destroy",
+            "call:VSB_fini"
+          ]
+        },
+        "s_use": {
+          "meaning": "a routine taking the VSB is about to be called",
+          "events": [
+            "call:VSB_bcat",
+            "call:VSB_cat",
+            "call:VSB_putc",
+            "call:VSB_printf",
+            "call:VSB_vprintf",
+            "call:VSB_quote",
+            "call:VSB_quote_pfx",
+            "call:VSB_indent",
+            "call:VBT_format",
+            "call:VSB_finish",
+            "call:VSB_data",
+            "call:VSB_tofile",
+            "call:VSB_clear",
+            "call:VSB_len",
+            "call:VSB_error",
+            "call:VSB_destroy",
+            "call:VSB_fini",
+            "call:VRE_error",
+            "call:VRE_quote",
+            "call:VRE_sub"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSB_new_auto",
+            "ok:VSB_new_auto",
+            "call:VSB_cat",
+            "ok:VSB_cat",
+            "call:VSB_finish",
+            "ok:VSB_finish",
+            "call:VSB_destroy",
+            "ok:VSB_destroy",
+            "call:VSB_init",
+            "ok:VSB_init",
+            "call:VSB_putc"
+          ],
+          "allowed": true,
+          "reason": "uses sit between create and release"
+        },
+        {
+          "events": [
+            "call:VSB_cat"
+          ],
+          "allowed": false,
+          "reason": "no VSB"
+        },
+        {
+          "events": [
+            "call:VSB_new_auto",
+            "ok:VSB_new_auto",
+            "call:VSB_destroy",
+            "ok:VSB_destroy",
+            "call:VSB_len"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "vsb_write_until_finish",
+      "rule": "vsb.c: append routines and VSB_finish assert_VSB_state(s, 0), i.e. not finished; VSB_data and VSB_tofile assert_VSB_state(s, VSB_FINISHED). VSB_finish sets the FINISHED flag even when it returns -1; VSB_clear clears it; a new buffer starts unfinished. VRE_error, VRE_quote and VRE_sub append to the VSB.",
+      "formula": "G(s_finish -> X(!s_write W s_reopen)) & (!s_read W s_finish) & G(s_reopen -> X(!s_read W s_finish))",
+      "apis": [
+        "VSB_new_auto",
+        "VSB_init",
+        "VSB_clear",
+        "VSB_bcat",
+        "VSB_cat",
+        "VSB_putc",
+        "VSB_printf",
+        "VSB_vprintf",
+        "VSB_quote",
+        "VSB_quote_pfx",
+        "VSB_indent",
+        "VBT_format",
+        "VSB_finish",
+        "VSB_data",
+        "VSB_tofile",
+        "VRE_error",
+        "VRE_quote",
+        "VRE_sub"
+      ],
+      "predicates": {
+        "s_finish": {
+          "meaning": "VSB_finish is about to be called",
+          "events": [
+            "call:VSB_finish"
+          ]
+        },
+        "s_reopen": {
+          "meaning": "the buffer is unfinished again (new or cleared)",
+          "events": [
+            "ok:VSB_new_auto",
+            "ok:VSB_init",
+            "call:VSB_clear"
+          ]
+        },
+        "s_write": {
+          "meaning": "an append routine or VSB_finish is about to be called",
+          "events": [
+            "call:VSB_bcat",
+            "call:VSB_cat",
+            "call:VSB_putc",
+            "call:VSB_printf",
+            "call:VSB_vprintf",
+            "call:VSB_quote",
+            "call:VSB_quote_pfx",
+            "call:VSB_indent",
+            "call:VBT_format",
+            "call:VSB_finish",
+            "call:VRE_error",
+            "call:VRE_quote",
+            "call:VRE_sub"
+          ]
+        },
+        "s_read": {
+          "meaning": "VSB_data or VSB_tofile is about to be called",
+          "events": [
+            "call:VSB_data",
+            "call:VSB_tofile"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSB_new_auto",
+            "ok:VSB_new_auto",
+            "call:VSB_printf",
+            "ok:VSB_printf",
+            "call:VSB_finish",
+            "fail:VSB_finish",
+            "call:VSB_data",
+            "ok:VSB_data",
+            "call:VSB_clear",
+            "ok:VSB_clear",
+            "call:VSB_putc",
+            "ok:VSB_putc"
+          ],
+          "allowed": true,
+          "reason": "finish (even failing) then read, clear then write again"
+        },
+        {
+          "events": [
+            "call:VSB_new_auto",
+            "ok:VSB_new_auto",
+            "call:VSB_finish",
+            "ok:VSB_finish",
+            "call:VSB_cat"
+          ],
+          "allowed": false,
+          "reason": "append after finish"
+        },
+        {
+          "events": [
+            "call:VSB_new_auto",
+            "ok:VSB_new_auto",
+            "call:VSB_finish",
+            "ok:VSB_finish",
+            "call:VSB_finish"
+          ],
+          "allowed": false,
+          "reason": "finish twice"
+        },
+        {
+          "events": [
+            "call:VSB_new_auto",
+            "ok:VSB_new_auto",
+            "call:VSB_data"
+          ],
+          "allowed": false,
+          "reason": "data before finish"
+        }
+      ]
+    },
+    {
+      "id": "vav_argv_ownership",
+      "rule": "vav.h: VAV_Parse / VAV_ParseTxt return a malloc'd argv the caller releases with VAV_Free; freeing it again or freeing without one is a double/invalid free. The harness holds one argv.",
+      "formula": "(!a_free W a_ok) & G(a_free -> X(!a_free W a_ok))",
+      "apis": [
+        "VAV_Parse",
+        "VAV_ParseTxt",
+        "VAV_Free"
+      ],
+      "predicates": {
+        "a_ok": {
+          "meaning": "a parse returned an argv",
+          "events": [
+            "ok:VAV_Parse",
+            "ok:VAV_ParseTxt",
+            "fail:VAV_Parse",
+            "fail:VAV_ParseTxt"
+          ]
+        },
+        "a_free": {
+          "meaning": "VAV_Free is about to be called",
+          "events": [
+            "call:VAV_Free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VAV_Parse",
+            "fail:VAV_Parse",
+            "call:VAV_Free",
+            "ok:VAV_Free",
+            "call:VAV_ParseTxt",
+            "ok:VAV_ParseTxt",
+            "call:VAV_Free"
+          ],
+          "allowed": true,
+          "reason": "an argv with an error in argv[0] still has to be freed"
+        },
+        {
+          "events": [
+            "call:VAV_Free"
+          ],
+          "allowed": false,
+          "reason": "nothing to free"
+        },
+        {
+          "events": [
+            "call:VAV_Parse",
+            "ok:VAV_Parse",
+            "call:VAV_Free",
+            "ok:VAV_Free",
+            "call:VAV_Free"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        }
+      ]
+    },
+    {
+      "id": "vbh_lifecycle",
+      "rule": "vbh.h / vbh.c: VBH_insert, VBH_reorder, VBH_delete, VBH_root and VBH_destroy CHECK_OBJ_NOTNULL(bh, VBH_MAGIC) a tree from VBH_new; VBH_destroy (TAKE_OBJ_NOTNULL, FREE_OBJ) releases it. The harness keeps one tree.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "VBH_new",
+        "VBH_destroy",
+        "VBH_insert",
+        "VBH_reorder",
+        "VBH_delete",
+        "VBH_root"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VBH_new"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VBH_destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VBH_insert",
+            "call:VBH_reorder",
+            "call:VBH_delete",
+            "call:VBH_root",
+            "call:VBH_destroy"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VBH_new",
+            "ok:VBH_new",
+            "call:VBH_insert",
+            "ok:VBH_insert",
+            "call:VBH_delete",
+            "ok:VBH_delete",
+            "call:VBH_destroy",
+            "ok:VBH_destroy",
+            "call:VBH_new",
+            "ok:VBH_new",
+            "call:VBH_root"
+          ],
+          "allowed": true,
+          "reason": "uses between create and destroy"
+        },
+        {
+          "events": [
+            "call:VBH_insert"
+          ],
+          "allowed": false,
+          "reason": "no tree"
+        },
+        {
+          "events": [
+            "call:VBH_new",
+            "ok:VBH_new",
+            "call:VBH_destroy",
+            "ok:VBH_destroy",
+            "call:VBH_root"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "vbit_lifecycle",
+      "rule": "vbm.h: vbit_new (calloc) and vbit_init (caller memory) return the bitmap vbit_set / vbit_clr / vbit_test / vbit_expand take; vbit_destroy frees what was malloc'd (bits, and the struct for vbit_new). The harness keeps one bitmap.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "vbit_new",
+        "vbit_init",
+        "vbit_destroy",
+        "vbit_set",
+        "vbit_clr",
+        "vbit_test",
+        "vbit_expand"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:vbit_new",
+            "ok:vbit_init"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:vbit_destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:vbit_set",
+            "call:vbit_clr",
+            "call:vbit_test",
+            "call:vbit_expand",
+            "call:vbit_destroy"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:vbit_new",
+            "ok:vbit_new",
+            "call:vbit_set",
+            "ok:vbit_set",
+            "call:vbit_destroy",
+            "ok:vbit_destroy",
+            "call:vbit_init",
+            "ok:vbit_init",
+            "call:vbit_test"
+          ],
+          "allowed": true,
+          "reason": "uses between create and destroy"
+        },
+        {
+          "events": [
+            "call:vbit_set"
+          ],
+          "allowed": false,
+          "reason": "no bitmap"
+        },
+        {
+          "events": [
+            "call:vbit_new",
+            "ok:vbit_new",
+            "call:vbit_destroy",
+            "ok:vbit_destroy",
+            "call:vbit_expand"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "vre_lifecycle",
+      "rule": "vre.h / vre.c: VRE_match, VRE_capture, VRE_sub, VRE_export and VRE_unpack CHECK_OBJ_NOTNULL(code, VRE_MAGIC) a vre_t from VRE_compile; VRE_free (TAKE_OBJ_NOTNULL, FREE_OBJ) releases it. The harness keeps one compiled expression (the VRE_export copy is freed inside its wrapper).",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "VRE_compile",
+        "VRE_free",
+        "VRE_match",
+        "VRE_capture",
+        "VRE_sub",
+        "VRE_export",
+        "VRE_unpack"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VRE_compile"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VRE_free"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VRE_match",
+            "call:VRE_capture",
+            "call:VRE_sub",
+            "call:VRE_export",
+            "call:VRE_unpack",
+            "call:VRE_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VRE_compile",
+            "ok:VRE_compile",
+            "call:VRE_match",
+            "ok:VRE_match",
+            "call:VRE_free",
+            "ok:VRE_free",
+            "call:VRE_compile",
+            "ok:VRE_compile",
+            "call:VRE_export"
+          ],
+          "allowed": true,
+          "reason": "uses between compile and free"
+        },
+        {
+          "events": [
+            "call:VRE_compile",
+            "fail:VRE_compile",
+            "call:VRE_match"
+          ],
+          "allowed": false,
+          "reason": "compile failed, no expression"
+        },
+        {
+          "events": [
+            "call:VRE_compile",
+            "ok:VRE_compile",
+            "call:VRE_free",
+            "ok:VRE_free",
+            "call:VRE_free"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        }
+      ]
+    },
+    {
+      "id": "vsa_owned_free",
+      "rule": "vsa.h / vsa.c: VSA_Malloc, VSA_Clone and VTCP_my_suckaddr (vtcp.c, malloc) return a suckaddr the caller releases with VSA_free (TAKE_OBJ_NOTNULL, free); freeing without one or twice is an invalid/double free. The harness holds one.",
+      "formula": "(!a_free W a_new) & G(a_free -> X(!a_free W a_new))",
+      "apis": [
+        "VSA_Malloc",
+        "VSA_Clone",
+        "VTCP_my_suckaddr",
+        "VSA_free"
+      ],
+      "predicates": {
+        "a_new": {
+          "meaning": "a malloc'd suckaddr was returned",
+          "events": [
+            "ok:VSA_Malloc",
+            "ok:VSA_Clone",
+            "ok:VTCP_my_suckaddr"
+          ]
+        },
+        "a_free": {
+          "meaning": "VSA_free is about to be called",
+          "events": [
+            "call:VSA_free"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSA_Malloc",
+            "ok:VSA_Malloc",
+            "call:VSA_free",
+            "ok:VSA_free",
+            "call:VSA_Clone",
+            "ok:VSA_Clone",
+            "call:VSA_free"
+          ],
+          "allowed": true,
+          "reason": "each free has its own allocation"
+        },
+        {
+          "events": [
+            "call:VSA_Malloc",
+            "fail:VSA_Malloc",
+            "call:VSA_free"
+          ],
+          "allowed": false,
+          "reason": "VSA_Malloc returned NULL"
+        },
+        {
+          "events": [
+            "call:VTCP_my_suckaddr",
+            "ok:VTCP_my_suckaddr",
+            "call:VSA_free",
+            "ok:VSA_free",
+            "call:VSA_free"
+          ],
+          "allowed": false,
+          "reason": "double free"
+        }
+      ]
+    },
+    {
+      "id": "vsha256_context",
+      "rule": "vsha256.h / vsha256.c: VSHA256_Update and VSHA256_Final work on a context VSHA256_Init set up; VSHA256_Final clears it (memset(ctx, 0, sizeof *ctx), vsha256.c:335), so a further Update or Final needs a new Init.",
+      "formula": "(!h_use W h_init) & G(h_final -> X(!h_use W h_init))",
+      "apis": [
+        "VSHA256_Init",
+        "VSHA256_Update",
+        "VSHA256_Final"
+      ],
+      "predicates": {
+        "h_init": {
+          "meaning": "the context was initialised",
+          "events": [
+            "ok:VSHA256_Init"
+          ]
+        },
+        "h_final": {
+          "meaning": "VSHA256_Final is about to be called",
+          "events": [
+            "call:VSHA256_Final"
+          ]
+        },
+        "h_use": {
+          "meaning": "Update or Final is about to be called",
+          "events": [
+            "call:VSHA256_Update",
+            "call:VSHA256_Final"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSHA256_Init",
+            "ok:VSHA256_Init",
+            "call:VSHA256_Update",
+            "ok:VSHA256_Update",
+            "call:VSHA256_Final",
+            "ok:VSHA256_Final",
+            "call:VSHA256_Init",
+            "ok:VSHA256_Init",
+            "call:VSHA256_Final"
+          ],
+          "allowed": true,
+          "reason": "init, update, final, init again"
+        },
+        {
+          "events": [
+            "call:VSHA256_Update"
+          ],
+          "allowed": false,
+          "reason": "no init"
+        },
+        {
+          "events": [
+            "call:VSHA256_Init",
+            "ok:VSHA256_Init",
+            "call:VSHA256_Final",
+            "ok:VSHA256_Final",
+            "call:VSHA256_Update"
+          ],
+          "allowed": false,
+          "reason": "update after final"
+        }
+      ]
+    },
+    {
+      "id": "vte_lifecycle",
+      "rule": "vte.h / vte.c: VTE_putc, VTE_cat, VTE_printf, VTE_finish, VTE_format and VTE_dump CHECK_OBJ_NOTNULL(vte, VTE_MAGIC) a table from VTE_new; VTE_destroy (TAKE_OBJ_NOTNULL) frees it. The harness keeps one table.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "VTE_new",
+        "VTE_destroy",
+        "VTE_putc",
+        "VTE_cat",
+        "VTE_printf",
+        "VTE_finish",
+        "VTE_format",
+        "VTE_dump"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VTE_new"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VTE_destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VTE_putc",
+            "call:VTE_cat",
+            "call:VTE_printf",
+            "call:VTE_finish",
+            "call:VTE_format",
+            "call:VTE_dump",
+            "call:VTE_destroy"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VTE_new",
+            "ok:VTE_new",
+            "call:VTE_cat",
+            "ok:VTE_cat",
+            "call:VTE_finish",
+            "ok:VTE_finish",
+            "call:VTE_format",
+            "ok:VTE_format",
+            "call:VTE_destroy",
+            "ok:VTE_destroy",
+            "call:VTE_new",
+            "ok:VTE_new",
+            "call:VTE_putc"
+          ],
+          "allowed": true,
+          "reason": "uses between create and destroy"
+        },
+        {
+          "events": [
+            "call:VTE_format"
+          ],
+          "allowed": false,
+          "reason": "no table"
+        },
+        {
+          "events": [
+            "call:VTE_new",
+            "ok:VTE_new",
+            "call:VTE_destroy",
+            "ok:VTE_destroy",
+            "call:VTE_dump"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "vtcp_client_socket",
+      "rule": "vtcp.h / vtcp.c: the client-socket routines need a socket from VTCP_connect / VTCP_open: VTCP_blocking, VTCP_linger, VTCP_read, VTCP_close ... VTCP_Assert the syscall result, which aborts on EBADF, and VTCP_my_suckaddr does AN(VSA_getsockname(...)). VTCP_close closes the socket, and VTCP_connected closes it (closefd) when it returns -1. The harness keeps one client socket.",
+      "formula": "(!t_use W t_new) & G(t_end -> X(!t_use W t_new))",
+      "apis": [
+        "VTCP_connect",
+        "VTCP_open",
+        "VTCP_blocking",
+        "VTCP_nonblocking",
+        "VTCP_linger",
+        "VTCP_check_hup",
+        "VTCP_set_read_timeout",
+        "VTCP_read",
+        "VTCP_myname",
+        "VTCP_hisname",
+        "VTCP_my_suckaddr",
+        "VSA_getsockname",
+        "VSA_getpeername",
+        "VTCP_connected",
+        "VTCP_close"
+      ],
+      "predicates": {
+        "t_new": {
+          "meaning": "a client socket was opened",
+          "events": [
+            "ok:VTCP_connect",
+            "ok:VTCP_open"
+          ]
+        },
+        "t_end": {
+          "meaning": "the socket is closed",
+          "events": [
+            "call:VTCP_close",
+            "fail:VTCP_connected"
+          ]
+        },
+        "t_use": {
+          "meaning": "a routine taking the socket is about to be called",
+          "events": [
+            "call:VTCP_blocking",
+            "call:VTCP_nonblocking",
+            "call:VTCP_linger",
+            "call:VTCP_check_hup",
+            "call:VTCP_set_read_timeout",
+            "call:VTCP_read",
+            "call:VTCP_myname",
+            "call:VTCP_hisname",
+            "call:VTCP_my_suckaddr",
+            "call:VSA_getsockname",
+            "call:VSA_getpeername",
+            "call:VTCP_connected",
+            "call:VTCP_close"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VTCP_connect",
+            "ok:VTCP_connect",
+            "call:VTCP_connected",
+            "ok:VTCP_connected",
+            "call:VTCP_read",
+            "ok:VTCP_read",
+            "call:VTCP_close",
+            "ok:VTCP_close",
+            "call:VTCP_open",
+            "ok:VTCP_open",
+            "call:VTCP_linger"
+          ],
+          "allowed": true,
+          "reason": "uses while a socket is open"
+        },
+        {
+          "events": [
+            "call:VTCP_connect",
+            "ok:VTCP_connect",
+            "call:VTCP_connected",
+            "fail:VTCP_connected",
+            "call:VTCP_close"
+          ],
+          "allowed": false,
+          "reason": "VTCP_connected already closed the socket"
+        },
+        {
+          "events": [
+            "call:VTCP_open",
+            "fail:VTCP_open",
+            "call:VTCP_read"
+          ],
+          "allowed": false,
+          "reason": "no socket"
+        }
+      ]
+    },
+    {
+      "id": "vsl_data_lifecycle",
+      "rule": "vsl.h / vsl.c: the VSL_* routines taking a struct VSL_data CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC) one from VSL_New; VSL_Delete frees it (FREE_OBJ). The harness keeps one.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "VSL_New",
+        "VSL_Delete",
+        "VSL_Arg",
+        "VSL_Error",
+        "VSL_ResetError",
+        "VSL_CursorFile",
+        "VSL_CursorVSM",
+        "VSL_Match",
+        "VSL_Print",
+        "VSL_PrintTerse",
+        "VSL_PrintAll",
+        "VSL_Write",
+        "VSL_WriteAll",
+        "VSL_PrintTransactions",
+        "VSL_WriteTransactions",
+        "VSL_WriteOpen",
+        "VSLQ_New"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VSL_New"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VSL_Delete"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VSL_Arg",
+            "call:VSL_Error",
+            "call:VSL_ResetError",
+            "call:VSL_CursorFile",
+            "call:VSL_CursorVSM",
+            "call:VSL_Match",
+            "call:VSL_Print",
+            "call:VSL_PrintTerse",
+            "call:VSL_PrintAll",
+            "call:VSL_Write",
+            "call:VSL_WriteAll",
+            "call:VSL_PrintTransactions",
+            "call:VSL_WriteTransactions",
+            "call:VSL_WriteOpen",
+            "call:VSLQ_New",
+            "call:VSL_Delete"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSL_New",
+            "ok:VSL_New",
+            "call:VSL_Arg",
+            "ok:VSL_Arg",
+            "call:VSL_Delete",
+            "ok:VSL_Delete",
+            "call:VSL_New",
+            "ok:VSL_New",
+            "call:VSL_CursorFile"
+          ],
+          "allowed": true,
+          "reason": "uses between create and delete"
+        },
+        {
+          "events": [
+            "call:VSL_Arg"
+          ],
+          "allowed": false,
+          "reason": "no VSL_data"
+        },
+        {
+          "events": [
+            "call:VSL_New",
+            "ok:VSL_New",
+            "call:VSL_Delete",
+            "ok:VSL_Delete",
+            "call:VSLQ_New"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "vsl_cursor_ownership",
+      "rule": "vsl.h: VSL_CursorFile / VSL_CursorVSM return a cursor the caller owns until VSL_DeleteCursor, or until VSLQ_New / VSLQ_SetCursor take it (\"the cursor pointed to by cp will be transferred to the query, and *cp set to NULL\"; VSLQ_New takes it only on success). After that the cursor belongs to the query, which deletes it.",
+      "formula": "(!c_use W c_new) & G(c_end -> X(!c_use W c_new))",
+      "apis": [
+        "VSL_CursorFile",
+        "VSL_CursorVSM",
+        "VSLQ_New",
+        "VSLQ_SetCursor",
+        "VSL_Next",
+        "VSL_Check",
+        "VSL_ResetCursor",
+        "VSL_DeleteCursor",
+        "VSL_Match",
+        "VSL_Print",
+        "VSL_PrintTerse",
+        "VSL_PrintAll",
+        "VSL_Write",
+        "VSL_WriteAll",
+        "VSL_PrintTransactions",
+        "VSL_WriteTransactions"
+      ],
+      "predicates": {
+        "c_new": {
+          "meaning": "a cursor was created",
+          "events": [
+            "ok:VSL_CursorFile",
+            "ok:VSL_CursorVSM"
+          ]
+        },
+        "c_end": {
+          "meaning": "the cursor is deleted or handed to a query",
+          "events": [
+            "call:VSL_DeleteCursor",
+            "ok:VSLQ_New",
+            "call:VSLQ_SetCursor"
+          ]
+        },
+        "c_use": {
+          "meaning": "a routine taking the cursor is about to be called",
+          "events": [
+            "call:VSL_Next",
+            "call:VSL_Check",
+            "call:VSL_ResetCursor",
+            "call:VSL_DeleteCursor",
+            "call:VSL_Match",
+            "call:VSL_Print",
+            "call:VSL_PrintTerse",
+            "call:VSL_PrintAll",
+            "call:VSL_Write",
+            "call:VSL_WriteAll",
+            "call:VSL_PrintTransactions",
+            "call:VSL_WriteTransactions"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSL_CursorFile",
+            "ok:VSL_CursorFile",
+            "call:VSL_Next",
+            "ok:VSL_Next",
+            "call:VSL_DeleteCursor",
+            "ok:VSL_DeleteCursor",
+            "call:VSL_CursorFile",
+            "ok:VSL_CursorFile",
+            "call:VSL_PrintAll"
+          ],
+          "allowed": true,
+          "reason": "uses while the harness owns a cursor"
+        },
+        {
+          "events": [
+            "call:VSL_CursorFile",
+            "ok:VSL_CursorFile",
+            "call:VSLQ_New",
+            "ok:VSLQ_New",
+            "call:VSL_Next"
+          ],
+          "allowed": false,
+          "reason": "the query owns the cursor now"
+        },
+        {
+          "events": [
+            "call:VSL_CursorFile",
+            "ok:VSL_CursorFile",
+            "call:VSL_DeleteCursor",
+            "ok:VSL_DeleteCursor",
+            "call:VSL_DeleteCursor"
+          ],
+          "allowed": false,
+          "reason": "double delete"
+        }
+      ]
+    },
+    {
+      "id": "vsl_cursor_record",
+      "rule": "vsl.h VSL_Next: vsl_more means \"Cursor points to next log record\"; VSL_Check, VSL_Match, VSL_Print, VSL_PrintTerse and VSL_Write read c->rec. After end, EOF or an error the mmap cursor's rec is at or past the end of the mapping (vsl_cursor.c vslc_mmap_next), so a record is read only after VSL_Next returned vsl_more (ok:VSL_Next). VSL_ResetCursor, VSL_PrintAll, VSL_WriteAll and the transaction printers move the cursor on (to its end); a new cursor has no record yet.",
+      "formula": "(!r_use W r_ok) & G(r_lost -> X(!r_use W r_ok))",
+      "apis": [
+        "VSL_Next",
+        "VSL_ResetCursor",
+        "VSL_PrintAll",
+        "VSL_WriteAll",
+        "VSL_PrintTransactions",
+        "VSL_WriteTransactions",
+        "VSL_CursorFile",
+        "VSL_CursorVSM",
+        "VSL_Check",
+        "VSL_Match",
+        "VSL_Print",
+        "VSL_PrintTerse",
+        "VSL_Write"
+      ],
+      "predicates": {
+        "r_ok": {
+          "meaning": "the cursor points to a record",
+          "events": [
+            "ok:VSL_Next"
+          ]
+        },
+        "r_lost": {
+          "meaning": "the cursor no longer points to a record",
+          "events": [
+            "fail:VSL_Next",
+            "call:VSL_ResetCursor",
+            "call:VSL_PrintAll",
+            "call:VSL_WriteAll",
+            "call:VSL_PrintTransactions",
+            "call:VSL_WriteTransactions",
+            "ok:VSL_CursorFile",
+            "ok:VSL_CursorVSM"
+          ]
+        },
+        "r_use": {
+          "meaning": "a routine reading the current record is about to be called",
+          "events": [
+            "call:VSL_Check",
+            "call:VSL_Match",
+            "call:VSL_Print",
+            "call:VSL_PrintTerse",
+            "call:VSL_Write"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSL_CursorFile",
+            "ok:VSL_CursorFile",
+            "call:VSL_Next",
+            "ok:VSL_Next",
+            "call:VSL_Print",
+            "ok:VSL_Print",
+            "call:VSL_Check",
+            "ok:VSL_Check"
+          ],
+          "allowed": true,
+          "reason": "reads after vsl_more"
+        },
+        {
+          "events": [
+            "call:VSL_CursorFile",
+            "ok:VSL_CursorFile",
+            "call:VSL_Next",
+            "fail:VSL_Next",
+            "call:VSL_Print"
+          ],
+          "allowed": false,
+          "reason": "read after EOF"
+        },
+        {
+          "events": [
+            "call:VSL_CursorFile",
+            "ok:VSL_CursorFile",
+            "call:VSL_Match"
+          ],
+          "allowed": false,
+          "reason": "read before VSL_Next"
+        }
+      ]
+    },
+    {
+      "id": "vslq_lifecycle",
+      "rule": "vsl.h / vsl_dispatch.c: VSLQ_SetCursor, VSLQ_Dispatch, VSLQ_Flush and VSLQ_Delete CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC) a query from VSLQ_New; VSLQ_Delete frees it after flushing through vslq->vsl (VSLQ_Delete -> VSLQ_Flush -> vslq_process_ready), so VSL_Delete of its VSL_data comes after VSLQ_Delete.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new)) & G(x_new -> (!d_end W x_end))",
+      "apis": [
+        "VSLQ_New",
+        "VSLQ_Delete",
+        "VSLQ_SetCursor",
+        "VSLQ_Dispatch",
+        "VSLQ_Flush",
+        "VSL_Delete"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VSLQ_New"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VSLQ_Delete"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VSLQ_SetCursor",
+            "call:VSLQ_Dispatch",
+            "call:VSLQ_Flush",
+            "call:VSLQ_Delete"
+          ]
+        },
+        "d_end": {
+          "meaning": "VSL_Delete is about to be called",
+          "events": [
+            "call:VSL_Delete"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSLQ_New",
+            "ok:VSLQ_New",
+            "call:VSLQ_Dispatch",
+            "ok:VSLQ_Dispatch",
+            "call:VSLQ_Delete",
+            "ok:VSLQ_Delete",
+            "call:VSL_Delete",
+            "ok:VSL_Delete"
+          ],
+          "allowed": true,
+          "reason": "query deleted before its VSL_data"
+        },
+        {
+          "events": [
+            "call:VSLQ_New",
+            "ok:VSLQ_New",
+            "call:VSL_Delete"
+          ],
+          "allowed": false,
+          "reason": "VSL_data deleted under a live query"
+        },
+        {
+          "events": [
+            "call:VSLQ_New",
+            "ok:VSLQ_New",
+            "call:VSLQ_Delete",
+            "ok:VSLQ_Delete",
+            "call:VSLQ_Flush"
+          ],
+          "allowed": false,
+          "reason": "use after delete"
+        }
+      ]
+    },
+    {
+      "id": "vsm_lifecycle",
+      "rule": "vsm.h / vsm.c: the VSM_* routines CHECK_OBJ_NOTNULL(vd, VSM_MAGIC) a handle from VSM_New, and VSC_Iter / VSL_CursorVSM work through one; VSM_Destroy (TAKE_OBJ_NOTNULL) frees it. The harness keeps one handle.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "VSM_New",
+        "VSM_Destroy",
+        "VSM_Arg",
+        "VSM_Attach",
+        "VSM_Status",
+        "VSM_Error",
+        "VSM_ResetError",
+        "VSM__iter0",
+        "VSM__itern",
+        "VSM_Get",
+        "VSM_Dup",
+        "VSM_Map",
+        "VSM_Unmap",
+        "VSM_StillValid",
+        "VSC_Iter",
+        "VSL_CursorVSM"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VSM_New"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VSM_Destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VSM_Arg",
+            "call:VSM_Attach",
+            "call:VSM_Status",
+            "call:VSM_Error",
+            "call:VSM_ResetError",
+            "call:VSM__iter0",
+            "call:VSM__itern",
+            "call:VSM_Get",
+            "call:VSM_Dup",
+            "call:VSM_Map",
+            "call:VSM_Unmap",
+            "call:VSM_StillValid",
+            "call:VSM_Destroy",
+            "call:VSC_Iter",
+            "call:VSL_CursorVSM"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Arg",
+            "ok:VSM_Arg",
+            "call:VSM_Destroy",
+            "ok:VSM_Destroy",
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Status"
+          ],
+          "allowed": true,
+          "reason": "uses between create and destroy"
+        },
+        {
+          "events": [
+            "call:VSM_Arg"
+          ],
+          "allowed": false,
+          "reason": "no handle"
+        },
+        {
+          "events": [
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Destroy",
+            "ok:VSM_Destroy",
+            "call:VSM_Error"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "vsm_attach",
+      "rule": "vsm.c: VSM_Attach does AZ(vd->attached), so a handle attaches once; VSM__iter0, VSM__itern, VSM_Get, VSM_Dup, VSM_Map and VSM_Unmap do AN(vd->attached), as do VSC_Iter (VSM_FOREACH) and VSL_CursorVSM (VSM_Get). A new handle (VSM_New) starts detached.",
+      "formula": "(!a_need W a_ok) & G(a_new -> X(!a_need W a_ok)) & G(a_ok -> X(!a_call W a_new))",
+      "apis": [
+        "VSM_New",
+        "VSM_Attach",
+        "VSM__iter0",
+        "VSM__itern",
+        "VSM_Get",
+        "VSM_Dup",
+        "VSM_Map",
+        "VSM_Unmap",
+        "VSC_Iter",
+        "VSL_CursorVSM"
+      ],
+      "predicates": {
+        "a_ok": {
+          "meaning": "the handle attached",
+          "events": [
+            "ok:VSM_Attach"
+          ]
+        },
+        "a_new": {
+          "meaning": "a new handle was created",
+          "events": [
+            "ok:VSM_New"
+          ]
+        },
+        "a_call": {
+          "meaning": "VSM_Attach is about to be called",
+          "events": [
+            "call:VSM_Attach"
+          ]
+        },
+        "a_need": {
+          "meaning": "a routine needing an attached handle is about to be called",
+          "events": [
+            "call:VSM__iter0",
+            "call:VSM__itern",
+            "call:VSM_Get",
+            "call:VSM_Dup",
+            "call:VSM_Map",
+            "call:VSM_Unmap",
+            "call:VSC_Iter",
+            "call:VSL_CursorVSM"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Attach",
+            "fail:VSM_Attach",
+            "call:VSM_Attach",
+            "ok:VSM_Attach",
+            "call:VSM_Get",
+            "ok:VSM_Get",
+            "call:VSC_Iter"
+          ],
+          "allowed": true,
+          "reason": "retry after a failed attach, then use"
+        },
+        {
+          "events": [
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Get"
+          ],
+          "allowed": false,
+          "reason": "not attached"
+        },
+        {
+          "events": [
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Attach",
+            "ok:VSM_Attach",
+            "call:VSM_Attach"
+          ],
+          "allowed": false,
+          "reason": "attached twice"
+        }
+      ]
+    },
+    {
+      "id": "vsm_fantom",
+      "rule": "vsm.h VSM_StillValid checks \"a previously looked up vsm_fantom\"; VSM_Map takes a fantom from VSM_Get / VSM_FOREACH (vsm.c vsm_findseg: WRONG(\"Corrupt fantom\") otherwise), and VSM_Unmap one VSM_Map mapped (AN(vf->b), which VSM_Unmap clears). VSM__iter0, a failed VSM_Get / VSM__itern and a new handle leave no looked-up fantom. The harness keeps one fantom.",
+      "formula": "(!f_use W f_ok) & G(f_bad -> X(!f_use W f_ok)) & (!u_call W m_ok) & G(u_reset -> X(!u_call W m_ok))",
+      "apis": [
+        "VSM_New",
+        "VSM_Get",
+        "VSM__iter0",
+        "VSM__itern",
+        "VSM_Map",
+        "VSM_Unmap",
+        "VSM_StillValid"
+      ],
+      "predicates": {
+        "f_ok": {
+          "meaning": "a fantom was looked up",
+          "events": [
+            "ok:VSM_Get",
+            "ok:VSM__itern"
+          ]
+        },
+        "f_bad": {
+          "meaning": "the fantom is no longer a looked-up one",
+          "events": [
+            "fail:VSM_Get",
+            "fail:VSM__itern",
+            "call:VSM__iter0",
+            "ok:VSM_New"
+          ]
+        },
+        "f_use": {
+          "meaning": "VSM_Map or VSM_StillValid is about to be called",
+          "events": [
+            "call:VSM_Map",
+            "call:VSM_StillValid"
+          ]
+        },
+        "m_ok": {
+          "meaning": "the fantom was mapped",
+          "events": [
+            "ok:VSM_Map"
+          ]
+        },
+        "u_call": {
+          "meaning": "VSM_Unmap is about to be called",
+          "events": [
+            "call:VSM_Unmap"
+          ]
+        },
+        "u_reset": {
+          "meaning": "the fantom is unmapped",
+          "events": [
+            "call:VSM_Unmap",
+            "ok:VSM_New"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Get",
+            "ok:VSM_Get",
+            "call:VSM_Map",
+            "ok:VSM_Map",
+            "call:VSM_StillValid",
+            "ok:VSM_StillValid",
+            "call:VSM_Unmap",
+            "ok:VSM_Unmap"
+          ],
+          "allowed": true,
+          "reason": "look up, map, check, unmap"
+        },
+        {
+          "events": [
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Get",
+            "fail:VSM_Get",
+            "call:VSM_Map"
+          ],
+          "allowed": false,
+          "reason": "map a fantom the lookup did not fill"
+        },
+        {
+          "events": [
+            "call:VSM_New",
+            "ok:VSM_New",
+            "call:VSM_Get",
+            "ok:VSM_Get",
+            "call:VSM_Map",
+            "ok:VSM_Map",
+            "call:VSM_Unmap",
+            "ok:VSM_Unmap",
+            "call:VSM_Unmap"
+          ],
+          "allowed": false,
+          "reason": "unmap twice"
+        }
+      ]
+    },
+    {
+      "id": "vsc_lifecycle",
+      "rule": "vsc.h / vsc.c: VSC_Arg, VSC_State, VSC_Iter, VSC_IsRaw and VSC_Destroy CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC) a handle from VSC_New; VSC_Destroy (TAKE_OBJ_NOTNULL) frees it and unmaps the segments VSC_Iter mapped through the vsm passed to it (vsc_del_segs -> vsc_unmap_seg -> VSM_Unmap), so that vsm is not destroyed between VSC_Iter and VSC_Destroy.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new)) & G(c_iter -> (!m_end W x_end))",
+      "apis": [
+        "VSC_New",
+        "VSC_Destroy",
+        "VSC_Arg",
+        "VSC_State",
+        "VSC_Iter",
+        "VSC_IsRaw",
+        "VSM_Destroy"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VSC_New"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VSC_Destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VSC_Arg",
+            "call:VSC_State",
+            "call:VSC_Iter",
+            "call:VSC_IsRaw",
+            "call:VSC_Destroy"
+          ]
+        },
+        "c_iter": {
+          "meaning": "VSC_Iter is about to be called",
+          "events": [
+            "call:VSC_Iter"
+          ]
+        },
+        "m_end": {
+          "meaning": "VSM_Destroy is about to be called",
+          "events": [
+            "call:VSM_Destroy"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VSC_New",
+            "ok:VSC_New",
+            "call:VSC_Iter",
+            "ok:VSC_Iter",
+            "call:VSC_Destroy",
+            "ok:VSC_Destroy",
+            "call:VSM_Destroy",
+            "ok:VSM_Destroy"
+          ],
+          "allowed": true,
+          "reason": "VSC destroyed before the vsm it iterated"
+        },
+        {
+          "events": [
+            "call:VSC_New",
+            "ok:VSC_New",
+            "call:VSC_Iter",
+            "ok:VSC_Iter",
+            "call:VSM_Destroy"
+          ],
+          "allowed": false,
+          "reason": "vsm destroyed under the VSC mappings"
+        },
+        {
+          "events": [
+            "call:VSC_New",
+            "ok:VSC_New",
+            "call:VSC_Destroy",
+            "ok:VSC_Destroy",
+            "call:VSC_Arg"
+          ],
+          "allowed": false,
+          "reason": "use after destroy"
+        }
+      ]
+    },
+    {
+      "id": "vrt_vsc_segment",
+      "rule": "vrt.h / common_vsc.c: VRT_VSC_Alloc / VRT_VSC_Allocv return the counters and the segment (via sg) VRT_VSC_Hide, VRT_VSC_Reveal and VRT_VSC_Destroy CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC); VRT_VSC_Destroy frees it (VSMW_Free, FREE_OBJ). The harness keeps one segment.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new))",
+      "apis": [
+        "VRT_VSC_Alloc",
+        "VRT_VSC_Allocv",
+        "VRT_VSC_Destroy",
+        "VRT_VSC_Hide",
+        "VRT_VSC_Reveal"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VRT_VSC_Alloc",
+            "ok:VRT_VSC_Allocv"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VRT_VSC_Destroy"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VRT_VSC_Hide",
+            "call:VRT_VSC_Reveal",
+            "call:VRT_VSC_Destroy"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VRT_VSC_Alloc",
+            "ok:VRT_VSC_Alloc",
+            "call:VRT_VSC_Hide",
+            "ok:VRT_VSC_Hide",
+            "call:VRT_VSC_Destroy",
+            "ok:VRT_VSC_Destroy",
+            "call:VRT_VSC_Allocv",
+            "ok:VRT_VSC_Allocv",
+            "call:VRT_VSC_Reveal"
+          ],
+          "allowed": true,
+          "reason": "uses between alloc and destroy"
+        },
+        {
+          "events": [
+            "call:VRT_VSC_Hide"
+          ],
+          "allowed": false,
+          "reason": "no segment"
+        },
+        {
+          "events": [
+            "call:VRT_VSC_Alloc",
+            "ok:VRT_VSC_Alloc",
+            "call:VRT_VSC_Destroy",
+            "ok:VRT_VSC_Destroy",
+            "call:VRT_VSC_Destroy"
+          ],
+          "allowed": false,
+          "reason": "double destroy"
+        }
+      ]
+    },
+    {
+      "id": "vut_lifecycle",
+      "rule": "vut.h / vut.c: VUT_Arg, VUT_Setup, VUT_Main, VUT_Signaled and VUT_Fini CHECK_OBJ_NOTNULL(vut, VUT_MAGIC) a VUT from VUT_Init; VUT_Fini (TAKE_OBJ_NOTNULL) frees it. VUT_Setup does AZ(vut->vsm), AZ(vut->vslq) (once per VUT) and VUT_Main AN(vut->vslq) (after VUT_Setup); VUT_Setup consumes the -n/-r/-q/-t options VUT_Arg stores (and VUT_Main does AZ(vut->r_arg) for VSM input, vut.c:469), so options come before VUT_Setup.",
+      "formula": "(!x_use W x_new) & G(x_end -> X(!x_use W x_new)) & (!u_main W u_setup) & G(x_new -> X(!u_main W u_setup)) & G(u_setup -> X(!(u_setup | u_arg) W x_new))",
+      "apis": [
+        "VUT_Init",
+        "VUT_Fini",
+        "VUT_Arg",
+        "VUT_Setup",
+        "VUT_Main",
+        "VUT_Signaled"
+      ],
+      "predicates": {
+        "x_new": {
+          "meaning": "the object was created",
+          "events": [
+            "ok:VUT_Init"
+          ]
+        },
+        "x_end": {
+          "meaning": "the object is about to be released",
+          "events": [
+            "call:VUT_Fini"
+          ]
+        },
+        "x_use": {
+          "meaning": "a routine taking the object is about to be called",
+          "events": [
+            "call:VUT_Arg",
+            "call:VUT_Setup",
+            "call:VUT_Main",
+            "call:VUT_Signaled",
+            "call:VUT_Fini"
+          ]
+        },
+        "u_main": {
+          "meaning": "VUT_Main is about to be called",
+          "events": [
+            "call:VUT_Main"
+          ]
+        },
+        "u_setup": {
+          "meaning": "VUT_Setup is about to be called",
+          "events": [
+            "call:VUT_Setup"
+          ]
+        },
+        "u_arg": {
+          "meaning": "VUT_Arg is about to be called",
+          "events": [
+            "call:VUT_Arg"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:VUT_Init",
+            "ok:VUT_Init",
+            "call:VUT_Arg",
+            "ok:VUT_Arg",
+            "call:VUT_Setup",
+            "ok:VUT_Setup",
+            "call:VUT_Main",
+            "ok:VUT_Main",
+            "call:VUT_Fini",
+            "ok:VUT_Fini",
+            "call:VUT_Init",
+            "ok:VUT_Init",
+            "call:VUT_Setup"
+          ],
+          "allowed": true,
+          "reason": "init, options, setup once, main, fini"
+        },
+        {
+          "events": [
+            "call:VUT_Init",
+            "ok:VUT_Init",
+            "call:VUT_Main"
+          ],
+          "allowed": false,
+          "reason": "main before setup"
+        },
+        {
+          "events": [
+            "call:VUT_Init",
+            "ok:VUT_Init",
+            "call:VUT_Setup",
+            "ok:VUT_Setup",
+            "call:VUT_Setup"
+          ],
+          "allowed": false,
+          "reason": "setup twice"
+        }
+      ]
+    }
+  ]
+}

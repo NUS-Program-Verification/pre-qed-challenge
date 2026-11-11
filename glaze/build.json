@@ -1,0 +1,4 @@
+{
+  "languageStandard": "c++23",
+  "includeRoots": ["include"]
+}

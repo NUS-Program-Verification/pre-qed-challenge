@@ -1,0 +1,391 @@
+{
+  "properties": [
+    {
+      "id": "compress_stream_lifecycle",
+      "rule": "bzlib.h / bzip2 manual 3.3: BZ2_bzCompressInit must succeed before BZ2_bzCompress or BZ2_bzCompressEnd; BZ2_bzCompressEnd releases all memory, after which the stream is invalid until re-initialised.",
+      "formula": "(!c_use W c_init_ok) & G(c_end -> X(!c_use W c_init_ok))",
+      "apis": [
+        "BZ2_bzCompressInit",
+        "BZ2_bzCompress",
+        "BZ2_bzCompressEnd"
+      ],
+      "predicates": {
+        "c_init_ok": {
+          "meaning": "BZ2_bzCompressInit returned BZ_OK",
+          "events": [
+            "ok:BZ2_bzCompressInit"
+          ]
+        },
+        "c_use": {
+          "meaning": "BZ2_bzCompress or BZ2_bzCompressEnd is about to be called",
+          "events": [
+            "call:BZ2_bzCompress",
+            "call:BZ2_bzCompressEnd"
+          ]
+        },
+        "c_end": {
+          "meaning": "BZ2_bzCompressEnd is about to be called",
+          "events": [
+            "call:BZ2_bzCompressEnd"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:BZ2_bzCompressInit",
+            "ok:BZ2_bzCompressInit",
+            "call:BZ2_bzCompress",
+            "ok:BZ2_bzCompress",
+            "call:BZ2_bzCompress",
+            "fail:BZ2_bzCompress",
+            "call:BZ2_bzCompressEnd",
+            "ok:BZ2_bzCompressEnd"
+          ],
+          "allowed": true,
+          "reason": "sequence errors from BZ2_bzCompress are documented returns, not illegal calls"
+        },
+        {
+          "events": [
+            "call:BZ2_bzCompress"
+          ],
+          "allowed": false,
+          "reason": "not initialised"
+        },
+        {
+          "events": [
+            "call:BZ2_bzCompressInit",
+            "fail:BZ2_bzCompressInit",
+            "call:BZ2_bzCompressEnd"
+          ],
+          "allowed": false,
+          "reason": "init failed"
+        },
+        {
+          "events": [
+            "call:BZ2_bzCompressInit",
+            "ok:BZ2_bzCompressInit",
+            "call:BZ2_bzCompressEnd",
+            "ok:BZ2_bzCompressEnd",
+            "call:BZ2_bzCompressEnd"
+          ],
+          "allowed": false,
+          "reason": "double end"
+        }
+      ]
+    },
+    {
+      "id": "decompress_stream_lifecycle",
+      "rule": "bzlib.h / manual 3.3: BZ2_bzDecompressInit must succeed before BZ2_bzDecompress or BZ2_bzDecompressEnd; BZ2_bzDecompressEnd releases the stream.",
+      "formula": "(!d_use W d_init_ok) & G(d_end -> X(!d_use W d_init_ok))",
+      "apis": [
+        "BZ2_bzDecompressInit",
+        "BZ2_bzDecompress",
+        "BZ2_bzDecompressEnd"
+      ],
+      "predicates": {
+        "d_init_ok": {
+          "meaning": "BZ2_bzDecompressInit returned BZ_OK",
+          "events": [
+            "ok:BZ2_bzDecompressInit"
+          ]
+        },
+        "d_use": {
+          "meaning": "BZ2_bzDecompress or BZ2_bzDecompressEnd is about to be called",
+          "events": [
+            "call:BZ2_bzDecompress",
+            "call:BZ2_bzDecompressEnd"
+          ]
+        },
+        "d_end": {
+          "meaning": "BZ2_bzDecompressEnd is about to be called",
+          "events": [
+            "call:BZ2_bzDecompressEnd"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:BZ2_bzDecompressInit",
+            "ok:BZ2_bzDecompressInit",
+            "call:BZ2_bzDecompress",
+            "fail:BZ2_bzDecompress",
+            "call:BZ2_bzDecompressEnd",
+            "ok:BZ2_bzDecompressEnd",
+            "call:BZ2_bzDecompressInit",
+            "ok:BZ2_bzDecompressInit",
+            "call:BZ2_bzDecompress"
+          ],
+          "allowed": true,
+          "reason": "re-init after end"
+        },
+        {
+          "events": [
+            "call:BZ2_bzDecompressEnd"
+          ],
+          "allowed": false,
+          "reason": "not initialised"
+        },
+        {
+          "events": [
+            "call:BZ2_bzDecompressInit",
+            "ok:BZ2_bzDecompressInit",
+            "call:BZ2_bzDecompressEnd",
+            "ok:BZ2_bzDecompressEnd",
+            "call:BZ2_bzDecompress"
+          ],
+          "allowed": false,
+          "reason": "use after end"
+        }
+      ]
+    },
+    {
+      "id": "bzfile_read_lifecycle",
+      "rule": "manual 3.4: BZ2_bzRead, BZ2_bzReadGetUnused and BZ2_bzReadClose take the BZFILE* from a successful BZ2_bzReadOpen; after BZ2_bzReadClose the handle is freed. A handle from BZ2_bzWriteOpen must not be passed to the read functions. The harness keeps one BZFILE.",
+      "formula": "(!r_use W r_open_ok) & G((r_close | w_open) -> X(!r_use W r_open_ok))",
+      "apis": [
+        "BZ2_bzReadOpen",
+        "BZ2_bzRead",
+        "BZ2_bzReadGetUnused",
+        "BZ2_bzReadClose",
+        "BZ2_bzWriteOpen"
+      ],
+      "predicates": {
+        "r_open_ok": {
+          "meaning": "BZ2_bzReadOpen returned a handle with BZ_OK",
+          "events": [
+            "ok:BZ2_bzReadOpen"
+          ]
+        },
+        "r_use": {
+          "meaning": "a read-side routine is about to be called",
+          "events": [
+            "call:BZ2_bzRead",
+            "call:BZ2_bzReadGetUnused",
+            "call:BZ2_bzReadClose"
+          ]
+        },
+        "r_close": {
+          "meaning": "BZ2_bzReadClose is about to be called",
+          "events": [
+            "call:BZ2_bzReadClose"
+          ]
+        },
+        "w_open": {
+          "meaning": "the BZFILE slot is being opened for writing",
+          "events": [
+            "call:BZ2_bzWriteOpen"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:BZ2_bzReadOpen",
+            "ok:BZ2_bzReadOpen",
+            "call:BZ2_bzRead",
+            "ok:BZ2_bzRead",
+            "call:BZ2_bzReadGetUnused",
+            "fail:BZ2_bzReadGetUnused",
+            "call:BZ2_bzReadClose",
+            "ok:BZ2_bzReadClose"
+          ],
+          "allowed": true,
+          "reason": "normal read session"
+        },
+        {
+          "events": [
+            "call:BZ2_bzRead"
+          ],
+          "allowed": false,
+          "reason": "nothing open"
+        },
+        {
+          "events": [
+            "call:BZ2_bzWriteOpen",
+            "ok:BZ2_bzWriteOpen",
+            "call:BZ2_bzRead"
+          ],
+          "allowed": false,
+          "reason": "read on a write handle"
+        },
+        {
+          "events": [
+            "call:BZ2_bzReadOpen",
+            "ok:BZ2_bzReadOpen",
+            "call:BZ2_bzReadClose",
+            "ok:BZ2_bzReadClose",
+            "call:BZ2_bzReadClose"
+          ],
+          "allowed": false,
+          "reason": "double close"
+        }
+      ]
+    },
+    {
+      "id": "bzfile_write_lifecycle",
+      "rule": "manual 3.4: BZ2_bzWrite, BZ2_bzWriteClose and BZ2_bzWriteClose64 take the BZFILE* from a successful BZ2_bzWriteOpen; the close functions free it. A read handle must not be passed to them.",
+      "formula": "(!w_use W w_open_ok) & G((w_close | r_open) -> X(!w_use W w_open_ok))",
+      "apis": [
+        "BZ2_bzWriteOpen",
+        "BZ2_bzWrite",
+        "BZ2_bzWriteClose",
+        "BZ2_bzWriteClose64",
+        "BZ2_bzReadOpen"
+      ],
+      "predicates": {
+        "w_open_ok": {
+          "meaning": "BZ2_bzWriteOpen returned a handle with BZ_OK",
+          "events": [
+            "ok:BZ2_bzWriteOpen"
+          ]
+        },
+        "w_use": {
+          "meaning": "a write-side routine is about to be called",
+          "events": [
+            "call:BZ2_bzWrite",
+            "call:BZ2_bzWriteClose",
+            "call:BZ2_bzWriteClose64"
+          ]
+        },
+        "w_close": {
+          "meaning": "a write close is about to be called",
+          "events": [
+            "call:BZ2_bzWriteClose",
+            "call:BZ2_bzWriteClose64"
+          ]
+        },
+        "r_open": {
+          "meaning": "the BZFILE slot is being opened for reading",
+          "events": [
+            "call:BZ2_bzReadOpen"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:BZ2_bzWriteOpen",
+            "ok:BZ2_bzWriteOpen",
+            "call:BZ2_bzWrite",
+            "ok:BZ2_bzWrite",
+            "call:BZ2_bzWriteClose64",
+            "ok:BZ2_bzWriteClose64"
+          ],
+          "allowed": true,
+          "reason": "normal write session"
+        },
+        {
+          "events": [
+            "call:BZ2_bzWrite"
+          ],
+          "allowed": false,
+          "reason": "nothing open"
+        },
+        {
+          "events": [
+            "call:BZ2_bzReadOpen",
+            "ok:BZ2_bzReadOpen",
+            "call:BZ2_bzWrite"
+          ],
+          "allowed": false,
+          "reason": "write on a read handle"
+        },
+        {
+          "events": [
+            "call:BZ2_bzWriteOpen",
+            "ok:BZ2_bzWriteOpen",
+            "call:BZ2_bzWriteClose",
+            "ok:BZ2_bzWriteClose",
+            "call:BZ2_bzWriteClose64"
+          ],
+          "allowed": false,
+          "reason": "double close"
+        }
+      ]
+    },
+    {
+      "id": "highlevel_handle_lifecycle",
+      "rule": "manual 3.5 (zlib-compatible interface): BZ2_bzread, BZ2_bzwrite, BZ2_bzflush, BZ2_bzerror and BZ2_bzclose take the BZFILE* from BZ2_bzopen or BZ2_bzdopen; BZ2_bzclose frees it. The harness keeps one high-level handle.",
+      "formula": "(!h_use W h_open_ok) & G(h_close -> X(!h_use W h_open_ok))",
+      "apis": [
+        "BZ2_bzopen",
+        "BZ2_bzdopen",
+        "BZ2_bzread",
+        "BZ2_bzwrite",
+        "BZ2_bzflush",
+        "BZ2_bzerror",
+        "BZ2_bzclose"
+      ],
+      "predicates": {
+        "h_open_ok": {
+          "meaning": "BZ2_bzopen or BZ2_bzdopen returned non-NULL",
+          "events": [
+            "ok:BZ2_bzopen",
+            "ok:BZ2_bzdopen"
+          ]
+        },
+        "h_use": {
+          "meaning": "a routine taking the handle is about to be called",
+          "events": [
+            "call:BZ2_bzread",
+            "call:BZ2_bzwrite",
+            "call:BZ2_bzflush",
+            "call:BZ2_bzerror",
+            "call:BZ2_bzclose"
+          ]
+        },
+        "h_close": {
+          "meaning": "BZ2_bzclose is about to be called",
+          "events": [
+            "call:BZ2_bzclose"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "events": [
+            "call:BZ2_bzopen",
+            "ok:BZ2_bzopen",
+            "call:BZ2_bzwrite",
+            "ok:BZ2_bzwrite",
+            "call:BZ2_bzflush",
+            "ok:BZ2_bzflush",
+            "call:BZ2_bzclose",
+            "ok:BZ2_bzclose"
+          ],
+          "allowed": true,
+          "reason": "normal session"
+        },
+        {
+          "events": [
+            "call:BZ2_bzerror"
+          ],
+          "allowed": false,
+          "reason": "nothing open"
+        },
+        {
+          "events": [
+            "call:BZ2_bzopen",
+            "fail:BZ2_bzopen",
+            "call:BZ2_bzclose"
+          ],
+          "allowed": false,
+          "reason": "open failed"
+        },
+        {
+          "events": [
+            "call:BZ2_bzdopen",
+            "ok:BZ2_bzdopen",
+            "call:BZ2_bzclose",
+            "ok:BZ2_bzclose",
+            "call:BZ2_bzread"
+          ],
+          "allowed": false,
+          "reason": "use after close"
+        }
+      ]
+    }
+  ]
+}

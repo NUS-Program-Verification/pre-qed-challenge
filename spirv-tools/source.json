@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/KhronosGroup/SPIRV-Tools",
+  "commit": "47c74f488bad1136559f382ce99e8e52d7a392cd",
+  "extra": [
+    {
+      "path": "external/spirv-headers",
+      "repository": "https://github.com/KhronosGroup/SPIRV-Headers",
+      "commit": "f0bf307f7c49d26484db596185cece53c37701fc"
+    }
+  ]
+}
